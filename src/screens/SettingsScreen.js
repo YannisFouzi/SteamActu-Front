@@ -17,6 +17,7 @@ const SettingsScreen = () => {
   const [saving, setSaving] = useState(false);
   const [steamId, setSteamId] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [autoFollowEnabled, setAutoFollowEnabled] = useState(false);
 
   // Chargement des données utilisateur au démarrage
   useEffect(() => {
@@ -44,6 +45,7 @@ const SettingsScreen = () => {
 
       // Définir l'état des notifications
       setNotificationsEnabled(user.notificationSettings?.enabled ?? true);
+      setAutoFollowEnabled(user.autoFollowSettings?.enabled ?? false);
     } catch (error) {
       console.error('Erreur lors du chargement des paramètres:', error);
       Alert.alert(
@@ -148,6 +150,27 @@ const SettingsScreen = () => {
         <Text style={styles.settingDescription}>
           Recevez des notifications lorsque de nouvelles actualités sont
           publiées pour les jeux que vous suivez.
+        </Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Suivi automatique</Text>
+
+        <View style={styles.settingRow}>
+          <Text style={styles.settingLabel}>
+            Suivre automatiquement les nouveaux jeux
+          </Text>
+          <Switch
+            value={autoFollowEnabled}
+            onValueChange={setAutoFollowEnabled}
+            trackColor={{false: '#767577', true: '#2A3F5A'}}
+            thumbColor={autoFollowEnabled ? '#66C0F4' : '#f4f3f4'}
+          />
+        </View>
+
+        <Text style={styles.settingDescription}>
+          Si activé, les nouveaux jeux que vous achetez seront automatiquement
+          ajoutés à votre liste de jeux suivis pour les notifications.
         </Text>
       </View>
 
