@@ -4,7 +4,14 @@ import {useAppContext} from '../../../context/AppContext';
 import styles from '../styles';
 
 const SearchBar = () => {
-  const {searchQuery, setSearchQuery, setSortModalVisible} = useAppContext();
+  const {searchQuery, setSearchQuery, setSortModalVisible, filterAndSortGames} =
+    useAppContext();
+
+  // Gérer le changement de texte dans la recherche
+  const handleSearchChange = text => {
+    setSearchQuery(text);
+    filterAndSortGames(); // Appliquer immédiatement le filtrage
+  };
 
   return (
     <View style={styles.searchContainer}>
@@ -13,7 +20,7 @@ const SearchBar = () => {
         placeholder="Rechercher un jeu..."
         placeholderTextColor="#8F98A0"
         value={searchQuery}
-        onChangeText={setSearchQuery}
+        onChangeText={handleSearchChange}
       />
       <TouchableOpacity
         style={styles.sortButton}

@@ -279,9 +279,11 @@ export const AppProvider = ({children, navigation = null}) => {
   };
 
   // Fonction pour filtrer et trier les jeux
-  const filterAndSortGames = () => {
+  const filterAndSortGames = (optionOverride = null) => {
     console.log('=== DÉBUT DE TRI DES JEUX ===');
-    console.log(`Option de tri actuelle: "${sortOption}"`);
+    // Utiliser l'option passée en paramètre ou l'option enregistrée dans l'état
+    const optionToUse = optionOverride || sortOption;
+    console.log(`Option de tri actuelle: "${optionToUse}"`);
 
     let result = [...games];
 
@@ -293,7 +295,7 @@ export const AppProvider = ({children, navigation = null}) => {
     }
 
     // Trier selon l'option choisie
-    switch (sortOption) {
+    switch (optionToUse) {
       case 'recent':
         console.log('Tri par temps de jeu récent activé');
         result.sort(

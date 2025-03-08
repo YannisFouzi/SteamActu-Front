@@ -16,18 +16,11 @@ const SortModal = () => {
   const handleSortOptionChange = option => {
     console.log(`Option de tri sélectionnée: ${option}`);
 
-    // Utiliser une fonction pour s'assurer que nous avons la valeur la plus récente
-    setSortOption(currentOption => {
-      console.log('Dans setSortOption - valeur actuelle:', currentOption);
-      console.log('Dans setSortOption - nouvelle valeur:', option);
-      return option;
-    });
+    // Mettre à jour l'option de tri dans l'état
+    setSortOption(option);
 
-    // Forcer une mise à jour immédiate du tri
-    setTimeout(() => {
-      console.log(`Forcer un re-tri avec option ${option}`);
-      filterAndSortGames();
-    }, 100);
+    // Appliquer immédiatement le tri avec la nouvelle option
+    filterAndSortGames(option);
 
     // Fermer la modal
     setSortModalVisible(false);
