@@ -4,7 +4,7 @@ import React from 'react';
 
 // Importation des écrans (à créer)
 import GameDetailsScreen from '../screens/GameDetailsScreen';
-import HomeScreen from '../screens/HomeScreen';
+import HomeScreen from '../screens/Home';
 import LoginScreen from '../screens/LoginScreen';
 import NewsDetailScreen from '../screens/NewsDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
