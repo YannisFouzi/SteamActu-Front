@@ -94,11 +94,6 @@ const GameDetailsScreen = ({route, navigation}) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{gameName}</Text>
-        <Text style={styles.subtitle}>Dernières actualités</Text>
-      </View>
-
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#66C0F4" />
