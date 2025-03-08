@@ -75,6 +75,7 @@ const AppNavigator = () => {
           options={{
             title: 'Mes Jeux',
             headerBackVisible: false,
+            headerShown: false,
           }}
         />
         <Stack.Screen

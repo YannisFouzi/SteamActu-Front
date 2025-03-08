@@ -10,8 +10,15 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#171A21',
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 2},
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A475E',
   },
   title: {
     color: '#FFFFFF',
@@ -24,10 +31,13 @@ export default StyleSheet.create({
   },
   headerButton: {
     marginLeft: 12,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
   },
   headerButtonText: {
     color: '#66C0F4',
     fontSize: 14,
+    fontWeight: '500',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -35,6 +45,8 @@ export default StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 8,
     alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1B2838',
   },
   searchInput: {
     flex: 1,
@@ -48,6 +60,8 @@ export default StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     marginLeft: 10,
+    justifyContent: 'space-between',
+    width: 130,
   },
   actionButton: {
     paddingVertical: 8,
@@ -56,7 +70,7 @@ export default StyleSheet.create({
     borderRadius: 3,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 5,
+    minWidth: 60,
   },
   actionButtonText: {
     color: '#FFFFFF',
@@ -85,6 +99,7 @@ export default StyleSheet.create({
     marginBottom: 8,
     borderRadius: 3,
     overflow: 'hidden',
+    paddingRight: 5,
   },
   gameImage: {
     width: 120,
@@ -99,7 +114,7 @@ export default StyleSheet.create({
   gameTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 6,
     flexWrap: 'wrap',
   },
   gameTitle: {
@@ -107,6 +122,7 @@ export default StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     flexShrink: 1,
+    maxWidth: '80%',
   },
   gamePlaytime: {
     color: '#8F98A0',
@@ -123,6 +139,9 @@ export default StyleSheet.create({
     backgroundColor: '#67C1F5',
     paddingHorizontal: 12,
     minWidth: 70,
+    height: 32,
+    alignSelf: 'center',
+    borderRadius: 3,
   },
   followButtonText: {
     color: '#FFFFFF',
@@ -195,6 +214,8 @@ export default StyleSheet.create({
     paddingVertical: 2,
     marginLeft: 8,
     alignSelf: 'center',
+    height: 20,
+    justifyContent: 'center',
   },
   updateBadgeText: {
     color: '#FFFFFF',

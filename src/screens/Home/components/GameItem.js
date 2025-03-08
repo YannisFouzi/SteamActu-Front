@@ -32,7 +32,9 @@ const GameItem = ({game}) => {
       />
       <View style={styles.gameInfo}>
         <View style={styles.gameTitleContainer}>
-          <Text style={styles.gameTitle}>{game.name}</Text>
+          <Text style={styles.gameTitle} numberOfLines={1} ellipsizeMode="tail">
+            {game.name}
+          </Text>
           {hasRecentUpdate && (
             <View style={styles.updateBadge}>
               <Text style={styles.updateBadgeText}>Nouveau</Text>
