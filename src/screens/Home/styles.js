@@ -45,6 +45,23 @@ export default StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
   },
+  buttonContainer: {
+    flexDirection: 'row',
+    marginLeft: 10,
+  },
+  actionButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#316282',
+    borderRadius: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 5,
+  },
+  actionButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
   sortButton: {
     marginLeft: 10,
     paddingVertical: 8,

@@ -36,6 +36,10 @@ export const AppProvider = ({children, navigation = null}) => {
   const [sortOption, setSortOption] = useState('default');
   const [isLoadingMoreGames, setIsLoadingMoreGames] = useState(false);
 
+  // Filtre pour les jeux suivis
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [followFilter, setFollowFilter] = useState('all'); // 'all', 'followed', 'unfollowed'
+
   // Chargement initial des données
   useEffect(() => {
     loadData();
@@ -71,6 +75,23 @@ export const AppProvider = ({children, navigation = null}) => {
     };
     getSavedSortOption();
 
+    // Charger l'option de filtre sauvegardée
+    const getSavedFilterOption = async () => {
+      try {
+        const savedFilter = await AsyncStorage.getItem('followFilter');
+        if (savedFilter) {
+          console.log('Option de filtre récupérée du stockage:', savedFilter);
+          setFollowFilter(savedFilter);
+        }
+      } catch (error) {
+        console.error(
+          "Erreur lors de la récupération de l'option de filtre:",
+          error,
+        );
+      }
+    };
+    getSavedFilterOption();
+
     return () => {
       subscription.remove();
     };
@@ -93,6 +114,24 @@ export const AppProvider = ({children, navigation = null}) => {
       saveSortOption();
     }
   }, [sortOption]);
+
+  // Persister l'option de filtre
+  useEffect(() => {
+    if (followFilter) {
+      const saveFilterOption = async () => {
+        try {
+          await AsyncStorage.setItem('followFilter', followFilter);
+          console.log('Option de filtre sauvegardée:', followFilter);
+        } catch (error) {
+          console.error(
+            "Erreur lors de la sauvegarde de l'option de filtre:",
+            error,
+          );
+        }
+      };
+      saveFilterOption();
+    }
+  }, [followFilter]);
 
   // Filtrer et trier les jeux quand les critères changent
   useEffect(() => {
@@ -279,11 +318,13 @@ export const AppProvider = ({children, navigation = null}) => {
   };
 
   // Fonction pour filtrer et trier les jeux
-  const filterAndSortGames = (optionOverride = null) => {
-    console.log('=== DÉBUT DE TRI DES JEUX ===');
-    // Utiliser l'option passée en paramètre ou l'option enregistrée dans l'état
+  const filterAndSortGames = (optionOverride = null, filterOverride = null) => {
+    console.log('=== DÉBUT DE TRI ET FILTRAGE DES JEUX ===');
+    // Utiliser les options passées en paramètre ou les options enregistrées dans l'état
     const optionToUse = optionOverride || sortOption;
+    const filterToUse = filterOverride || followFilter;
     console.log(`Option de tri actuelle: "${optionToUse}"`);
+    console.log(`Option de filtre actuelle: "${filterToUse}"`);
 
     let result = [...games];
 
@@ -292,6 +333,14 @@ export const AppProvider = ({children, navigation = null}) => {
       result = result.filter(game =>
         game.name.toLowerCase().includes(searchQuery.toLowerCase()),
       );
+    }
+
+    // Filtrer par suivi
+    if (filterToUse !== 'all') {
+      result = result.filter(game => {
+        const followed = isGameFollowed(game.appId);
+        return filterToUse === 'followed' ? followed : !followed;
+      });
     }
 
     // Trier selon l'option choisie
@@ -330,7 +379,7 @@ export const AppProvider = ({children, navigation = null}) => {
         break;
     }
 
-    console.log('=== FIN DE TRI DES JEUX ===');
+    console.log('=== FIN DE TRI ET FILTRAGE DES JEUX ===');
     setFilteredGames(result);
   };
 
@@ -362,11 +411,15 @@ export const AppProvider = ({children, navigation = null}) => {
     sortModalVisible,
     sortOption,
     isLoadingMoreGames,
+    filterModalVisible,
+    followFilter,
 
     // Setters
     setSearchQuery,
     setSortModalVisible,
     setSortOption,
+    setFilterModalVisible,
+    setFollowFilter,
 
     // Fonctions
     loadData,

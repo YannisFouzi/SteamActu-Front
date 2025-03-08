@@ -1,6 +1,7 @@
 import React from 'react';
 import {ActivityIndicator, Text, View} from 'react-native';
 import {useAppContext} from '../../context/AppContext';
+import FilterModal from './components/FilterModal';
 import GamesList from './components/GamesList';
 import SearchBar from './components/SearchBar';
 import SortModal from './components/SortModal';
@@ -33,6 +34,7 @@ const HomeScreen = () => {
       )}
 
       <SortModal />
+      <FilterModal />
     </View>
   );
 };
