@@ -79,10 +79,17 @@ export default StyleSheet.create({
     paddingVertical: 8,
     justifyContent: 'center',
   },
-  gameName: {
+  gameTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+    flexWrap: 'wrap',
+  },
+  gameTitle: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: 'bold',
+    flexShrink: 1,
   },
   gamePlaytime: {
     color: '#8F98A0',
@@ -164,22 +171,19 @@ export default StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#66C0F4',
   },
-  gameNameContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
   updateBadge: {
     backgroundColor: '#66C0F4',
     borderRadius: 4,
     paddingHorizontal: 6,
     paddingVertical: 2,
     marginLeft: 8,
+    alignSelf: 'center',
   },
   updateBadgeText: {
     color: '#FFFFFF',
     fontSize: 10,
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   loadingMoreContainer: {
     backgroundColor: 'rgba(35, 60, 95, 0.8)',

@@ -9,7 +9,7 @@ const GameItem = ({game}) => {
   const {isGameFollowed, followGame, formatPlaytime, isRecentlyUpdated} =
     useAppContext();
 
-  const isFollowed = isGameFollowed(game);
+  const isFollowed = isGameFollowed(game.appId);
   const hasRecentUpdate = isRecentlyUpdated(game);
 
   return (
