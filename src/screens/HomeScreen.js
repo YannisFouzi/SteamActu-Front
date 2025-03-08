@@ -31,7 +31,47 @@ const HomeScreen = ({navigation}) => {
   // États pour le filtrage et le tri
   const [searchQuery, setSearchQuery] = useState('');
   const [sortModalVisible, setSortModalVisible] = useState(false);
-  const [sortOption, setSortOption] = useState('default'); // default, recent, mostPlayed
+  const [sortOption, setSortOption] = useState('default'); // default, recent, mostPlayed, recentlyUpdated
+
+  // Persistance de l'option de tri
+  useEffect(() => {
+    // Récupérer l'option de tri sauvegardée
+    const getSavedSortOption = async () => {
+      try {
+        const savedOption = await AsyncStorage.getItem('sortOption');
+        if (savedOption) {
+          console.log('Option de tri récupérée du stockage:', savedOption);
+          setSortOption(savedOption);
+        }
+      } catch (error) {
+        console.error(
+          "Erreur lors de la récupération de l'option de tri:",
+          error,
+        );
+      }
+    };
+
+    getSavedSortOption();
+  }, []);
+
+  // Sauvegarder l'option de tri lorsqu'elle change
+  useEffect(() => {
+    const saveSortOption = async () => {
+      try {
+        await AsyncStorage.setItem('sortOption', sortOption);
+        console.log('Option de tri sauvegardée:', sortOption);
+      } catch (error) {
+        console.error(
+          "Erreur lors de la sauvegarde de l'option de tri:",
+          error,
+        );
+      }
+    };
+
+    if (sortOption) {
+      saveSortOption();
+    }
+  }, [sortOption]);
 
   // Charger les données au démarrage
   useEffect(() => {
@@ -39,11 +79,11 @@ const HomeScreen = ({navigation}) => {
 
     // Configurer la détection du changement d'état de l'application
     const subscription = AppState.addEventListener('change', nextAppState => {
-      // Lorsque l'app revient au premier plan après avoir été en arrière-plan
       if (
         appState.current.match(/inactive|background/) &&
         nextAppState === 'active'
       ) {
+        console.log('App revenue au premier plan!');
         checkLastVerificationDate();
       }
 
@@ -66,13 +106,32 @@ const HomeScreen = ({navigation}) => {
     };
   }, [steamId, appStateVisible]);
 
-  // Effet pour filtrer et trier les jeux quand les données changent
+  // Surveiller les changements de l'option de tri pour déboguer
   useEffect(() => {
-    filterAndSortGames();
-  }, [games, searchQuery, sortOption]);
+    console.log('useEffect: sortOption a changé vers', sortOption);
+
+    // S'assurer que le tri est appliqué à chaque changement de l'option de tri
+    if (games.length > 0) {
+      console.log(`Appliquer le tri "${sortOption}" sur ${games.length} jeux`);
+      filterAndSortGames();
+    }
+  }, [sortOption]);
+
+  // Filtrer/trier les jeux quand la liste ou les critères de recherche changent
+  useEffect(() => {
+    if (games.length > 0 || searchQuery) {
+      console.log(
+        `Mise à jour des jeux filtrés (${games.length} jeux, recherche: "${searchQuery}")`,
+      );
+      filterAndSortGames();
+    }
+  }, [games, searchQuery]);
 
   // Fonction pour filtrer et trier les jeux
   const filterAndSortGames = () => {
+    console.log('=== DÉBUT DE TRI DES JEUX ===');
+    console.log(`Option de tri actuelle: "${sortOption}"`);
+
     let result = [...games];
 
     // Filtrer par recherche
@@ -82,20 +141,102 @@ const HomeScreen = ({navigation}) => {
       );
     }
 
+    // Vérifier les timestamps de quelques jeux pour déboguer
+    console.log('Échantillon de jeux avec leurs timestamps:');
+    result.slice(0, 3).forEach(game => {
+      console.log(
+        `- ${game.name}: ${game.lastUpdateTimestamp || 'aucun'} (${
+          game.lastUpdateTimestamp
+            ? new Date(game.lastUpdateTimestamp).toLocaleString()
+            : 'jamais'
+        })`,
+      );
+    });
+
     // Trier selon l'option choisie
     switch (sortOption) {
       case 'recent':
+        console.log('Tri par temps de jeu récent activé');
         // Tri par temps de jeu récent (si disponible)
         result.sort(
           (a, b) => (b.playtime.recent || 0) - (a.playtime.recent || 0),
         );
         break;
       case 'mostPlayed':
+        console.log('Tri par temps de jeu total activé');
         // Tri par temps de jeu total
         result.sort((a, b) => b.playtime.forever - a.playtime.forever);
         break;
-      // Par défaut, ne pas trier (ordre d'origine)
+      case 'recentlyUpdated':
+        console.log('Tri par mise à jour récente activé');
+        // Vérifier si nous avons des données lastUpdateTimestamp
+        const gamesWithTimestamp = result.filter(
+          game => game.lastUpdateTimestamp > 0,
+        );
+        console.log(
+          `${gamesWithTimestamp.length} jeux sur ${result.length} ont un timestamp > 0`,
+        );
+
+        if (gamesWithTimestamp.length > 0) {
+          console.log('Top 3 des jeux les plus récemment mis à jour:');
+          gamesWithTimestamp
+            .sort((a, b) => b.lastUpdateTimestamp - a.lastUpdateTimestamp)
+            .slice(0, 3)
+            .forEach(game => {
+              console.log(
+                `- ${game.name}: ${new Date(
+                  game.lastUpdateTimestamp,
+                ).toLocaleString()}`,
+              );
+            });
+        }
+
+        // Tri par mise à jour récente
+        result.sort((a, b) => {
+          // Pour le debug (limiter les logs pour éviter de surcharger la console)
+          if (
+            (a.lastUpdateTimestamp > 0 || b.lastUpdateTimestamp > 0) &&
+            Math.random() < 0.05
+          ) {
+            console.log(
+              `Comparaison: ${a.name} (${
+                a.lastUpdateTimestamp || 'aucun'
+              }) vs ${b.name} (${b.lastUpdateTimestamp || 'aucun'})`,
+            );
+          }
+
+          // Si les deux jeux ont un timestamp de 0 ou undefined, trier par nom
+          if (
+            (!a.lastUpdateTimestamp || a.lastUpdateTimestamp === 0) &&
+            (!b.lastUpdateTimestamp || b.lastUpdateTimestamp === 0)
+          ) {
+            return a.name.localeCompare(b.name);
+          }
+
+          // Si seulement a a un timestamp de 0 ou undefined, b doit venir en premier
+          if (!a.lastUpdateTimestamp || a.lastUpdateTimestamp === 0) return 1;
+
+          // Si seulement b a un timestamp de 0 ou undefined, a doit venir en premier
+          if (!b.lastUpdateTimestamp || b.lastUpdateTimestamp === 0) return -1;
+
+          // Sinon comparer les timestamps (du plus récent au plus ancien)
+          return b.lastUpdateTimestamp - a.lastUpdateTimestamp;
+        });
+        break;
+      case 'default':
+      default:
+        console.log('Tri par défaut (ordre alphabétique) activé');
+        // Par défaut, trier par ordre alphabétique
+        result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
     }
+
+    // Vérifier le résultat du tri
+    console.log('Premiers jeux après tri:');
+    result.slice(0, 3).forEach(game => {
+      console.log(`- ${game.name}`);
+    });
+    console.log('=== FIN DE TRI DES JEUX ===');
 
     setFilteredGames(result);
   };
@@ -165,28 +306,39 @@ const HomeScreen = ({navigation}) => {
       const gamesResponse = await steamService.getUserGames(savedSteamId);
       const newGames = gamesResponse.data;
 
-      // Si c'est une vérification complète et que nous avions déjà des jeux,
-      // vérifier s'il y a des nouveaux jeux
-      if (isFullCheck && games.length > 0) {
-        // Comparer avec les jeux actuels pour voir s'il y a des nouveautés
-        if (newGames.length > games.length) {
-          const currentAppIds = games.map(game => game.appId);
-          const addedGames = newGames.filter(
-            game => !currentAppIds.includes(game.appId),
-          );
+      // Ajouter des console.log pour débogage
+      console.log('Jeux récupérés avec leur timestamp:', newGames.slice(0, 3));
 
-          if (addedGames.length > 0) {
-            // Notifier l'utilisateur des nouveaux jeux
-            Alert.alert(
-              'Nouveaux jeux détectés',
-              `${addedGames.length} nouveau(x) jeu(x) ont été ajoutés à votre bibliothèque pendant votre absence.`,
-              [{text: 'OK'}],
-            );
-          }
-        }
+      // Vérifier si les jeux ont la propriété lastUpdateTimestamp
+      const gamesWithTimestamp = newGames.filter(
+        game => game.lastUpdateTimestamp,
+      );
+      console.log(`Nombre total de jeux: ${newGames.length}`);
+      console.log(
+        `Nombre de jeux avec lastUpdateTimestamp: ${gamesWithTimestamp.length}`,
+      );
+
+      if (gamesWithTimestamp.length > 0) {
+        console.log('Exemple de jeu avec timestamp:', {
+          nom: gamesWithTimestamp[0].name,
+          timestamp: gamesWithTimestamp[0].lastUpdateTimestamp,
+          date: new Date(
+            gamesWithTimestamp[0].lastUpdateTimestamp,
+          ).toLocaleString(),
+        });
       }
 
-      // Mettre à jour la liste des jeux
+      // Si nous n'avons pas encore tous les jeux avec timestamp, activer le polling
+      if (
+        gamesWithTimestamp.length < newGames.length &&
+        gamesWithTimestamp.length > 0
+      ) {
+        console.log('Activation du polling pour obtenir plus de timestamps');
+        setIsLoadingMoreGames(true);
+      } else {
+        setIsLoadingMoreGames(false);
+      }
+
       setGames(newGames);
       setFilteredGames(newGames);
 
@@ -324,10 +476,45 @@ const HomeScreen = ({navigation}) => {
     }
   };
 
+  // Fonction pour déterminer si un jeu a été mis à jour récemment (dans les 7 derniers jours)
+  const isRecentlyUpdated = game => {
+    // Debug pour identifier les problèmes avec lastUpdateTimestamp
+    if (game.name === 'Counter-Strike 2' || game.name === 'Split Fiction') {
+      console.log(`Vérification mise à jour pour ${game.name}:`, {
+        lastUpdateTimestamp: game.lastUpdateTimestamp,
+        date: game.lastUpdateTimestamp
+          ? new Date(game.lastUpdateTimestamp).toLocaleString()
+          : 'Aucune date',
+      });
+    }
+
+    // Si lastUpdateTimestamp n'existe pas ou est égal à 0, le jeu n'a pas été mis à jour récemment
+    if (!game.lastUpdateTimestamp || game.lastUpdateTimestamp === 0)
+      return false;
+
+    const now = Date.now();
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000; // 7 jours en millisecondes
+
+    // Debug pour les jeux mis à jour récemment
+    const isRecent = now - game.lastUpdateTimestamp < sevenDaysMs;
+    if (isRecent) {
+      console.log(
+        `Jeu mis à jour récemment: ${game.name} - ${new Date(
+          game.lastUpdateTimestamp,
+        ).toLocaleString()}`,
+      );
+    }
+
+    return isRecent;
+  };
+
   // Rendu d'un élément de jeu
   const renderGameItem = ({item}) => (
     <TouchableOpacity
-      style={styles.gameItem}
+      style={[
+        styles.gameItem,
+        isRecentlyUpdated(item) && styles.recentlyUpdatedGameItem,
+      ]}
       onPress={() =>
         navigation.navigate('GameDetails', {
           gameId: item.appId,
@@ -344,7 +531,14 @@ const HomeScreen = ({navigation}) => {
         resizeMode="cover"
       />
       <View style={styles.gameInfo}>
-        <Text style={styles.gameName}>{item.name}</Text>
+        <View style={styles.gameNameContainer}>
+          <Text style={styles.gameName}>{item.name}</Text>
+          {isRecentlyUpdated(item) && (
+            <View style={styles.updateBadge}>
+              <Text style={styles.updateBadgeText}>Nouveau</Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.gamePlaytime}>
           Temps de jeu: {formatPlaytime(item.playtime.forever)}
         </Text>
@@ -387,7 +581,9 @@ const HomeScreen = ({navigation}) => {
               sortOption === 'default' && styles.selectedSortOption,
             ]}
             onPress={() => {
-              setSortOption('default');
+              console.log('Bouton "Par défaut" cliqué');
+              setSortOption(currentOption => 'default');
+              setTimeout(() => filterAndSortGames(), 100);
               setSortModalVisible(false);
             }}>
             <Text style={styles.sortOptionText}>Par défaut</Text>
@@ -399,7 +595,9 @@ const HomeScreen = ({navigation}) => {
               sortOption === 'recent' && styles.selectedSortOption,
             ]}
             onPress={() => {
-              setSortOption('recent');
+              console.log('Bouton "Joué récemment" cliqué');
+              setSortOption(currentOption => 'recent');
+              setTimeout(() => filterAndSortGames(), 100);
               setSortModalVisible(false);
             }}>
             <Text style={styles.sortOptionText}>Joué récemment</Text>
@@ -411,15 +609,111 @@ const HomeScreen = ({navigation}) => {
               sortOption === 'mostPlayed' && styles.selectedSortOption,
             ]}
             onPress={() => {
-              setSortOption('mostPlayed');
+              console.log('Bouton "Plus joué" cliqué');
+              setSortOption(currentOption => 'mostPlayed');
+              setTimeout(() => filterAndSortGames(), 100);
               setSortModalVisible(false);
             }}>
             <Text style={styles.sortOptionText}>Plus joué</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.sortOption,
+              sortOption === 'recentlyUpdated' && styles.selectedSortOption,
+            ]}
+            onPress={() => {
+              console.log('Bouton "Mis à jour récemment" cliqué');
+              console.log('Avant: sortOption =', sortOption);
+
+              // Utiliser une fonction pour s'assurer que nous avons la valeur la plus récente
+              setSortOption(currentOption => {
+                console.log(
+                  'Dans setSortOption - valeur actuelle:',
+                  currentOption,
+                );
+                const newOption = 'recentlyUpdated';
+                console.log('Dans setSortOption - nouvelle valeur:', newOption);
+                return newOption;
+              });
+
+              // Forcer une mise à jour immédiate du tri
+              setTimeout(() => {
+                console.log(
+                  'setTimeout: forcer un re-tri avec option recentlyUpdated',
+                );
+                filterAndSortGames();
+              }, 100);
+
+              setSortModalVisible(false);
+            }}>
+            <Text style={styles.sortOptionText}>Mis à jour récemment</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
     </Modal>
   );
+
+  const [isLoadingMoreGames, setIsLoadingMoreGames] = useState(false);
+  const [lastUpdatedGamesList, setLastUpdatedGamesList] = useState(Date.now());
+  const pollingInterval = useRef(null);
+
+  // Fonction pour récupérer uniquement les jeux avec les données mises à jour sans recharger toute la liste
+  const pollForUpdatedGames = async () => {
+    try {
+      if (!steamId) return;
+
+      const gamesResponse = await steamService.getUserGames(steamId);
+      const newGames = gamesResponse.data;
+
+      // Vérifier si le nombre de jeux avec timestamp a augmenté
+      const newGamesWithTimestamp = newGames.filter(
+        game => game.lastUpdateTimestamp > 0,
+      );
+      const currentGamesWithTimestamp = games.filter(
+        game => game.lastUpdateTimestamp > 0,
+      );
+
+      if (newGamesWithTimestamp.length > currentGamesWithTimestamp.length) {
+        console.log(
+          `Mise à jour des jeux: ${
+            newGamesWithTimestamp.length - currentGamesWithTimestamp.length
+          } nouveaux jeux avec timestamp`,
+        );
+        setGames(newGames);
+        setLastUpdatedGamesList(Date.now());
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des jeux:', error);
+    }
+  };
+
+  // Démarrer le polling pour les mises à jour des jeux
+  useEffect(() => {
+    if (games.length > 0 && isLoadingMoreGames) {
+      console.log('Démarrage du polling pour les jeux mis à jour');
+
+      // Vérifier les mises à jour toutes les 10 secondes
+      pollingInterval.current = setInterval(pollForUpdatedGames, 10000);
+
+      // Arrêter le polling après 2 minutes (120 secondes)
+      setTimeout(() => {
+        if (pollingInterval.current) {
+          console.log('Arrêt du polling après 2 minutes');
+          clearInterval(pollingInterval.current);
+          pollingInterval.current = null;
+          setIsLoadingMoreGames(false);
+        }
+      }, 120000);
+
+      return () => {
+        if (pollingInterval.current) {
+          clearInterval(pollingInterval.current);
+          pollingInterval.current = null;
+        }
+      };
+    }
+  }, [games.length, isLoadingMoreGames]);
 
   return (
     <View style={styles.container}>
@@ -466,7 +760,7 @@ const HomeScreen = ({navigation}) => {
         <FlatList
           data={filteredGames}
           renderItem={renderGameItem}
-          keyExtractor={item => item.appId}
+          keyExtractor={(item, index) => `${item.appId}-${index}`}
           contentContainerStyle={styles.gamesList}
           refreshControl={
             <RefreshControl
@@ -486,6 +780,15 @@ const HomeScreen = ({navigation}) => {
             </View>
           }
         />
+      )}
+
+      {isLoadingMoreGames && (
+        <View style={styles.loadingMoreContainer}>
+          <Text style={styles.loadingMoreText}>
+            Analyse des jeux en cours... Les résultats s'actualiseront
+            automatiquement.
+          </Text>
+        </View>
       )}
 
       {renderSortModal()}
@@ -666,6 +969,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#8F98A0',
     textAlign: 'center',
+  },
+  recentlyUpdatedGameItem: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#66C0F4',
+  },
+  gameNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  updateBadge: {
+    backgroundColor: '#66C0F4',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
+  updateBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  loadingMoreContainer: {
+    backgroundColor: 'rgba(35, 60, 95, 0.8)',
+    padding: 10,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+  },
+  loadingMoreText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 12,
   },
 });
 
