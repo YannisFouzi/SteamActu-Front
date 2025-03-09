@@ -41,7 +41,12 @@ const newsService = {
   // Récupérer les actualités d'un jeu spécifique
   getGameNews: (appId, count = 5, maxLength = 300) => {
     return api.get(`/news/game/${appId}`, {
-      params: {count, maxLength},
+      params: {
+        count,
+        maxLength,
+        language: 'fr',
+        steamOnly: true,
+      },
     });
   },
 
