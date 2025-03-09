@@ -48,7 +48,46 @@ const LoginScreen = ({navigation}) => {
 
     try {
       // Enregistrer l'utilisateur sur le serveur
-      const response = await userService.register(steamId);
+      let response;
+      try {
+        response = await userService.register(steamId);
+        console.log('Enregistrement réussi avec réponse:', response.data);
+      } catch (registerError) {
+        // Vérifier si l'erreur est due à un utilisateur déjà existant
+        if (
+          registerError.response &&
+          registerError.response.status === 400 &&
+          registerError.response.data.message === 'Cet utilisateur existe déjà'
+        ) {
+          console.log(
+            'Utilisateur déjà existant, tentative de récupération des données...',
+          );
+          // L'utilisateur existe déjà, essayons de récupérer ses informations
+          try {
+            response = await userService.getUser(steamId);
+            console.log(
+              'Récupération des données utilisateur réussie:',
+              response.data,
+            );
+          } catch (getUserError) {
+            console.error(
+              'Erreur lors de la récupération des données utilisateur:',
+              getUserError,
+            );
+            throw new Error(
+              "Impossible de récupérer les informations de l'utilisateur",
+            );
+          }
+        } else {
+          // Autre type d'erreur, on la propage
+          throw registerError;
+        }
+      }
+
+      // À ce stade, nous avons soit créé un nouvel utilisateur, soit récupéré un existant
+      if (!response || !response.data) {
+        throw new Error('Réponse du serveur invalide');
+      }
 
       // Sauvegarder le SteamID localement
       await AsyncStorage.setItem('steamId', steamId);
@@ -57,22 +96,11 @@ const LoginScreen = ({navigation}) => {
       navigation.replace('Home');
     } catch (error) {
       console.error('Erreur lors de la connexion:', error);
-
-      // Vérifier si l'erreur est due à un utilisateur déjà existant
-      if (
-        error.response &&
-        error.response.status === 400 &&
-        error.response.data.message === 'Cet utilisateur existe déjà'
-      ) {
-        // Simplement sauvegarder le SteamID et naviguer
-        await AsyncStorage.setItem('steamId', steamId);
-        navigation.replace('Home');
-      } else {
-        Alert.alert(
-          'Erreur de connexion',
-          "Impossible de se connecter avec ce SteamID. Vérifiez qu'il est correct.",
-        );
-      }
+      Alert.alert(
+        'Erreur de connexion',
+        error.message ||
+          "Impossible de se connecter avec ce SteamID. Vérifiez qu'il est correct et que le serveur est accessible.",
+      );
     } finally {
       setLoading(false);
     }

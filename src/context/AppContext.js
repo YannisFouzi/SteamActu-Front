@@ -153,7 +153,14 @@ export const AppProvider = ({children, navigation = null}) => {
       const savedSteamId = await AsyncStorage.getItem('steamId');
 
       if (!savedSteamId) {
-        navigation.replace('Login');
+        // Éviter d'utiliser navigation si celui-ci n'est pas disponible
+        if (navigation) {
+          navigation.replace('Login');
+        } else {
+          console.log('Aucun steamId trouvé et pas de navigation disponible');
+          setLoading(false);
+          return; // Sortir de la fonction sans erreur
+        }
         return;
       }
 
@@ -179,10 +186,16 @@ export const AppProvider = ({children, navigation = null}) => {
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
       setLoading(false);
-      Alert.alert(
-        'Erreur',
-        'Impossible de charger vos jeux. Veuillez vérifier votre connexion et réessayer.',
-      );
+
+      // Ne pas afficher d'alerte si nous sommes déjà sur la page de login
+      // ou si nous n'avons pas encore d'ID Steam
+      const currentSteamId = await AsyncStorage.getItem('steamId');
+      if (currentSteamId) {
+        Alert.alert(
+          'Erreur',
+          'Impossible de charger vos jeux. Veuillez vérifier votre connexion et réessayer.',
+        );
+      }
     }
   };
 
@@ -224,10 +237,35 @@ export const AppProvider = ({children, navigation = null}) => {
   // Fonction pour se déconnecter
   const handleLogout = async () => {
     try {
+      // Supprimer l'ID Steam du stockage
       await AsyncStorage.removeItem('steamId');
-      navigation.replace('Login');
+
+      // Réinitialiser les états
+      setSteamId('');
+      setUser(null);
+      setGames([]);
+      setFilteredGames([]);
+
+      // Navigation si disponible
+      if (navigation) {
+        navigation.replace('Login');
+      } else {
+        // Forcer un "rafraîchissement" pour que les composants se mettent à jour
+        console.log(
+          'Navigation non disponible, réinitialisation des états uniquement',
+        );
+        // Vous pouvez ajouter ici une alerte ou un autre feedback utilisateur
+        Alert.alert(
+          'Déconnexion réussie',
+          "Vous avez été déconnecté avec succès. Veuillez redémarrer l'application.",
+        );
+      }
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error);
+      Alert.alert(
+        'Erreur de déconnexion',
+        'Une erreur est survenue lors de la déconnexion. Veuillez réessayer.',
+      );
     }
   };
 
