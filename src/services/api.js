@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 // Définir l'URL de base de l'API
-// Pour tester localement, utilisez l'adresse IP de votre machine sur le réseau local
-// Par exemple 192.168.1.X ou 10.0.0.X (et non pas localhost car ce n'est pas accessible depuis l'émulateur)
-const API_URL = 'http://192.168.50.42:5000/api';
+// Pour les émulateurs Android, utilisez 10.0.2.2 qui pointe vers localhost de la machine hôte
+// Pour les appareils physiques, utilisez l'adresse IP de votre machine sur le réseau local
+const API_URL = 'http://10.0.2.2:5000/api';
 
 // Créer une instance axios avec la configuration de base
 const api = axios.create({
@@ -25,14 +25,34 @@ const userService = {
     return api.get(`/users/${steamId}`);
   },
 
-  // Mettre à jour les jeux suivis
-  updateGames: (steamId, games) => {
-    return api.put(`/users/${steamId}/games`, {games});
+  // Suivre un jeu
+  followGame: (steamId, appId, name, logoUrl) => {
+    return api.post(`/users/${steamId}/follow`, {appId, name, logoUrl});
+  },
+
+  // Ne plus suivre un jeu
+  unfollowGame: (steamId, appId) => {
+    return api.delete(`/users/${steamId}/follow/${appId}`);
   },
 
   // Mettre à jour les paramètres de notification
   updateNotificationSettings: (steamId, settings) => {
     return api.put(`/users/${steamId}/notifications`, settings);
+  },
+
+  // Forcer la synchronisation complète des jeux
+  syncGames: steamId => {
+    return api.post(`/users/${steamId}/sync-games`);
+  },
+
+  // Diagnostiquer et résoudre les problèmes de bibliothèque
+  runLibraryDiagnostic: steamId => {
+    return api.get(`/steam/diagnostic/library/${steamId}`);
+  },
+
+  // Forcer l'importation complète de la bibliothèque
+  forceLibraryImport: (steamId, method = 'api') => {
+    return api.post(`/users/${steamId}/force-library-import`, {method});
   },
 };
 
@@ -40,12 +60,12 @@ const userService = {
 const newsService = {
   // Récupérer les actualités d'un jeu spécifique
   getGameNews: (appId, count = 5, maxLength = 300) => {
-    return api.get(`/news/game/${appId}`, {
+    return api.get(`/steam/news/${appId}`, {
       params: {
         count,
         maxLength,
         language: 'fr',
-        steamOnly: true,
+        steamOnly: 'true',
       },
     });
   },
@@ -62,6 +82,11 @@ const steamService = {
   getUserGames: steamId => {
     // Cette fonction utilisera notre backend comme proxy pour appeler l'API Steam
     return api.get(`/steam/games/${steamId}`);
+  },
+
+  // Récupérer la liste complète des jeux (API + base de données)
+  getAllUserGames: steamId => {
+    return api.get(`/steam/all-games/${steamId}`);
   },
 };
 

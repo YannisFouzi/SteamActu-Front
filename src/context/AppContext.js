@@ -135,30 +135,117 @@ export const AppProvider = ({children, navigation = null}) => {
 
   // Filtrer et trier les jeux quand les critères changent
   useEffect(() => {
-    if (games.length > 0 || searchQuery) {
+    if (games && Array.isArray(games) && (games.length > 0 || searchQuery)) {
       filterAndSortGames();
     } else {
       setFilteredGames([]);
     }
-  }, [games, searchQuery, sortOption]);
+  }, [games, searchQuery, sortOption, followFilter]);
+
+  // Filtrer et trier les jeux
+  const filterAndSortGames = () => {
+    if (!games || !Array.isArray(games)) {
+      console.log('Aucun jeu à filtrer ou format incorrect');
+      setFilteredGames([]);
+      return;
+    }
+
+    let filtered = [...games];
+
+    // Vérifier les données disponibles pour le débogage
+    if (filtered.length > 0) {
+      const sampleGame = filtered[0];
+      console.log("Données d'un jeu exemple pour le tri:", {
+        name: sampleGame.name,
+        appid: sampleGame.appid,
+        lastUpdateTimestamp: sampleGame.lastUpdateTimestamp,
+        playtime_forever: sampleGame.playtime_forever,
+        playtime_2weeks: sampleGame.playtime_2weeks,
+        rtime_last_played: sampleGame.rtime_last_played,
+      });
+    }
+
+    // Appliquer le filtre de recherche
+    if (searchQuery && searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(game =>
+        game.name?.toLowerCase().includes(query),
+      );
+    }
+
+    // Appliquer le filtre de suivi
+    if (followFilter !== 'all') {
+      filtered = filtered.filter(game => {
+        const isFollowed = game.isFollowed === true;
+        return followFilter === 'followed' ? isFollowed : !isFollowed;
+      });
+    }
+
+    // Appliquer le tri
+    console.log(`Tri en cours avec l'option: ${sortOption}`);
+    switch (sortOption) {
+      case 'alphabetical':
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'recentlyUpdated':
+        filtered.sort((a, b) => {
+          const timestampA = a.lastUpdateTimestamp || 0;
+          const timestampB = b.lastUpdateTimestamp || 0;
+          return timestampB - timestampA; // Du plus récent au plus ancien
+        });
+        break;
+      case 'mostPlayed':
+        filtered.sort((a, b) => {
+          const playtimeA = a.playtime_forever || 0;
+          const playtimeB = b.playtime_forever || 0;
+          return playtimeB - playtimeA;
+        });
+        break;
+      case 'recent':
+        // Essayer d'abord de trier par playtime_2weeks (jeux joués dans les 2 dernières semaines)
+        // Sinon, trier par rtime_last_played (horodatage de la dernière session de jeu)
+        filtered.sort((a, b) => {
+          // Priorité aux jeux joués récemment (2 dernières semaines)
+          const recentA = a.playtime_2weeks || 0;
+          const recentB = b.playtime_2weeks || 0;
+
+          if (recentA > 0 || recentB > 0) {
+            return recentB - recentA;
+          }
+
+          // Si pas de données récentes, utiliser rtime_last_played
+          const lastPlayedA = a.rtime_last_played || 0;
+          const lastPlayedB = b.rtime_last_played || 0;
+          return lastPlayedB - lastPlayedA;
+        });
+        break;
+      case 'default':
+      default:
+        // Par défaut, ne change pas l'ordre ou utilise l'ordre dans lequel Steam renvoie les jeux
+        // On peut aussi utiliser un tri par nom si on préfère
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+    }
+
+    console.log(`${filtered.length} jeux après filtrage et tri`);
+    setFilteredGames(filtered);
+  };
 
   // Fonction pour charger les données
   const loadData = async (isFullCheck = false) => {
     try {
-      if (!isFullCheck) {
+      if (isFullCheck) {
         setLoading(true);
       }
 
-      // Récupérer le SteamID stocké
+      // Vérifier s'il y a un identifiant Steam enregistré
       const savedSteamId = await AsyncStorage.getItem('steamId');
 
+      // Si pas d'identifiant, retourner à l'écran de connexion
       if (!savedSteamId) {
-        // Éviter d'utiliser navigation si celui-ci n'est pas disponible
+        setLoading(false);
         if (navigation) {
-          navigation.replace('Login');
-        } else {
-          console.log('Aucun steamId trouvé et pas de navigation disponible');
-          setLoading(false);
+          navigation.navigate('Login');
           return; // Sortir de la fonction sans erreur
         }
         return;
@@ -166,19 +253,151 @@ export const AppProvider = ({children, navigation = null}) => {
 
       setSteamId(savedSteamId);
 
-      // Récupérer les informations de l'utilisateur
-      const userResponse = await userService.getUser(savedSteamId);
-      setUser(userResponse.data);
+      try {
+        // Récupérer les informations de l'utilisateur
+        const userResponse = await userService.getUser(savedSteamId);
+        setUser(userResponse.data);
 
-      // Récupérer les jeux de l'utilisateur
-      const gamesResponse = await steamService.getUserGames(savedSteamId);
-      const newGames = gamesResponse.data;
+        // Vérifier si nous pouvons utiliser getAllUserGames ou si nous devons revenir à getUserGames
+        let gamesResponse;
+        try {
+          // D'abord, essayer avec getAllUserGames (nouvelle méthode)
+          gamesResponse = await steamService.getAllUserGames(savedSteamId);
+          console.log('Réponse de getAllUserGames:', gamesResponse.data);
+        } catch (allGamesError) {
+          // En cas d'erreur, revenir à getUserGames (ancienne méthode)
+          console.warn(
+            'Erreur avec getAllUserGames, utilisation de getUserGames:',
+            allGamesError,
+          );
+          gamesResponse = await steamService.getUserGames(savedSteamId);
+          console.log('Réponse de getUserGames:', gamesResponse.data);
+        }
 
-      console.log('Jeux récupérés:', newGames.slice(0, 3));
-      setGames(newGames);
+        // Adapter la structure selon la réponse reçue
+        let newGames = [];
+        if (gamesResponse.data && gamesResponse.data.games) {
+          // Nouvelle structure (getAllUserGames)
+          newGames = gamesResponse.data.games;
+          console.log(
+            `Structure getAllUserGames détectée. ${newGames.length} jeux reçus.`,
+          );
+        } else if (
+          gamesResponse.data &&
+          Array.isArray(gamesResponse.data.games)
+        ) {
+          // Ancienne structure (getUserGames)
+          newGames = gamesResponse.data.games;
+          console.log(
+            `Structure getUserGames détectée. ${newGames.length} jeux reçus.`,
+          );
+        } else if (Array.isArray(gamesResponse.data)) {
+          // Structure de secours
+          newGames = gamesResponse.data;
+          console.log(
+            `Structure alternative détectée. ${newGames.length} jeux reçus.`,
+          );
+        }
 
-      if (!isFullCheck) {
+        // Vérifier les données de tri disponibles
+        if (newGames.length > 0) {
+          const jeuAvecLastPlayed = newGames.filter(
+            g => g.rtime_last_played > 0,
+          ).length;
+          const jeuAvecPlaytime2Weeks = newGames.filter(
+            g => g.playtime_2weeks > 0,
+          ).length;
+          const jeuAvecPlaytime = newGames.filter(
+            g => g.playtime_forever > 0,
+          ).length;
+          const jeuAvecTimestamp = newGames.filter(
+            g => g.lastUpdateTimestamp > 0,
+          ).length;
+
+          console.log('[DIAGNOSTIC TRI] Propriétés disponibles :');
+          console.log(
+            `- rtime_last_played : ${jeuAvecLastPlayed}/${newGames.length} jeux`,
+          );
+          console.log(
+            `- playtime_2weeks : ${jeuAvecPlaytime2Weeks}/${newGames.length} jeux`,
+          );
+          console.log(
+            `- playtime_forever : ${jeuAvecPlaytime}/${newGames.length} jeux`,
+          );
+          console.log(
+            `- lastUpdateTimestamp : ${jeuAvecTimestamp}/${newGames.length} jeux`,
+          );
+
+          // Ajout de lastUpdateTimestamp pour tous les jeux qui n'en ont pas
+          newGames.forEach(game => {
+            if (!game.lastUpdateTimestamp) {
+              game.lastUpdateTimestamp = game.rtime_last_played || 0;
+            }
+          });
+        }
+
+        // Traiter et afficher les statistiques
+        if (Array.isArray(newGames) && newGames.length > 0) {
+          console.log(`${newGames.length} jeux récupérés au total`);
+
+          if (gamesResponse.data.apiGamesCount) {
+            console.log(
+              `Détails: ${
+                gamesResponse.data.apiGamesCount || 0
+              } jeux de l'API Steam, ${
+                gamesResponse.data.databaseOnlyCount || 0
+              } jeux uniquement en base de données`,
+            );
+          }
+
+          console.log('Exemples de jeux:', newGames.slice(0, 3));
+        } else {
+          console.log('Aucun jeu récupéré ou format de réponse inattendu');
+        }
+
+        // Enfin, mettre à jour l'état des jeux et arrêter le chargement
+        setGames(Array.isArray(newGames) ? newGames : []);
+        if (!isFullCheck) {
+          setLoading(false);
+        }
+      } catch (apiError) {
+        console.error('Erreur API lors du chargement des données:', apiError);
         setLoading(false);
+
+        // Vérifier si l'erreur est due à un utilisateur non trouvé (404)
+        if (apiError.response && apiError.response.status === 404) {
+          console.log(
+            'Utilisateur non trouvé dans la base de données, déconnexion forcée',
+          );
+          Alert.alert(
+            'Session expirée',
+            'Votre session a expiré ou votre compte a été supprimé. Veuillez vous reconnecter.',
+            [
+              {
+                text: 'OK',
+                onPress: () => handleLogout(),
+              },
+            ],
+          );
+          return;
+        }
+
+        // Autres erreurs
+        Alert.alert(
+          'Erreur de connexion',
+          'Impossible de récupérer vos données. Veuillez vérifier votre connexion et réessayer.',
+          [
+            {
+              text: 'Réessayer',
+              onPress: () => loadData(isFullCheck),
+            },
+            {
+              text: 'Déconnexion',
+              style: 'destructive',
+              onPress: () => handleLogout(),
+            },
+          ],
+        );
       }
 
       await AsyncStorage.setItem('lastVerificationDate', Date.now().toString());
@@ -187,15 +406,22 @@ export const AppProvider = ({children, navigation = null}) => {
       console.error('Erreur lors du chargement des données:', error);
       setLoading(false);
 
-      // Ne pas afficher d'alerte si nous sommes déjà sur la page de login
-      // ou si nous n'avons pas encore d'ID Steam
-      const currentSteamId = await AsyncStorage.getItem('steamId');
-      if (currentSteamId) {
-        Alert.alert(
-          'Erreur',
-          'Impossible de charger vos jeux. Veuillez vérifier votre connexion et réessayer.',
-        );
-      }
+      // Proposer à l'utilisateur de se déconnecter en cas d'erreur grave
+      Alert.alert(
+        'Erreur',
+        "Une erreur inattendue s'est produite. Voulez-vous vous déconnecter et réessayer?",
+        [
+          {
+            text: 'Réessayer',
+            onPress: () => loadData(isFullCheck),
+          },
+          {
+            text: 'Déconnexion',
+            style: 'destructive',
+            onPress: () => handleLogout(),
+          },
+        ],
+      );
     }
   };
 
@@ -269,43 +495,55 @@ export const AppProvider = ({children, navigation = null}) => {
     }
   };
 
-  // Fonction pour suivre ou ne plus suivre un jeu
-  const followGame = async game => {
+  // Fonction pour suivre/ne plus suivre un jeu
+  const handleFollowGame = async (game, isFollowed) => {
+    if (!steamId) return;
+
     try {
-      if (!steamId || !user) return;
-
-      const isFollowed = user.followedGames?.some(g => g.appId === game.appId);
-
-      let updatedGames = [];
-
-      if (isFollowed) {
-        updatedGames = user.followedGames.filter(g => g.appId !== game.appId);
-      } else {
-        updatedGames = [
-          ...(user.followedGames || []),
-          {
-            appId: game.appId,
-            name: game.name,
-            logoUrl: game.logoUrl,
-          },
-        ];
-      }
-
-      const response = await userService.updateGames(steamId, updatedGames);
-      setUser(response.data);
-
-      Alert.alert(
-        'Succès',
-        isFollowed
-          ? `Vous ne suivez plus les actualités de ${game.name}`
-          : `Vous suivez maintenant les actualités de ${game.name}`,
+      // Copier l'état actuel des jeux
+      const updatedGames = [...games];
+      const gameIndex = updatedGames.findIndex(
+        g => g.appid.toString() === game.appid.toString(),
       );
+
+      if (gameIndex !== -1) {
+        // Mettre à jour l'état localement pour une réactivité immédiate
+        updatedGames[gameIndex] = {
+          ...updatedGames[gameIndex],
+          isFollowed: !isFollowed,
+        };
+        setGames(updatedGames);
+
+        // Mettre à jour le filtrage
+        filterAndSortGames();
+
+        if (!isFollowed) {
+          // Suivre le jeu via l'API
+          await userService.followGame(
+            steamId,
+            game.appid.toString(),
+            game.name,
+            game.img_logo_url
+              ? `http://media.steampowered.com/steamcommunity/public/images/apps/${game.appid}/${game.img_logo_url}.jpg`
+              : null,
+          );
+        } else {
+          // Ne plus suivre le jeu via l'API
+          await userService.unfollowGame(steamId, game.appid.toString());
+        }
+
+        // Rafraîchir les informations utilisateur pour mettre à jour la liste des jeux suivis
+        const userResponse = await userService.getUser(steamId);
+        setUser(userResponse.data.user || userResponse.data);
+      }
     } catch (error) {
-      console.error('Erreur lors du suivi du jeu:', error);
+      console.error('Erreur lors du suivi/désabonnement du jeu:', error);
       Alert.alert(
         'Erreur',
-        'Impossible de mettre à jour vos préférences. Veuillez réessayer.',
+        'Impossible de modifier le suivi du jeu. Veuillez réessayer.',
       );
+      // En cas d'erreur, rafraîchir les données pour revenir à l'état correct
+      handleRefresh();
     }
   };
 
@@ -315,17 +553,29 @@ export const AppProvider = ({children, navigation = null}) => {
       if (!steamId) return;
 
       console.log('Vérification des nouveaux jeux pour', steamId);
-      const gamesResponse = await steamService.getUserGames(steamId);
-      const newGames = gamesResponse.data;
+      const gamesResponse = await steamService.getAllUserGames(steamId);
+      const newGames = gamesResponse.data.games || [];
+
+      if (!Array.isArray(newGames)) {
+        console.log('Format de réponse inattendu:', gamesResponse.data);
+        return;
+      }
+
+      console.log(
+        `Jeux récupérés: ${newGames.length} jeux au total (API: ${gamesResponse.data.apiGamesCount}, DB uniquement: ${gamesResponse.data.databaseOnlyCount})`,
+      );
 
       if (newGames.length > games.length) {
         console.log(
           `${newGames.length - games.length} nouveaux jeux détectés!`,
         );
 
-        const currentAppIds = games.map(game => game.appId);
+        // Convertir en Set pour une comparaison plus rapide
+        const currentAppIds = new Set(games.map(game => game.appid.toString()));
+
+        // Trouver les nouveaux jeux
         const addedGames = newGames.filter(
-          game => !currentAppIds.includes(game.appId),
+          game => !currentAppIds.has(game.appid.toString()),
         );
 
         if (addedGames.length > 0) {
@@ -334,91 +584,24 @@ export const AppProvider = ({children, navigation = null}) => {
             `${addedGames.length} nouveau(x) jeu(x) ont été ajoutés à votre bibliothèque.`,
             [{text: 'OK'}],
           );
+
+          // Mettre à jour les jeux
+          setGames(newGames);
         }
-
-        setGames(newGames);
       }
-
-      setLastRefreshTime(Date.now());
     } catch (error) {
       console.error('Erreur lors de la vérification des nouveaux jeux:', error);
     }
   };
 
-  // Fonction pour déterminer si un jeu a été mis à jour récemment
-  const isRecentlyUpdated = game => {
-    if (!game.lastUpdateTimestamp || game.lastUpdateTimestamp === 0)
-      return false;
+  // Vérifier si un jeu a été mis à jour récemment (dans les dernières 24 heures)
+  const isRecentlyUpdated = timestamp => {
+    if (!timestamp) return false;
 
     const now = Date.now();
-    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-    return now - game.lastUpdateTimestamp < sevenDaysMs;
-  };
+    const oneDayMs = 24 * 60 * 60 * 1000;
 
-  // Fonction pour filtrer et trier les jeux
-  const filterAndSortGames = (optionOverride = null, filterOverride = null) => {
-    console.log('=== DÉBUT DE TRI ET FILTRAGE DES JEUX ===');
-    // Utiliser les options passées en paramètre ou les options enregistrées dans l'état
-    const optionToUse = optionOverride || sortOption;
-    const filterToUse = filterOverride || followFilter;
-    console.log(`Option de tri actuelle: "${optionToUse}"`);
-    console.log(`Option de filtre actuelle: "${filterToUse}"`);
-
-    let result = [...games];
-
-    // Filtrer par recherche
-    if (searchQuery) {
-      result = result.filter(game =>
-        game.name.toLowerCase().includes(searchQuery.toLowerCase()),
-      );
-    }
-
-    // Filtrer par suivi
-    if (filterToUse !== 'all') {
-      result = result.filter(game => {
-        const followed = isGameFollowed(game.appId);
-        return filterToUse === 'followed' ? followed : !followed;
-      });
-    }
-
-    // Trier selon l'option choisie
-    switch (optionToUse) {
-      case 'recent':
-        console.log('Tri par temps de jeu récent activé');
-        result.sort(
-          (a, b) => (b.playtime.recent || 0) - (a.playtime.recent || 0),
-        );
-        break;
-      case 'mostPlayed':
-        console.log('Tri par temps de jeu total activé');
-        result.sort((a, b) => b.playtime.forever - a.playtime.forever);
-        break;
-      case 'recentlyUpdated':
-        console.log('Tri par mise à jour récente activé');
-
-        result.sort((a, b) => {
-          if (
-            (!a.lastUpdateTimestamp || a.lastUpdateTimestamp === 0) &&
-            (!b.lastUpdateTimestamp || b.lastUpdateTimestamp === 0)
-          ) {
-            return a.name.localeCompare(b.name);
-          }
-
-          if (!a.lastUpdateTimestamp || a.lastUpdateTimestamp === 0) return 1;
-          if (!b.lastUpdateTimestamp || b.lastUpdateTimestamp === 0) return -1;
-
-          return b.lastUpdateTimestamp - a.lastUpdateTimestamp;
-        });
-        break;
-      case 'default':
-      default:
-        console.log('Tri par défaut (ordre alphabétique) activé');
-        result.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-    }
-
-    console.log('=== FIN DE TRI ET FILTRAGE DES JEUX ===');
-    setFilteredGames(result);
+    return now - timestamp < oneDayMs;
   };
 
   // Formater le temps de jeu
@@ -463,7 +646,7 @@ export const AppProvider = ({children, navigation = null}) => {
     loadData,
     handleRefresh,
     handleLogout,
-    followGame,
+    handleFollowGame,
     checkForNewGames,
     isRecentlyUpdated,
     filterAndSortGames,

@@ -2,7 +2,7 @@ import React from 'react';
 import {FlatList, RefreshControl, Text, View} from 'react-native';
 import {useAppContext} from '../../../context/AppContext';
 import styles from '../styles';
-import GameItem from './GameItem';
+import GameItemAlt from './GameItemAlt';
 
 const GamesList = () => {
   const {filteredGames, refreshing, handleRefresh} = useAppContext();
@@ -18,8 +18,10 @@ const GamesList = () => {
   return (
     <FlatList
       data={filteredGames}
-      renderItem={({item}) => <GameItem game={item} />}
-      keyExtractor={(item, index) => `${item.appId}-${index}`}
+      renderItem={({item}) => <GameItemAlt game={item} />}
+      keyExtractor={(item, index) =>
+        item.appid ? `${item.appid}-${index}` : `game-${index}`
+      }
       contentContainerStyle={styles.gamesList}
       refreshControl={
         <RefreshControl

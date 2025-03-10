@@ -1,6 +1,4 @@
 import {useNavigation} from '@react-navigation/native';
-import {format, formatDistanceToNow} from 'date-fns';
-import {fr} from 'date-fns/locale';
 import React from 'react';
 import {
   Image,
@@ -10,10 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {useAppContext} from '../../../context/AppContext';
 
-const GameItem = ({game}) => {
+const GameItemAlt = ({game}) => {
   const navigation = useNavigation();
   const {handleFollowGame, isRecentlyUpdated} = useAppContext();
 
@@ -22,17 +19,19 @@ const GameItem = ({game}) => {
 
     const date = new Date(timestamp);
     const now = new Date();
-    const diffInDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+    const diffInMs = now - date;
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
 
-    if (diffInDays < 1) {
-      return formatDistanceToNow(date, {
-        addSuffix: true,
-        locale: fr,
-      }).replace('environ ', '');
+    if (diffInHours < 24) {
+      return `Il y a ${diffInHours} heure${diffInHours > 1 ? 's' : ''}`;
     } else if (diffInDays < 7) {
-      return format(date, 'EEEE', {locale: fr});
+      return `Il y a ${diffInDays} jour${diffInDays > 1 ? 's' : ''}`;
     } else {
-      return format(date, 'dd/MM/yyyy', {locale: fr});
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
     }
   };
 
@@ -53,7 +52,7 @@ const GameItem = ({game}) => {
             <Image source={{uri: game.logoUrl}} style={styles.logo} />
           ) : (
             <View style={styles.placeholderLogo}>
-              <Icon name="gamepad-variant" size={30} color="#555" />
+              <Text style={styles.placeholderText}>🎮</Text>
             </View>
           )}
         </View>
@@ -70,11 +69,13 @@ const GameItem = ({game}) => {
         <Pressable
           style={styles.followButton}
           onPress={() => handleFollowGame(game, game.isFollowed)}>
-          <Icon
-            name={game.isFollowed ? 'bell' : 'bell-outline'}
-            size={24}
-            color={game.isFollowed ? '#4CAF50' : '#757575'}
-          />
+          <Text
+            style={{
+              fontSize: 20,
+              color: game.isFollowed ? '#4CAF50' : '#757575',
+            }}>
+            {game.isFollowed ? '🔔' : '🔕'}
+          </Text>
         </Pressable>
       </View>
     </TouchableOpacity>
@@ -129,6 +130,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  placeholderText: {
+    fontSize: 24,
+  },
   info: {
     flex: 1,
     justifyContent: 'center',
@@ -149,4 +153,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default GameItem;
+export default GameItemAlt;

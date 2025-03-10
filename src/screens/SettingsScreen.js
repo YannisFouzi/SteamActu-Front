@@ -15,9 +15,15 @@ import {userService} from '../services/api';
 const SettingsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncingGames, setSyncingGames] = useState(false);
   const [steamId, setSteamId] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoFollowEnabled, setAutoFollowEnabled] = useState(false);
+  const [ownedGamesCount, setOwnedGamesCount] = useState(0);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [runningDiagnostic, setRunningDiagnostic] = useState(false);
+  const [forcingImport, setForcingImport] = useState(false);
+  const [diagnosticResults, setDiagnosticResults] = useState(null);
 
   // Chargement des données utilisateur au démarrage
   useEffect(() => {
@@ -46,6 +52,9 @@ const SettingsScreen = () => {
       // Définir l'état des notifications
       setNotificationsEnabled(user.notificationSettings?.enabled ?? true);
       setAutoFollowEnabled(user.autoFollowSettings?.enabled ?? false);
+
+      // Stocker le nombre de jeux possédés
+      setOwnedGamesCount(user.user?.ownedGamesCount || 0);
     } catch (error) {
       console.error('Erreur lors du chargement des paramètres:', error);
       Alert.alert(
@@ -57,43 +66,39 @@ const SettingsScreen = () => {
     }
   };
 
+  // Fonction pour resynchroniser la bibliothèque de jeux
+  const handleSyncGames = async () => {
+    try {
+      setSyncingGames(true);
+
+      // Appeler l'API pour resynchroniser les jeux
+      const response = await userService.syncGames(steamId);
+
+      // Mettre à jour le compteur de jeux
+      setOwnedGamesCount(response.data.gamesCount || 0);
+
+      Alert.alert(
+        'Synchronisation terminée',
+        `${response.data.newGamesCount} nouveaux jeux ont été trouvés.`,
+      );
+
+      // Recharger les paramètres utilisateur pour obtenir les données mises à jour
+      await loadUserSettings();
+    } catch (error) {
+      console.error('Erreur lors de la synchronisation des jeux:', error);
+      Alert.alert(
+        'Erreur',
+        'Impossible de synchroniser votre bibliothèque de jeux. Veuillez réessayer.',
+      );
+    } finally {
+      setSyncingGames(false);
+    }
+  };
+
   // Fonction pour enregistrer un token de notification
   const registerForPushNotifications = async () => {
     // Note: Ici, vous implémenteriez la logique d'enregistrement des notifications push
     // Avec OneSignal ou un autre service similaire
-
-    // Exemple de code:
-    /*
-    try {
-      // Demander la permission pour les notifications
-      const permission = await Permissions.askAsync(Permissions.NOTIFICATIONS);
-      
-      if (permission.status !== 'granted') {
-        Alert.alert(
-          'Notifications désactivées',
-          'Vous devez autoriser les notifications dans les paramètres de votre appareil.'
-        );
-        return;
-      }
-      
-      // Obtenir un token pour ce périphérique
-      const pushToken = await Notifications.getExpoPushTokenAsync();
-      
-      // Mettre à jour sur le serveur
-      await userService.updateNotificationSettings(steamId, {
-        enabled: notificationsEnabled,
-        pushToken: pushToken.data
-      });
-      
-      Alert.alert('Succès', 'Vos préférences de notifications ont été mises à jour');
-    } catch (error) {
-      console.error('Erreur lors de l\'enregistrement des notifications:', error);
-      Alert.alert(
-        'Erreur',
-        'Impossible d\'enregistrer les notifications. Veuillez réessayer.'
-      );
-    }
-    */
 
     // Pour l'instant, on simule une mise à jour sans token
     try {
@@ -101,6 +106,7 @@ const SettingsScreen = () => {
 
       await userService.updateNotificationSettings(steamId, {
         enabled: notificationsEnabled,
+        autoFollowNewGames: autoFollowEnabled,
       });
 
       Alert.alert(
@@ -121,6 +127,58 @@ const SettingsScreen = () => {
   // Gestionnaire de changement d'état des notifications
   const handleToggleNotifications = value => {
     setNotificationsEnabled(value);
+  };
+
+  // Fonction pour diagnostiquer la bibliothèque
+  const handleRunDiagnostic = async () => {
+    try {
+      setRunningDiagnostic(true);
+
+      const results = await userService.runLibraryDiagnostic(steamId);
+      console.log('Résultats du diagnostic:', results.data);
+      setDiagnosticResults(results.data.diagnosticResults);
+
+      Alert.alert(
+        'Diagnostic terminé',
+        'Les résultats du diagnostic ont été récupérés avec succès.',
+      );
+    } catch (error) {
+      console.error('Erreur lors de la réalisation du diagnostic:', error);
+      Alert.alert(
+        'Erreur',
+        'Impossible de réaliser le diagnostic. Veuillez réessayer plus tard.',
+      );
+    } finally {
+      setRunningDiagnostic(false);
+    }
+  };
+
+  // Fonction pour forcer l'importation complète de la bibliothèque
+  const handleForceImport = async () => {
+    try {
+      setForcingImport(true);
+
+      const response = await userService.forceLibraryImport(steamId);
+      console.log("Résultat de l'importation forcée:", response.data);
+
+      // Mettre à jour le nombre de jeux
+      if (response.data.stats) {
+        setOwnedGamesCount(response.data.stats.afterImport);
+      }
+
+      Alert.alert(
+        'Importation forcée terminée',
+        `L'importation complète de la bibliothèque a été effectuée avec succès. ${response.data.stats.newGamesAdded} nouveaux jeux ajoutés.`,
+      );
+    } catch (error) {
+      console.error("Erreur lors de l'importation forcée:", error);
+      Alert.alert(
+        'Erreur',
+        "Impossible de forcer l'importation. Veuillez réessayer plus tard.",
+      );
+    } finally {
+      setForcingImport(false);
+    }
   };
 
   if (loading) {
@@ -172,6 +230,104 @@ const SettingsScreen = () => {
           Si activé, les nouveaux jeux que vous achetez seront automatiquement
           ajoutés à votre liste de jeux suivis pour les notifications.
         </Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Bibliothèque de jeux</Text>
+
+        <Text style={styles.settingDescription}>
+          {ownedGamesCount} jeux détectés dans votre bibliothèque Steam.
+        </Text>
+
+        <TouchableOpacity
+          style={styles.syncButton}
+          onPress={handleSyncGames}
+          disabled={syncingGames}>
+          {syncingGames ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <Text style={styles.syncButtonText}>
+              Synchroniser la bibliothèque
+            </Text>
+          )}
+        </TouchableOpacity>
+
+        <Text style={styles.settingDescription}>
+          Utilisez cette option si vous avez récemment acheté des jeux et qu'ils
+          n'apparaissent pas dans l'application. La synchronisation peut prendre
+          quelques instants.
+        </Text>
+
+        <TouchableOpacity
+          style={styles.advancedButton}
+          onPress={() => setShowAdvanced(!showAdvanced)}>
+          <Text style={styles.advancedButtonText}>
+            {showAdvanced
+              ? 'Masquer les options avancées'
+              : 'Afficher les options avancées'}
+          </Text>
+        </TouchableOpacity>
+
+        {showAdvanced && (
+          <View style={styles.advancedSection}>
+            <Text style={styles.advancedDescription}>
+              Options de diagnostic pour les problèmes de bibliothèque. Utilisez
+              avec précaution.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.diagnosticButton}
+              onPress={handleRunDiagnostic}
+              disabled={runningDiagnostic}>
+              {runningDiagnostic ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text style={styles.diagnosticButtonText}>
+                  Diagnostiquer la bibliothèque
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.importButton}
+              onPress={handleForceImport}
+              disabled={forcingImport}>
+              {forcingImport ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <Text style={styles.importButtonText}>
+                  Forcer l'importation complète
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            {diagnosticResults && (
+              <View style={styles.diagnosticResults}>
+                <Text style={styles.resultTitle}>Résultats du diagnostic:</Text>
+                <Text style={styles.resultText}>
+                  En base de données: {diagnosticResults.databaseGamesCount}{' '}
+                  jeux
+                </Text>
+                <Text style={styles.resultText}>
+                  Via API Steam: {diagnosticResults.apiGamesCount} jeux
+                </Text>
+                {typeof diagnosticResults.webProfileGamesCount === 'number' && (
+                  <Text style={styles.resultText}>
+                    Profil web Steam: {diagnosticResults.webProfileGamesCount}{' '}
+                    jeux
+                  </Text>
+                )}
+
+                {diagnosticResults.discrepancyDetected && (
+                  <Text style={styles.warningText}>
+                    Différence détectée entre l'API Steam et la base de données.
+                    Essayez de forcer l'importation complète.
+                  </Text>
+                )}
+              </View>
+            )}
+          </View>
+        )}
       </View>
 
       <TouchableOpacity
@@ -253,6 +409,83 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#8F98A0',
     lineHeight: 20,
+  },
+  syncButton: {
+    backgroundColor: '#2A3F5A',
+    padding: 14,
+    marginVertical: 16,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  syncButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  advancedButton: {
+    backgroundColor: '#2A3F5A',
+    padding: 14,
+    marginVertical: 16,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  advancedButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  advancedSection: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A3F5A',
+  },
+  advancedDescription: {
+    fontSize: 14,
+    color: '#8F98A0',
+    marginBottom: 16,
+  },
+  diagnosticButton: {
+    backgroundColor: '#2A3F5A',
+    padding: 14,
+    marginVertical: 8,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  diagnosticButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  importButton: {
+    backgroundColor: '#2A3F5A',
+    padding: 14,
+    marginVertical: 8,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  importButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  diagnosticResults: {
+    padding: 16,
+  },
+  resultTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  resultText: {
+    fontSize: 14,
+    color: '#8F98A0',
+    marginBottom: 4,
+  },
+  warningText: {
+    fontSize: 14,
+    color: '#FFD700',
+    marginTop: 8,
   },
 });
 
