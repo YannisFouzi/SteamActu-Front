@@ -8,11 +8,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import {useAppContext} from '../../../context/AppContext';
 
 const GameItemAlt = ({game}) => {
   const navigation = useNavigation();
-  const {handleFollowGame, isRecentlyUpdated} = useAppContext();
+  const {handleFollowGame, isRecentlyUpdated, isGameFollowed} = useAppContext();
+
+  // S'assurer que nous avons un appId valide
+  const appId = game?.appid?.toString() || game?.appId?.toString();
+  const isFollowed = isGameFollowed(appId);
 
   const formatDate = timestamp => {
     if (!timestamp) return 'Jamais';
@@ -36,6 +41,11 @@ const GameItemAlt = ({game}) => {
   };
 
   const isRecent = isRecentlyUpdated(game.lastUpdateTimestamp);
+
+  // Ne pas rendre le composant si nous n'avons pas les données minimales requises
+  if (!game || !game.name) {
+    return null;
+  }
 
   return (
     <TouchableOpacity
@@ -68,14 +78,18 @@ const GameItemAlt = ({game}) => {
 
         <Pressable
           style={styles.followButton}
-          onPress={() => handleFollowGame(game, game.isFollowed)}>
-          <Text
-            style={{
-              fontSize: 20,
-              color: game.isFollowed ? '#4CAF50' : '#757575',
-            }}>
-            {game.isFollowed ? '🔔' : '🔕'}
-          </Text>
+          onPress={() => {
+            if (appId) {
+              handleFollowGame(appId, isFollowed);
+            } else {
+              console.error('ID du jeu non trouvé:', game);
+            }
+          }}>
+          <Icon
+            name={isFollowed ? 'notifications' : 'notifications-outline'}
+            size={24}
+            color={isFollowed ? '#4CAF50' : '#757575'}
+          />
         </Pressable>
       </View>
     </TouchableOpacity>

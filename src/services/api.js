@@ -60,7 +60,7 @@ const userService = {
 const newsService = {
   // Récupérer les actualités d'un jeu spécifique
   getGameNews: (appId, count = 5, maxLength = 300) => {
-    return api.get(`/steam/news/${appId}`, {
+    return api.get(`/news/game/${appId}`, {
       params: {
         count,
         maxLength,

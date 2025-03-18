@@ -49,7 +49,7 @@ const GameDetailsScreen = ({route, navigation}) => {
 
       // Récupérer les actualités
       const response = await newsService.getGameNews(gameId, 10, 500);
-      setNews(response.data.news || []);
+      setNews(response.data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des actualités:', error);
       Alert.alert(

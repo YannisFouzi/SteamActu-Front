@@ -495,55 +495,99 @@ export const AppProvider = ({children, navigation = null}) => {
     }
   };
 
-  // Fonction pour suivre/ne plus suivre un jeu
-  const handleFollowGame = async (game, isFollowed) => {
-    if (!steamId) return;
-
+  // Fonction pour gérer le suivi/désabonnement d'un jeu
+  const handleFollowGame = async (appId, isFollowed) => {
     try {
-      // Copier l'état actuel des jeux
-      const updatedGames = [...games];
-      const gameIndex = updatedGames.findIndex(
-        g => g.appid.toString() === game.appid.toString(),
-      );
+      if (!steamId) {
+        console.error('SteamID non trouvé');
+        return;
+      }
 
-      if (gameIndex !== -1) {
-        // Mettre à jour l'état localement pour une réactivité immédiate
-        updatedGames[gameIndex] = {
-          ...updatedGames[gameIndex],
-          isFollowed: !isFollowed,
-        };
-        setGames(updatedGames);
+      if (!appId) {
+        console.error('AppID non trouvé');
+        return;
+      }
 
-        // Mettre à jour le filtrage
-        filterAndSortGames();
+      // Convertir l'appId en chaîne
+      const appIdString = appId.toString();
 
+      console.log('=== Début handleFollowGame ===');
+      console.log('AppID reçu:', appIdString);
+      console.log('État isFollowed:', isFollowed);
+      console.log('Nombre total de jeux:', games.length);
+
+      // Trouver le jeu dans la liste
+      const game = games.find(g => {
+        const gameId = (g.appid || g.appId || '').toString();
+        return gameId === appIdString;
+      });
+
+      if (!game) {
+        console.error('Jeu non trouvé dans la liste:', appIdString);
+        console.log('=== Fin handleFollowGame (erreur) ===');
+        return;
+      }
+
+      console.log('Jeu trouvé:', game.name);
+
+      // Mettre à jour l'état localement d'abord pour une UI réactive
+      const updatedGames = games.map(g => {
+        const gameId = (g.appid || g.appId || '').toString();
+        if (gameId === appIdString) {
+          return {...g, isFollowed: !isFollowed};
+        }
+        return g;
+      });
+
+      // Mettre à jour l'état des jeux
+      setGames(updatedGames);
+
+      try {
+        // Appeler l'API pour mettre à jour le suivi
         if (!isFollowed) {
-          // Suivre le jeu via l'API
+          // Suivre le jeu
           await userService.followGame(
             steamId,
-            game.appid.toString(),
+            appIdString,
             game.name,
-            game.img_logo_url
-              ? `http://media.steampowered.com/steamcommunity/public/images/apps/${game.appid}/${game.img_logo_url}.jpg`
+            game.img_icon_url
+              ? `http://media.steampowered.com/steamcommunity/public/images/apps/${appIdString}/${game.img_icon_url}.jpg`
               : null,
           );
+          console.log('Jeu suivi avec succès:', game.name);
         } else {
-          // Ne plus suivre le jeu via l'API
-          await userService.unfollowGame(steamId, game.appid.toString());
+          // Ne plus suivre le jeu
+          await userService.unfollowGame(steamId, appIdString);
+          console.log('Jeu retiré des suivis:', game.name);
         }
 
-        // Rafraîchir les informations utilisateur pour mettre à jour la liste des jeux suivis
+        // Recharger les données de l'utilisateur
         const userResponse = await userService.getUser(steamId);
-        setUser(userResponse.data.user || userResponse.data);
+        if (userResponse.data) {
+          setUser(userResponse.data);
+        }
+
+        // Forcer le rafraîchissement de la liste filtrée
+        filterAndSortGames();
+
+        console.log('=== Fin handleFollowGame (succès) ===');
+      } catch (apiError) {
+        console.error('Erreur API lors de la modification du suivi:', apiError);
+
+        // Restaurer l'état précédent
+        setGames(games);
+
+        Alert.alert(
+          'Erreur',
+          'Impossible de modifier le suivi du jeu. Veuillez réessayer.',
+        );
       }
     } catch (error) {
-      console.error('Erreur lors du suivi/désabonnement du jeu:', error);
+      console.error('Erreur lors de la modification du suivi:', error);
       Alert.alert(
         'Erreur',
-        'Impossible de modifier le suivi du jeu. Veuillez réessayer.',
+        'Une erreur inattendue est survenue. Veuillez réessayer.',
       );
-      // En cas d'erreur, rafraîchir les données pour revenir à l'état correct
-      handleRefresh();
     }
   };
 

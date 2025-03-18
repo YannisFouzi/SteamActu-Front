@@ -38,6 +38,9 @@ const GameItem = ({game}) => {
 
   const isRecent = isRecentlyUpdated(game.lastUpdateTimestamp);
 
+  // S'assurer que l'appId est une chaîne de caractères
+  const appId = game.appid?.toString();
+
   return (
     <TouchableOpacity
       style={[styles.container, isRecent && styles.recentlyUpdatedGameItem]}
@@ -49,8 +52,13 @@ const GameItem = ({game}) => {
       )}
       <View style={styles.content}>
         <View style={styles.imageContainer}>
-          {game.logoUrl ? (
-            <Image source={{uri: game.logoUrl}} style={styles.logo} />
+          {game.img_icon_url ? (
+            <Image
+              source={{
+                uri: `http://media.steampowered.com/steamcommunity/public/images/apps/${game.appid}/${game.img_icon_url}.jpg`,
+              }}
+              style={styles.logo}
+            />
           ) : (
             <View style={styles.placeholderLogo}>
               <Icon name="gamepad-variant" size={30} color="#555" />
@@ -69,7 +77,13 @@ const GameItem = ({game}) => {
 
         <Pressable
           style={styles.followButton}
-          onPress={() => handleFollowGame(game, game.isFollowed)}>
+          onPress={() => {
+            if (appId) {
+              handleFollowGame(appId, game.isFollowed);
+            } else {
+              console.error('ID du jeu non trouvé:', game);
+            }
+          }}>
           <Icon
             name={game.isFollowed ? 'bell' : 'bell-outline'}
             size={24}
