@@ -83,11 +83,6 @@ const steamService = {
     // Cette fonction utilisera notre backend comme proxy pour appeler l'API Steam
     return api.get(`/steam/games/${steamId}`);
   },
-
-  // Récupérer la liste complète des jeux (API + base de données)
-  getAllUserGames: steamId => {
-    return api.get(`/steam/all-games/${steamId}`);
-  },
 };
 
 export {newsService, steamService, userService};

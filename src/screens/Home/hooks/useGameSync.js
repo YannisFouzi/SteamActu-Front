@@ -52,22 +52,17 @@ const useGameSync = ({
           const userResponse = await userService.getUser(savedSteamId);
           setUser(userResponse.data);
 
-          // Essayer d'abord avec getAllUserGames
+          // Utiliser directement getUserGames
           let gamesResponse;
           let newGamesData;
 
           try {
-            gamesResponse = await steamService.getAllUserGames(savedSteamId);
-            newGamesData = gamesResponse.data;
-            console.log('Méthode getAllUserGames utilisée avec succès');
-          } catch (e) {
-            console.warn(
-              'Erreur avec getAllUserGames, utilisation de getUserGames alternative:',
-              e,
-            );
             gamesResponse = await steamService.getUserGames(savedSteamId);
             newGamesData = gamesResponse.data;
-            console.log('Méthode getUserGames utilisée comme fallback');
+            console.log('Méthode getUserGames utilisée avec succès');
+          } catch (e) {
+            console.error('Erreur avec getUserGames:', e);
+            throw e; // Propager l'erreur pour être gérée par le bloc catch parent
           }
 
           // Normaliser la structure des données reçues
@@ -267,26 +262,17 @@ const useGameSync = ({
 
       console.log('Vérification des nouveaux jeux pour', steamId);
 
-      // Essayer d'utiliser la nouvelle méthode, et se rabattre sur l'ancienne en cas d'erreur
+      // Essayer d'utiliser getUserGames uniquement
       let gamesResponse;
       let newGamesData;
 
       try {
-        gamesResponse = await steamService.getAllUserGames(steamId);
-        newGamesData = gamesResponse.data;
-        console.log(
-          'Utilisation réussie de getAllUserGames pour la vérification',
-        );
-      } catch (e) {
-        console.warn(
-          'Erreur avec getAllUserGames, utilisation de getUserGames alternative:',
-          e,
-        );
         gamesResponse = await steamService.getUserGames(steamId);
         newGamesData = gamesResponse.data;
-        console.log(
-          'Utilisation de getUserGames comme fallback pour la vérification',
-        );
+        console.log('Utilisation réussie de getUserGames pour la vérification');
+      } catch (e) {
+        console.error('Erreur lors de la récupération des jeux:', e);
+        return; // Sortir de la fonction en cas d'erreur
       }
 
       // Normaliser la structure pour extraire la liste des jeux

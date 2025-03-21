@@ -261,17 +261,28 @@ export const AppProvider = ({children, navigation = null}) => {
         // Vérifier si nous pouvons utiliser getAllUserGames ou si nous devons revenir à getUserGames
         let gamesResponse;
         try {
-          // D'abord, essayer avec getAllUserGames (nouvelle méthode)
-          gamesResponse = await steamService.getAllUserGames(savedSteamId);
-          console.log('Réponse de getAllUserGames:', gamesResponse.data);
-        } catch (allGamesError) {
-          // En cas d'erreur, revenir à getUserGames (ancienne méthode)
-          console.warn(
-            'Erreur avec getAllUserGames, utilisation de getUserGames:',
-            allGamesError,
-          );
+          // Utiliser directement getUserGames (méthode fiable)
           gamesResponse = await steamService.getUserGames(savedSteamId);
           console.log('Réponse de getUserGames:', gamesResponse.data);
+        } catch (error) {
+          console.error('Erreur lors de la récupération des jeux:', error);
+          setLoading(false);
+          Alert.alert(
+            'Erreur de connexion',
+            'Impossible de récupérer vos jeux. Veuillez vérifier votre connexion et réessayer.',
+            [
+              {
+                text: 'Réessayer',
+                onPress: () => loadData(isFullCheck),
+              },
+              {
+                text: 'Déconnexion',
+                style: 'destructive',
+                onPress: () => handleLogout(),
+              },
+            ],
+          );
+          return;
         }
 
         // Adapter la structure selon la réponse reçue
@@ -597,17 +608,17 @@ export const AppProvider = ({children, navigation = null}) => {
       if (!steamId) return;
 
       console.log('Vérification des nouveaux jeux pour', steamId);
-      const gamesResponse = await steamService.getAllUserGames(steamId);
-      const newGames = gamesResponse.data.games || [];
+      const gamesResponse = await steamService.getUserGames(steamId);
+      const newGames = Array.isArray(gamesResponse.data)
+        ? gamesResponse.data
+        : gamesResponse.data.games || [];
 
       if (!Array.isArray(newGames)) {
         console.log('Format de réponse inattendu:', gamesResponse.data);
         return;
       }
 
-      console.log(
-        `Jeux récupérés: ${newGames.length} jeux au total (API: ${gamesResponse.data.apiGamesCount}, DB uniquement: ${gamesResponse.data.databaseOnlyCount})`,
-      );
+      console.log(`Jeux récupérés: ${newGames.length} jeux au total`);
 
       if (newGames.length > games.length) {
         console.log(
