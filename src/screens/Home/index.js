@@ -1,5 +1,5 @@
 import {useNavigation} from '@react-navigation/native';
-import React, {useCallback, useEffect} from 'react';
+import React, {useCallback, useEffect, useRef} from 'react';
 import {ActivityIndicator, Text, TouchableOpacity, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useAppContext} from '../../context/AppContext';
@@ -13,6 +13,40 @@ const HomeScreen = () => {
   const {loading, refreshing, handleLogout, handleRefresh, filteredGames} =
     useAppContext();
   const navigation = useNavigation();
+  const hasLeftScreen = useRef(false);
+
+  // Utiliser les événements de navigation pour détecter quand l'utilisateur revient à l'écran
+  useEffect(() => {
+    // Quand l'écran reçoit le focus
+    const onFocus = () => {
+      console.log('Événement focus - hasLeftScreen =', hasLeftScreen.current);
+
+      // Si l'utilisateur était parti et revient maintenant
+      if (hasLeftScreen.current && !refreshing) {
+        console.log(
+          "Retour sur l'écran Home après navigation, actualisation automatique",
+        );
+        handleRefresh();
+        hasLeftScreen.current = false; // Réinitialiser l'état
+      }
+    };
+
+    // Quand l'écran perd le focus (l'utilisateur navigue ailleurs)
+    const onBlur = () => {
+      console.log("Événement blur - l'utilisateur quitte l'écran Home");
+      hasLeftScreen.current = true;
+    };
+
+    // S'abonner aux événements
+    const focusUnsubscribe = navigation.addListener('focus', onFocus);
+    const blurUnsubscribe = navigation.addListener('blur', onBlur);
+
+    // Nettoyage
+    return () => {
+      focusUnsubscribe();
+      blurUnsubscribe();
+    };
+  }, [navigation, handleRefresh, refreshing]);
 
   // Déclencher un rafraîchissement automatique lorsque l'écran est affiché pour la première fois
   useEffect(() => {
