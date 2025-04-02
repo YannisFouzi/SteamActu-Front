@@ -49,6 +49,15 @@ const GameDetailsScreen = ({route, navigation}) => {
 
       // Récupérer les actualités
       const response = await newsService.getGameNews(gameId, 10, 500);
+
+      // Log pour déboguer les URLs
+      if (response.data && response.data.length > 0) {
+        console.log('Format des URLs reçues:');
+        response.data.forEach((item, index) => {
+          console.log(`News ${index + 1}: URL = ${item.url}`);
+        });
+      }
+
       setNews(response.data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des actualités:', error);
@@ -85,13 +94,21 @@ const GameDetailsScreen = ({route, navigation}) => {
 
   // Fonction pour ouvrir un lien
   const openLink = url => {
-    Linking.canOpenURL(url).then(supported => {
-      if (supported) {
-        Linking.openURL(url);
-      } else {
-        console.log('Cannot open URL:', url);
-        Alert.alert('Erreur', "Impossible d'ouvrir ce lien.");
-      }
+    // Créer une URL directe vers la page d'annonces Steam pour ce jeu
+    const steamCommunityUrl = `https://steamcommunity.com/games/${
+      game.appId || game.appid
+    }/announcements`;
+
+    // Log pour déboguer
+    console.log('Ouverture directe du lien Steam:', steamCommunityUrl);
+
+    // Ouvrir directement le lien Steam sans essayer d'ouvrir l'URL originale
+    Linking.openURL(steamCommunityUrl).catch(err => {
+      console.error("Erreur lors de l'ouverture du lien Steam:", err);
+      Alert.alert(
+        'Erreur',
+        "Impossible d'ouvrir Steam. Veuillez vérifier que l'application Steam est installée.",
+      );
     });
   };
 
