@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -7,18 +7,19 @@ import {
   Linking,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import {userService} from '../services/api';
+import InAppBrowser from 'react-native-inappbrowser-reborn';
+import {steamAuthService, userService} from '../services/api';
 
 const LoginScreen = ({navigation}) => {
-  const [steamId, setSteamId] = useState('');
   const [loading, setLoading] = useState(false);
+  const [processingAuth, setProcessingAuth] = useState(false);
+  const processedUrls = useRef(new Set());
 
   // Vérifie si un SteamID est déjà enregistré au démarrage
-  React.useEffect(() => {
+  useEffect(() => {
     const checkExistingUser = async () => {
       try {
         const savedSteamId = await AsyncStorage.getItem('steamId');
@@ -37,22 +38,79 @@ const LoginScreen = ({navigation}) => {
     checkExistingUser();
   }, [navigation]);
 
-  // Fonction pour gérer la connexion
-  const handleLogin = async () => {
-    if (!steamId.trim()) {
-      Alert.alert('Erreur', 'Veuillez entrer votre SteamID');
-      return;
-    }
+  // Configuration de l'écouteur d'URL pour intercepter la redirection depuis Steam
+  useEffect(() => {
+    // Fonction pour gérer les URL entrantes
+    const handleUrl = async ({url}) => {
+      console.log('URL interceptée:', url);
 
-    setLoading(true);
+      // Éviter de traiter plusieurs fois la même URL ou de traiter pendant un processus déjà actif
+      if (processedUrls.current.has(url) || processingAuth) {
+        console.log('URL déjà traitée ou authentification en cours, ignorée');
+        return;
+      }
 
+      // Vérifier si c'est une URL d'authentification
+      if (url && url.startsWith(steamAuthService.APP_SCHEME_URL)) {
+        // Marquer l'URL comme traitée
+        processedUrls.current.add(url);
+
+        // Activer le flag d'authentification en cours
+        setProcessingAuth(true);
+
+        try {
+          // Extraire le SteamID de l'URL en utilisant une méthode compatible avec React Native
+          const steamId = url.split('steamId=')[1];
+
+          if (steamId) {
+            console.log('SteamID récupéré:', steamId);
+            await handleSteamIdReceived(steamId);
+          } else {
+            console.error("SteamID non trouvé dans l'URL");
+            Alert.alert(
+              "Erreur d'authentification",
+              'Impossible de récupérer votre identifiant Steam. Veuillez réessayer.',
+            );
+          }
+        } catch (error) {
+          console.error("Erreur lors du traitement de l'URL:", error);
+        } finally {
+          // Désactiver le flag d'authentification en cours
+          setProcessingAuth(false);
+        }
+      }
+    };
+
+    // Ajouter l'écouteur d'URL
+    const urlListener = Linking.addEventListener('url', handleUrl);
+
+    // Vérifier si l'application a été ouverte via une URL
+    Linking.getInitialURL().then(url => {
+      if (url) {
+        handleUrl({url});
+      }
+    });
+
+    // Nettoyer l'écouteur à la fermeture du composant
+    return () => {
+      urlListener.remove();
+    };
+  }, []); // Supprimer la dépendance navigation
+
+  // Fonction pour gérer un SteamID reçu
+  const handleSteamIdReceived = async steamId => {
     try {
+      setLoading(true);
+
       // Enregistrer l'utilisateur sur le serveur
       let response;
       try {
+        console.log("Tentative d'enregistrement du SteamID:", steamId);
         response = await userService.register(steamId);
         console.log('Enregistrement réussi avec réponse:', response.data);
       } catch (registerError) {
+        console.log("Erreur lors de l'enregistrement:", registerError.message);
+
         // Vérifier si l'erreur est due à un utilisateur déjà existant
         if (
           registerError.response &&
@@ -90,25 +148,56 @@ const LoginScreen = ({navigation}) => {
       }
 
       // Sauvegarder le SteamID localement
+      console.log('Enregistrement du SteamID dans AsyncStorage:', steamId);
       await AsyncStorage.setItem('steamId', steamId);
 
+      console.log("Navigation vers l'écran d'accueil...");
       // Naviguer vers l'écran d'accueil
       navigation.replace('Home');
     } catch (error) {
       console.error('Erreur lors de la connexion:', error);
       Alert.alert(
-        'Erreur de connexion',
+        'Erreur',
         error.message ||
-          "Impossible de se connecter avec ce SteamID. Vérifiez qu'il est correct et que le serveur est accessible.",
+          'Impossible de se connecter. Vérifiez que le serveur est accessible.',
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // Aide pour trouver son SteamID
-  const openSteamIdHelp = () => {
-    Linking.openURL('https://help.steampowered.com/en/wizard/HelpWithSteamID');
+  // Fonction pour ouvrir la page de connexion Steam
+  const handleSteamLogin = async () => {
+    try {
+      setLoading(true);
+
+      // Obtenir l'URL d'authentification Steam
+      const steamAuthUrl = steamAuthService.getAuthUrl();
+      console.log("URL d'authentification Steam:", steamAuthUrl);
+
+      // Ouvrir la page dans le navigateur intégré si disponible
+      if (await InAppBrowser.isAvailable()) {
+        await InAppBrowser.open(steamAuthUrl, {
+          // Options du navigateur
+          showTitle: true,
+          toolbarColor: '#171A21',
+          secondaryToolbarColor: '#66C0F4',
+          navigationBarColor: '#171A21',
+          enableUrlBarHiding: true,
+          enableDefaultShare: false,
+        });
+      } else {
+        // Fallback sur le navigateur externe
+        Linking.openURL(steamAuthUrl);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la connexion Steam:', error);
+      Alert.alert(
+        'Erreur',
+        'Impossible de lancer la connexion Steam. Veuillez réessayer.',
+      );
+      setLoading(false);
+    }
   };
 
   return (
@@ -124,33 +213,23 @@ const LoginScreen = ({navigation}) => {
         Restez informé des dernières actualités de vos jeux Steam
       </Text>
 
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Entrez votre SteamID</Text>
-        <TextInput
-          style={styles.input}
-          value={steamId}
-          onChangeText={setSteamId}
-          placeholder="Votre SteamID (ex: 76561198xxxxxxxxx)"
-          placeholderTextColor="#8F98A0"
-          keyboardType="numeric"
-          autoCorrect={false}
-          autoCapitalize="none"
-        />
-        <TouchableOpacity onPress={openSteamIdHelp} style={styles.helpLink}>
-          <Text style={styles.helpText}>Comment trouver mon SteamID ?</Text>
-        </TouchableOpacity>
-      </View>
-
       <TouchableOpacity
-        style={styles.loginButton}
-        onPress={handleLogin}
+        style={styles.steamLoginButton}
+        onPress={handleSteamLogin}
         disabled={loading}>
         {loading ? (
           <ActivityIndicator color="#FFFFFF" />
         ) : (
-          <Text style={styles.loginButtonText}>Se connecter</Text>
+          <Text style={styles.steamLoginButtonText}>
+            Se connecter avec Steam
+          </Text>
         )}
       </TouchableOpacity>
+
+      <Text style={styles.infoText}>
+        Vous serez automatiquement connecté après l'authentification sur le site
+        Steam.
+      </Text>
     </View>
   );
 };
@@ -181,42 +260,26 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     textAlign: 'center',
   },
-  inputContainer: {
-    width: '100%',
-    marginBottom: 30,
-  },
-  label: {
-    fontSize: 16,
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#2A3F5A',
-    borderRadius: 4,
-    padding: 12,
-    color: '#FFFFFF',
-    fontSize: 16,
-    width: '100%',
-  },
-  helpLink: {
-    marginTop: 8,
-    alignSelf: 'flex-end',
-  },
-  helpText: {
-    color: '#66C0F4',
-    fontSize: 14,
-  },
-  loginButton: {
-    backgroundColor: '#66C0F4',
+  steamLoginButton: {
+    backgroundColor: '#1b2838',
     borderRadius: 4,
     padding: 15,
     width: '100%',
     alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#66C0F4',
   },
-  loginButtonText: {
+  steamLoginButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  infoText: {
+    color: '#8F98A0',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
 
