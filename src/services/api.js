@@ -2,9 +2,12 @@ import axios from 'axios';
 import URLParse from 'url-parse';
 
 // Définir l'URL de base de l'API
-// Pour les émulateurs Android, utilisez 10.0.2.2 qui pointe vers localhost de la machine hôte
-// Pour les appareils physiques, utilisez l'adresse IP de votre machine sur le réseau local
-const API_URL = 'http://10.0.2.2:5000/api';
+// URL de production pour le backend déployé sur Render
+const API_URL = 'https://steamactunotif.onrender.com/api';
+
+// Pour les tests en local, utiliser ces URLs à la place :
+// Émulateurs Android: 'http://10.0.2.2:5000/api'
+// Appareils physiques: 'http://VOTRE_IP_LOCALE:5000/api'
 
 // Créer une instance axios avec la configuration de base
 const api = axios.create({
