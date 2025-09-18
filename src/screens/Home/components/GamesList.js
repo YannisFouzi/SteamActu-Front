@@ -8,8 +8,8 @@ const GamesList = () => {
   const {filteredGames, refreshing, handleRefresh} = useAppContext();
 
   const renderEmptyList = () => (
-    <View style={styles.emptyListContainer}>
-      <Text style={styles.emptyListText}>
+    <View style={styles.emptyContainer}>
+      <Text style={styles.emptyText}>
         Aucun jeu trouvé. Essayez de modifier vos critères de recherche.
       </Text>
     </View>

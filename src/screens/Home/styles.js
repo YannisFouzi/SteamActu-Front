@@ -76,62 +76,8 @@ export default StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
   },
-  sortButton: {
-    marginLeft: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#316282',
-    borderRadius: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sortButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-  },
   gamesList: {
     paddingTop: 8,
-  },
-  gameItem: {
-    flexDirection: 'row',
-    backgroundColor: '#2A3F5A',
-    marginHorizontal: 10,
-    marginBottom: 8,
-    borderRadius: 3,
-    overflow: 'hidden',
-    paddingRight: 5,
-  },
-  gameImage: {
-    width: 120,
-    height: 45,
-  },
-  gameInfo: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    justifyContent: 'center',
-  },
-  gameTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-    flexWrap: 'wrap',
-  },
-  gameTitle: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-    flexShrink: 1,
-    maxWidth: '80%',
-  },
-  gamePlaytime: {
-    color: '#8F98A0',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  gameRecentPlaytime: {
-    color: '#67C1F5',
-    fontSize: 12,
   },
   followButton: {
     justifyContent: 'center',
@@ -142,14 +88,6 @@ export default StyleSheet.create({
     height: 32,
     alignSelf: 'center',
     borderRadius: 3,
-  },
-  followButtonText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  followedButton: {
-    backgroundColor: '#5CCC7B',
   },
   loadingContainer: {
     flex: 1,

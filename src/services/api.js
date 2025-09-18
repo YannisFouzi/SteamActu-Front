@@ -43,21 +43,6 @@ const userService = {
   updateNotificationSettings: (steamId, settings) => {
     return api.put(`/users/${steamId}/notifications`, settings);
   },
-
-  // Forcer la synchronisation complète des jeux
-  syncGames: steamId => {
-    return api.post(`/users/${steamId}/sync-games`);
-  },
-
-  // Diagnostiquer et résoudre les problèmes de bibliothèque
-  runLibraryDiagnostic: steamId => {
-    return api.get(`/steam/diagnostic/library/${steamId}`);
-  },
-
-  // Forcer l'importation complète de la bibliothèque
-  forceLibraryImport: (steamId, method = 'api') => {
-    return api.post(`/users/${steamId}/force-library-import`, {method});
-  },
 };
 
 // Service actualités
@@ -72,11 +57,6 @@ const newsService = {
         steamOnly: 'true',
       },
     });
-  },
-
-  // Récupérer les actualités pour plusieurs jeux
-  getBatchNews: (appIds, count = 3, maxLength = 300) => {
-    return api.post('/news/batch', {appIds, count, maxLength});
   },
 };
 
@@ -150,83 +130,6 @@ const steamAuthService = {
       return null;
     }
   },
-
-  // Valider la réponse OpenID (à faire côté serveur, mais nous faisons une vérification minimale ici)
-  validateAndLogin: async url => {
-    try {
-      const steamId = steamAuthService.extractSteamId(url);
-
-      if (!steamId) {
-        throw new Error('SteamID non trouvé dans la réponse OpenID');
-      }
-
-      // Enregistrer l'utilisateur dans notre système
-      try {
-        await userService.register(steamId);
-      } catch (error) {
-        // Si l'utilisateur existe déjà, ce n'est pas grave
-        if (
-          !(
-            error.response &&
-            error.response.status === 400 &&
-            error.response.data.message === 'Cet utilisateur existe déjà'
-          )
-        ) {
-          throw error;
-        }
-      }
-
-      return steamId;
-    } catch (error) {
-      console.error('Erreur lors de la validation OpenID:', error);
-      throw error;
-    }
-  },
 };
 
-// Service Steam pour récupérer les informations de profil
-const steamProfileService = {
-  // Clé API Steam
-  API_KEY: '47DFE36FF72512F967DFF5AFF92E7D3B',
-
-  // URL pour se connecter via l'interface Steam officielle
-  getLoginUrl: () => {
-    // Cette URL redirige vers la page de connexion officielle Steam
-    return 'https://steamcommunity.com/login/home/?goto=';
-  },
-
-  // Récupérer les informations de profil d'un utilisateur
-  getPlayerSummary: async steamId => {
-    try {
-      // Utiliser notre backend comme proxy pour ne pas exposer la clé API
-      const response = await api.get(`/steam/profile/${steamId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Erreur lors de la récupération du profil Steam:', error);
-      throw error;
-    }
-  },
-
-  // Convertir un nom d'utilisateur Steam en SteamID
-  resolveVanityURL: async vanityURL => {
-    try {
-      // Utiliser notre backend comme proxy
-      const response = await api.get(`/steam/resolve-vanity/${vanityURL}`);
-      return response.data;
-    } catch (error) {
-      console.error(
-        "Erreur lors de la résolution du nom d'utilisateur Steam:",
-        error,
-      );
-      throw error;
-    }
-  },
-};
-
-export {
-  newsService,
-  steamAuthService,
-  steamProfileService,
-  steamService,
-  userService,
-};
+export {newsService, steamAuthService, steamService, userService};

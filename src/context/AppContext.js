@@ -28,13 +28,11 @@ export const AppProvider = ({children, navigation = null}) => {
 
   // État de l'application
   const appState = useRef(AppState.currentState);
-  const [appStateVisible, setAppStateVisible] = useState(appState.current);
 
   // Recherche et tri
   const [searchQuery, setSearchQuery] = useState('');
   const [sortModalVisible, setSortModalVisible] = useState(false);
   const [sortOption, setSortOption] = useState('default');
-  const [isLoadingMoreGames, setIsLoadingMoreGames] = useState(false);
 
   // Filtre pour les jeux suivis
   const [filterModalVisible, setFilterModalVisible] = useState(false);
@@ -55,7 +53,6 @@ export const AppProvider = ({children, navigation = null}) => {
       }
 
       appState.current = nextAppState;
-      setAppStateVisible(appState.current);
     });
 
     // Charger l'option de tri sauvegardée
@@ -718,15 +715,6 @@ export const AppProvider = ({children, navigation = null}) => {
     return now - timestamp < oneDayMs;
   };
 
-  // Formater le temps de jeu
-  const formatPlaytime = minutes => {
-    if (!minutes) return '0 heure';
-
-    const hours = Math.floor(minutes / 60);
-    if (hours < 1) return `${minutes} minutes`;
-    return `${hours} heure${hours > 1 ? 's' : ''}`;
-  };
-
   // Vérifier si un jeu est suivi
   const isGameFollowed = appId => {
     if (!user || !user.followedGames) return false;
@@ -745,7 +733,6 @@ export const AppProvider = ({children, navigation = null}) => {
     searchQuery,
     sortModalVisible,
     sortOption,
-    isLoadingMoreGames,
     filterModalVisible,
     followFilter,
 
@@ -764,7 +751,6 @@ export const AppProvider = ({children, navigation = null}) => {
     checkForNewGames,
     isRecentlyUpdated,
     filterAndSortGames,
-    formatPlaytime,
     isGameFollowed,
   };
 

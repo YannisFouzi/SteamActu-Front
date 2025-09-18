@@ -6,7 +6,6 @@ import React from 'react';
 import GameDetailsScreen from '../screens/GameDetailsScreen';
 import HomeScreen from '../screens/Home';
 import LoginScreen from '../screens/LoginScreen';
-import NewsDetailScreen from '../screens/NewsDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
 // Création des navigateurs
@@ -91,13 +90,6 @@ const AppNavigator = () => {
           options={{
             title: 'Paramètres',
           }}
-        />
-        <Stack.Screen
-          name="NewsDetail"
-          component={NewsDetailScreen}
-          options={({route}) => ({
-            title: route.params?.title || 'Actualité',
-          })}
         />
       </Stack.Navigator>
     </NavigationContainer>
