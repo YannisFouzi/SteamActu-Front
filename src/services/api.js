@@ -3,7 +3,7 @@ import URLParse from 'url-parse';
 
 // Définir l'URL de base de l'API
 // URL de production pour le backend déployé sur Render
-const API_URL = 'https://steamactunotif.onrender.com/api';
+const API_URL = 'http://10.0.2.2:5000/api';
 
 // Pour les tests en local, utiliser ces URLs à la place :
 // Émulateurs Android: 'http://10.0.2.2:5000/api'
@@ -83,9 +83,28 @@ const newsService = {
 // Service Steam (communique directement avec l'API Steam via notre backend)
 const steamService = {
   // Récupérer la liste des jeux possédés par un utilisateur
-  getUserGames: steamId => {
+  getUserGames: (steamId, followedOnly = false) => {
     // Cette fonction utilisera notre backend comme proxy pour appeler l'API Steam
-    return api.get(`/steam/games/${steamId}`);
+    const params = followedOnly ? {followedOnly: 'true'} : {};
+    const callId = Date.now();
+    console.log(
+      `[${callId}] 📤 API CALL - getUserGames(${steamId}, followedOnly: ${followedOnly})`,
+    );
+
+    return api
+      .get(`/steam/games/${steamId}`, {params})
+      .then(response => {
+        console.log(
+          `[${callId}] 📥 API SUCCESS - Reçu ${
+            response.data?.length || 0
+          } jeux`,
+        );
+        return response;
+      })
+      .catch(error => {
+        console.log(`[${callId}] 📥 API ERROR - ${error.message}`);
+        throw error;
+      });
   },
 };
 

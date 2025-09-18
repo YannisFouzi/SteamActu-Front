@@ -135,6 +135,11 @@ export const AppProvider = ({children, navigation = null}) => {
 
   // Filtrer et trier les jeux quand les critères changent
   useEffect(() => {
+    console.log(
+      `🔄 FILTER EFFECT - games: ${
+        games?.length || 0
+      }, searchQuery: "${searchQuery}", sortOption: ${sortOption}, followFilter: ${followFilter}`,
+    );
     if (games && Array.isArray(games) && (games.length > 0 || searchQuery)) {
       filterAndSortGames();
     } else {
@@ -176,7 +181,8 @@ export const AppProvider = ({children, navigation = null}) => {
     // Appliquer le filtre de suivi
     if (followFilter !== 'all') {
       filtered = filtered.filter(game => {
-        const isFollowed = game.isFollowed === true;
+        const appId = (game.appid || game.appId || '').toString();
+        const isFollowed = isGameFollowed(appId);
         return followFilter === 'followed' ? isFollowed : !isFollowed;
       });
     }
@@ -227,14 +233,26 @@ export const AppProvider = ({children, navigation = null}) => {
         break;
     }
 
+    // LOG E : Analyser les jeux après filtrage
+    const filteredWithTimestamp = filtered.filter(
+      game => game.lastUpdateTimestamp > 0,
+    );
+    console.log(
+      `📱 LOG E - AFFICHAGE de ${filtered.length} jeux dont ${filteredWithTimestamp.length} ont des timestamps`,
+    );
     console.log(`${filtered.length} jeux après filtrage et tri`);
     setFilteredGames(filtered);
   };
 
   // Fonction pour charger les données
   const loadData = async (isFullCheck = false) => {
+    const loadId = Date.now();
+    console.log(
+      `[${loadId}] 🔵 LOAD START - isFullCheck: ${isFullCheck}, followFilter: ${followFilter}`,
+    );
     try {
       if (isFullCheck) {
+        console.log(`[${loadId}] 🔵 LOAD - setLoading(true)`);
         setLoading(true);
       }
 
@@ -262,7 +280,20 @@ export const AppProvider = ({children, navigation = null}) => {
         let gamesResponse;
         try {
           // Utiliser directement getUserGames (méthode fiable)
-          gamesResponse = await steamService.getUserGames(savedSteamId);
+          // Si le filtre est sur "followed", on ne récupère que les jeux suivis
+          const shouldFetchFollowedOnly = followFilter === 'followed';
+          gamesResponse = await steamService.getUserGames(
+            savedSteamId,
+            shouldFetchFollowedOnly,
+          );
+          // LOG D : Analyser la réponse reçue
+          const receivedGames = gamesResponse.data || [];
+          const gamesWithTimestamp = receivedGames.filter(
+            game => game.lastUpdateTimestamp > 0,
+          );
+          console.log(
+            `[${loadId}] 📥 LOG D - RÉCEPTION de ${receivedGames.length} jeux dont ${gamesWithTimestamp.length} ont des timestamps`,
+          );
           console.log('Réponse de getUserGames:', gamesResponse.data);
         } catch (error) {
           console.error('Erreur lors de la récupération des jeux:', error);
@@ -367,8 +398,14 @@ export const AppProvider = ({children, navigation = null}) => {
         }
 
         // Enfin, mettre à jour l'état des jeux et arrêter le chargement
+        console.log(
+          `[${loadId}] 🔵 LOAD - setGames(${
+            Array.isArray(newGames) ? newGames.length : 0
+          } jeux)`,
+        );
         setGames(Array.isArray(newGames) ? newGames : []);
         if (!isFullCheck) {
+          console.log(`[${loadId}] 🔵 LOAD - setLoading(false)`);
           setLoading(false);
         }
       } catch (apiError) {
@@ -413,8 +450,16 @@ export const AppProvider = ({children, navigation = null}) => {
 
       await AsyncStorage.setItem('lastVerificationDate', Date.now().toString());
       setLastRefreshTime(Date.now());
+      console.log(`[${loadId}] 🟢 LOAD SUCCESS - Terminé avec succès`);
+
+      // Log final pour débogage
+      setTimeout(() => {
+        console.log(
+          `\n🎯 ========== FIN DU TRAITEMENT DU DÉMARRAGE DE L'APP (Mobile) ==========`,
+        );
+      }, 1500);
     } catch (error) {
-      console.error('Erreur lors du chargement des données:', error);
+      console.error(`[${loadId}] 🔴 LOAD ERROR - ${error.message}`);
       setLoading(false);
 
       // Proposer à l'utilisateur de se déconnecter en cas d'erreur grave
@@ -467,8 +512,21 @@ export const AppProvider = ({children, navigation = null}) => {
 
   // Fonction pour rafraîchir les données
   const handleRefresh = () => {
+    console.log(`\n🔄 ========== DÉBUT DU REFRESH (Mobile) ==========`);
+    const refreshId = Date.now();
+    console.log(
+      `[${refreshId}] 🔄 REFRESH START - followFilter: ${followFilter}`,
+    );
     setRefreshing(true);
-    loadData().then(() => setRefreshing(false));
+    loadData()
+      .then(() => {
+        console.log(`[${refreshId}] 🔄 REFRESH END - setRefreshing(false)`);
+        setRefreshing(false);
+      })
+      .catch(error => {
+        console.log(`[${refreshId}] 🔄 REFRESH ERROR - ${error.message}`);
+        setRefreshing(false);
+      });
   };
 
   // Fonction pour se déconnecter
@@ -608,7 +666,8 @@ export const AppProvider = ({children, navigation = null}) => {
       if (!steamId) return;
 
       console.log('Vérification des nouveaux jeux pour', steamId);
-      const gamesResponse = await steamService.getUserGames(steamId);
+      // Pour vérifier les nouveaux jeux, on récupère toujours tous les jeux
+      const gamesResponse = await steamService.getUserGames(steamId, false);
       const newGames = Array.isArray(gamesResponse.data)
         ? gamesResponse.data
         : gamesResponse.data.games || [];

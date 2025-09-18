@@ -48,21 +48,13 @@ const HomeScreen = () => {
     };
   }, [navigation, handleRefresh, refreshing]);
 
-  // Déclencher un rafraîchissement automatique lorsque l'écran est affiché pour la première fois
+  // Log du nombre de jeux filtrés (refresh automatique supprimé)
   useEffect(() => {
     console.log(
       'HomeScreen monté, nombre de jeux filtrés :',
       filteredGames.length,
     );
-
-    // Si aucun jeu n'est chargé, déclencher un rafraîchissement
-    if (filteredGames.length === 0 && !loading && !refreshing) {
-      console.log(
-        'Aucun jeu trouvé, déclenchement du rafraîchissement automatique',
-      );
-      handleRefresh();
-    }
-  }, [filteredGames.length, handleRefresh, loading, refreshing]);
+  }, [filteredGames.length]);
 
   // Fonction de déconnexion adaptée avec navigation locale
   const handleLocalLogout = useCallback(async () => {
