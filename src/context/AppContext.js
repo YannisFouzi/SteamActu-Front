@@ -60,15 +60,9 @@ export const AppProvider = ({children, navigation = null}) => {
       try {
         const savedOption = await AsyncStorage.getItem('sortOption');
         if (savedOption) {
-          console.log('Option de tri récupérée du stockage:', savedOption);
           setSortOption(savedOption);
         }
-      } catch (error) {
-        console.error(
-          "Erreur lors de la récupération de l'option de tri:",
-          error,
-        );
-      }
+      } catch (error) {}
     };
     getSavedSortOption();
 
@@ -77,15 +71,9 @@ export const AppProvider = ({children, navigation = null}) => {
       try {
         const savedFilter = await AsyncStorage.getItem('followFilter');
         if (savedFilter) {
-          console.log('Option de filtre récupérée du stockage:', savedFilter);
           setFollowFilter(savedFilter);
         }
-      } catch (error) {
-        console.error(
-          "Erreur lors de la récupération de l'option de filtre:",
-          error,
-        );
-      }
+      } catch (error) {}
     };
     getSavedFilterOption();
 
@@ -94,13 +82,19 @@ export const AppProvider = ({children, navigation = null}) => {
     };
   }, []);
 
+  // Surveiller les changements de steamId pour recharger les données après reconnexion
+  useEffect(() => {
+    if (steamId) {
+      loadData();
+    }
+  }, [steamId]);
+
   // Persister l'option de tri
   useEffect(() => {
     if (sortOption) {
       const saveSortOption = async () => {
         try {
           await AsyncStorage.setItem('sortOption', sortOption);
-          console.log('Option de tri sauvegardée:', sortOption);
         } catch (error) {
           console.error(
             "Erreur lors de la sauvegarde de l'option de tri:",
@@ -118,7 +112,6 @@ export const AppProvider = ({children, navigation = null}) => {
       const saveFilterOption = async () => {
         try {
           await AsyncStorage.setItem('followFilter', followFilter);
-          console.log('Option de filtre sauvegardée:', followFilter);
         } catch (error) {
           console.error(
             "Erreur lors de la sauvegarde de l'option de filtre:",
@@ -132,11 +125,6 @@ export const AppProvider = ({children, navigation = null}) => {
 
   // Filtrer et trier les jeux quand les critères changent
   useEffect(() => {
-    console.log(
-      `🔄 FILTER EFFECT - games: ${
-        games?.length || 0
-      }, searchQuery: "${searchQuery}", sortOption: ${sortOption}, followFilter: ${followFilter}`,
-    );
     if (games && Array.isArray(games) && (games.length > 0 || searchQuery)) {
       filterAndSortGames();
     } else {
@@ -157,14 +145,6 @@ export const AppProvider = ({children, navigation = null}) => {
     // Vérifier les données disponibles pour le débogage
     if (filtered.length > 0) {
       const sampleGame = filtered[0];
-      console.log("Données d'un jeu exemple pour le tri:", {
-        name: sampleGame.name,
-        appid: sampleGame.appid,
-        lastUpdateTimestamp: sampleGame.lastUpdateTimestamp,
-        playtime_forever: sampleGame.playtime_forever,
-        playtime_2weeks: sampleGame.playtime_2weeks,
-        rtime_last_played: sampleGame.rtime_last_played,
-      });
     }
 
     // Appliquer le filtre de recherche
@@ -185,7 +165,6 @@ export const AppProvider = ({children, navigation = null}) => {
     }
 
     // Appliquer le tri
-    console.log(`Tri en cours avec l'option: ${sortOption}`);
     switch (sortOption) {
       case 'alphabetical':
         filtered.sort((a, b) => a.name.localeCompare(b.name));
@@ -234,22 +213,14 @@ export const AppProvider = ({children, navigation = null}) => {
     const filteredWithTimestamp = filtered.filter(
       game => game.lastUpdateTimestamp > 0,
     );
-    console.log(
-      `📱 LOG E - AFFICHAGE de ${filtered.length} jeux dont ${filteredWithTimestamp.length} ont des timestamps`,
-    );
-    console.log(`${filtered.length} jeux après filtrage et tri`);
     setFilteredGames(filtered);
   };
 
   // Fonction pour charger les données
   const loadData = async (isFullCheck = false) => {
     const loadId = Date.now();
-    console.log(
-      `[${loadId}] 🔵 LOAD START - isFullCheck: ${isFullCheck}, followFilter: ${followFilter}`,
-    );
     try {
       if (isFullCheck) {
-        console.log(`[${loadId}] 🔵 LOAD - setLoading(true)`);
         setLoading(true);
       }
 
@@ -264,6 +235,14 @@ export const AppProvider = ({children, navigation = null}) => {
           return; // Sortir de la fonction sans erreur
         }
         return;
+      }
+
+      // Si c'est le même steamId, forcer quand même le rechargement (reconnexion)
+      if (steamId === savedSteamId) {
+        // Continuer le chargement sans attendre useEffect
+      } else {
+        setSteamId(savedSteamId);
+        return; // Laisser useEffect[steamId] gérer le chargement
       }
 
       setSteamId(savedSteamId);
@@ -288,12 +267,7 @@ export const AppProvider = ({children, navigation = null}) => {
           const gamesWithTimestamp = receivedGames.filter(
             game => game.lastUpdateTimestamp > 0,
           );
-          console.log(
-            `[${loadId}] 📥 LOG D - RÉCEPTION de ${receivedGames.length} jeux dont ${gamesWithTimestamp.length} ont des timestamps`,
-          );
-          console.log('Réponse de getUserGames:', gamesResponse.data);
         } catch (error) {
-          console.error('Erreur lors de la récupération des jeux:', error);
           setLoading(false);
           Alert.alert(
             'Erreur de connexion',
@@ -333,9 +307,6 @@ export const AppProvider = ({children, navigation = null}) => {
         } else if (Array.isArray(gamesResponse.data)) {
           // Structure de secours
           newGames = gamesResponse.data;
-          console.log(
-            `Structure alternative détectée. ${newGames.length} jeux reçus.`,
-          );
         }
 
         // Vérifier les données de tri disponibles
@@ -353,20 +324,6 @@ export const AppProvider = ({children, navigation = null}) => {
             g => g.lastUpdateTimestamp > 0,
           ).length;
 
-          console.log('[DIAGNOSTIC TRI] Propriétés disponibles :');
-          console.log(
-            `- rtime_last_played : ${jeuAvecLastPlayed}/${newGames.length} jeux`,
-          );
-          console.log(
-            `- playtime_2weeks : ${jeuAvecPlaytime2Weeks}/${newGames.length} jeux`,
-          );
-          console.log(
-            `- playtime_forever : ${jeuAvecPlaytime}/${newGames.length} jeux`,
-          );
-          console.log(
-            `- lastUpdateTimestamp : ${jeuAvecTimestamp}/${newGames.length} jeux`,
-          );
-
           // Ajout de lastUpdateTimestamp pour tous les jeux qui n'en ont pas
           newGames.forEach(game => {
             if (!game.lastUpdateTimestamp) {
@@ -377,8 +334,6 @@ export const AppProvider = ({children, navigation = null}) => {
 
         // Traiter et afficher les statistiques
         if (Array.isArray(newGames) && newGames.length > 0) {
-          console.log(`${newGames.length} jeux récupérés au total`);
-
           if (gamesResponse.data.apiGamesCount) {
             console.log(
               `Détails: ${
@@ -388,21 +343,13 @@ export const AppProvider = ({children, navigation = null}) => {
               } jeux uniquement en base de données`,
             );
           }
-
-          console.log('Exemples de jeux:', newGames.slice(0, 3));
         } else {
           console.log('Aucun jeu récupéré ou format de réponse inattendu');
         }
 
         // Enfin, mettre à jour l'état des jeux et arrêter le chargement
-        console.log(
-          `[${loadId}] 🔵 LOAD - setGames(${
-            Array.isArray(newGames) ? newGames.length : 0
-          } jeux)`,
-        );
         setGames(Array.isArray(newGames) ? newGames : []);
         if (!isFullCheck) {
-          console.log(`[${loadId}] 🔵 LOAD - setLoading(false)`);
           setLoading(false);
         }
       } catch (apiError) {
@@ -447,14 +394,9 @@ export const AppProvider = ({children, navigation = null}) => {
 
       await AsyncStorage.setItem('lastVerificationDate', Date.now().toString());
       setLastRefreshTime(Date.now());
-      console.log(`[${loadId}] 🟢 LOAD SUCCESS - Terminé avec succès`);
 
       // Log final pour débogage
-      setTimeout(() => {
-        console.log(
-          `\n🎯 ========== FIN DU TRAITEMENT DU DÉMARRAGE DE L'APP (Mobile) ==========`,
-        );
-      }, 1500);
+      setTimeout(() => {}, 1500);
     } catch (error) {
       console.error(`[${loadId}] 🔴 LOAD ERROR - ${error.message}`);
       setLoading(false);
@@ -509,19 +451,13 @@ export const AppProvider = ({children, navigation = null}) => {
 
   // Fonction pour rafraîchir les données
   const handleRefresh = () => {
-    console.log(`\n🔄 ========== DÉBUT DU REFRESH (Mobile) ==========`);
     const refreshId = Date.now();
-    console.log(
-      `[${refreshId}] 🔄 REFRESH START - followFilter: ${followFilter}`,
-    );
     setRefreshing(true);
     loadData()
       .then(() => {
-        console.log(`[${refreshId}] 🔄 REFRESH END - setRefreshing(false)`);
         setRefreshing(false);
       })
       .catch(error => {
-        console.log(`[${refreshId}] 🔄 REFRESH ERROR - ${error.message}`);
         setRefreshing(false);
       });
   };

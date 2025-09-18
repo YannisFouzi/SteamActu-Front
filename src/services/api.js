@@ -67,22 +67,13 @@ const steamService = {
     // Cette fonction utilisera notre backend comme proxy pour appeler l'API Steam
     const params = followedOnly ? {followedOnly: 'true'} : {};
     const callId = Date.now();
-    console.log(
-      `[${callId}] 📤 API CALL - getUserGames(${steamId}, followedOnly: ${followedOnly})`,
-    );
 
     return api
       .get(`/steam/games/${steamId}`, {params})
       .then(response => {
-        console.log(
-          `[${callId}] 📥 API SUCCESS - Reçu ${
-            response.data?.length || 0
-          } jeux`,
-        );
         return response;
       })
       .catch(error => {
-        console.log(`[${callId}] 📥 API ERROR - ${error.message}`);
         throw error;
       });
   },

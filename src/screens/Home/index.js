@@ -19,16 +19,12 @@ const HomeScreen = () => {
   useEffect(() => {
     // Quand l'écran reçoit le focus
     const onFocus = () => {
-      console.log('Événement focus - hasLeftScreen =', hasLeftScreen.current);
-
-      // Si l'utilisateur était parti et revient maintenant
-      if (hasLeftScreen.current && !refreshing) {
-        console.log(
-          "Retour sur l'écran Home après navigation, actualisation automatique",
-        );
+      // Toujours actualiser au focus pour gérer les reconnexions
+      if (!refreshing) {
         handleRefresh();
-        hasLeftScreen.current = false; // Réinitialiser l'état
       }
+
+      hasLeftScreen.current = false; // Réinitialiser l'état
     };
 
     // Quand l'écran perd le focus (l'utilisateur navigue ailleurs)
@@ -49,12 +45,7 @@ const HomeScreen = () => {
   }, [navigation, handleRefresh, refreshing]);
 
   // Log du nombre de jeux filtrés (refresh automatique supprimé)
-  useEffect(() => {
-    console.log(
-      'HomeScreen monté, nombre de jeux filtrés :',
-      filteredGames.length,
-    );
-  }, [filteredGames.length]);
+  useEffect(() => {}, [filteredGames.length]);
 
   // Fonction de déconnexion adaptée avec navigation locale
   const handleLocalLogout = useCallback(async () => {

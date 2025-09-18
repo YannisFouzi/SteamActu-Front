@@ -128,10 +128,6 @@ const LoginScreen = ({navigation}) => {
               response.data,
             );
           } catch (getUserError) {
-            console.error(
-              'Erreur lors de la récupération des données utilisateur:',
-              getUserError,
-            );
             throw new Error(
               "Impossible de récupérer les informations de l'utilisateur",
             );
