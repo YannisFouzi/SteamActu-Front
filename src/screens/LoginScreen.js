@@ -204,7 +204,7 @@ const LoginScreen = ({navigation}) => {
         resizeMode="contain"
       />
 
-      <Text style={styles.title}>Steam Notifications</Text>
+      <Text style={styles.title}>Steam Actu & Notif</Text>
       <Text style={styles.subtitle}>
         Restez informé des dernières actualités de vos jeux Steam
       </Text>
@@ -221,11 +221,6 @@ const LoginScreen = ({navigation}) => {
           </Text>
         )}
       </TouchableOpacity>
-
-      <Text style={styles.infoText}>
-        Vous serez automatiquement connecté après l'authentification sur le site
-        Steam.
-      </Text>
     </View>
   );
 };

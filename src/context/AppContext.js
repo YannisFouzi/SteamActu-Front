@@ -85,7 +85,9 @@ export const AppProvider = ({children, navigation = null}) => {
   // Surveiller les changements de steamId pour recharger les données après reconnexion
   useEffect(() => {
     if (steamId) {
-      loadData();
+      // Utiliser setRefreshing pour afficher les indicateurs de chargement
+      setRefreshing(true);
+      loadData().finally(() => setRefreshing(false));
     }
   }, [steamId]);
 
@@ -239,7 +241,10 @@ export const AppProvider = ({children, navigation = null}) => {
 
       // Si c'est le même steamId, forcer quand même le rechargement (reconnexion)
       if (steamId === savedSteamId) {
-        // Continuer le chargement sans attendre useEffect
+        // Afficher l'indicateur de chargement pour la reconnexion
+        if (!isFullCheck) {
+          setRefreshing(true);
+        }
       } else {
         setSteamId(savedSteamId);
         return; // Laisser useEffect[steamId] gérer le chargement
@@ -352,9 +357,13 @@ export const AppProvider = ({children, navigation = null}) => {
         if (!isFullCheck) {
           setLoading(false);
         }
+
+        // Arrêter l'indicateur de refreshing si activé (cas de reconnexion)
+        setRefreshing(false);
       } catch (apiError) {
         console.error('Erreur API lors du chargement des données:', apiError);
         setLoading(false);
+        setRefreshing(false);
 
         // Vérifier si l'erreur est due à un utilisateur non trouvé (404)
         if (apiError.response && apiError.response.status === 404) {
@@ -400,6 +409,7 @@ export const AppProvider = ({children, navigation = null}) => {
     } catch (error) {
       console.error(`[${loadId}] 🔴 LOAD ERROR - ${error.message}`);
       setLoading(false);
+      setRefreshing(false);
 
       // Proposer à l'utilisateur de se déconnecter en cas d'erreur grave
       Alert.alert(
