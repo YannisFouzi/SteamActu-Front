@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+﻿import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
@@ -18,18 +18,18 @@ const LoginScreen = ({navigation}) => {
   const [processingAuth, setProcessingAuth] = useState(false);
   const processedUrls = useRef(new Set());
 
-  // Vérifie si un SteamID est déjà enregistré au démarrage
+  // VÃ©rifie si un SteamID est dÃ©jÃ  enregistrÃ© au dÃ©marrage
   useEffect(() => {
     const checkExistingUser = async () => {
       try {
         const savedSteamId = await AsyncStorage.getItem('steamId');
         if (savedSteamId) {
-          // Utilisateur trouvé, naviguer vers l'écran d'accueil
+          // Utilisateur trouvÃ©, naviguer vers l'Ã©cran d'accueil
           navigation.replace('Home');
         }
       } catch (error) {
         console.error(
-          "Erreur lors de la vérification de l'utilisateur:",
+          "Erreur lors de la vÃ©rification de l'utilisateur:",
           error,
         );
       }
@@ -38,66 +38,66 @@ const LoginScreen = ({navigation}) => {
     checkExistingUser();
   }, [navigation]);
 
-  // Configuration de l'écouteur d'URL pour intercepter la redirection depuis Steam
+  // Configuration de l'Ã©couteur d'URL pour intercepter la redirection depuis Steam
   useEffect(() => {
-    // Fonction pour gérer les URL entrantes
+    // Fonction pour gÃ©rer les URL entrantes
     const handleUrl = async ({url}) => {
-      console.log('URL interceptée:', url);
+      console.log('URL interceptÃ©e:', url);
 
-      // Éviter de traiter plusieurs fois la même URL ou de traiter pendant un processus déjà actif
+      // Ã‰viter de traiter plusieurs fois la mÃªme URL ou de traiter pendant un processus dÃ©jÃ  actif
       if (processedUrls.current.has(url) || processingAuth) {
-        console.log('URL déjà traitée ou authentification en cours, ignorée');
+        console.log('URL dÃ©jÃ  traitÃ©e ou authentification en cours, ignorÃ©e');
         return;
       }
 
-      // Vérifier si c'est une URL d'authentification
+      // VÃ©rifier si c'est une URL d'authentification
       if (url && url.startsWith(steamAuthService.APP_SCHEME_URL)) {
-        // Marquer l'URL comme traitée
+        // Marquer l'URL comme traitÃ©e
         processedUrls.current.add(url);
 
         // Activer le flag d'authentification en cours
         setProcessingAuth(true);
 
         try {
-          // Extraire le SteamID de l'URL en utilisant une méthode compatible avec React Native
+          // Extraire le SteamID de l'URL en utilisant une mÃ©thode compatible avec React Native
           const steamId = url.split('steamId=')[1];
 
           if (steamId) {
-            console.log('SteamID récupéré:', steamId);
+            console.log('SteamID rÃ©cupÃ©rÃ©:', steamId);
             await handleSteamIdReceived(steamId);
           } else {
-            console.error("SteamID non trouvé dans l'URL");
+            console.error("SteamID non trouvÃ© dans l'URL");
             Alert.alert(
               "Erreur d'authentification",
-              'Impossible de récupérer votre identifiant Steam. Veuillez réessayer.',
+              'Impossible de rÃ©cupÃ©rer votre identifiant Steam. Veuillez rÃ©essayer.',
             );
           }
         } catch (error) {
           console.error("Erreur lors du traitement de l'URL:", error);
         } finally {
-          // Désactiver le flag d'authentification en cours
+          // DÃ©sactiver le flag d'authentification en cours
           setProcessingAuth(false);
         }
       }
     };
 
-    // Ajouter l'écouteur d'URL
+    // Ajouter l'Ã©couteur d'URL
     const urlListener = Linking.addEventListener('url', handleUrl);
 
-    // Vérifier si l'application a été ouverte via une URL
+    // VÃ©rifier si l'application a Ã©tÃ© ouverte via une URL
     Linking.getInitialURL().then(url => {
       if (url) {
         handleUrl({url});
       }
     });
 
-    // Nettoyer l'écouteur à la fermeture du composant
+    // Nettoyer l'Ã©couteur Ã  la fermeture du composant
     return () => {
       urlListener.remove();
     };
-  }, []); // Supprimer la dépendance navigation
+  }, []); // Supprimer la dÃ©pendance navigation
 
-  // Fonction pour gérer un SteamID reçu
+  // Fonction pour gÃ©rer un SteamID reÃ§u
   const handleSteamIdReceived = async steamId => {
     try {
       setLoading(true);
@@ -107,29 +107,32 @@ const LoginScreen = ({navigation}) => {
       try {
         console.log("Tentative d'enregistrement du SteamID:", steamId);
         response = await userService.register(steamId);
-        console.log('Enregistrement réussi avec réponse:', response.data);
+        console.log('Enregistrement rÃ©ussi avec rÃ©ponse:', response.data);
       } catch (registerError) {
         console.log("Erreur lors de l'enregistrement:", registerError.message);
 
-        // Vérifier si l'erreur est due à un utilisateur déjà existant
+        // VÃ©rifier si l'erreur est due Ã  un utilisateur dÃ©jÃ  existant
+        const message = registerError.response && registerError.response.data
+          ? String(registerError.response.data.message || '')
+          : '';
         if (
           registerError.response &&
           registerError.response.status === 400 &&
-          registerError.response.data.message === 'Cet utilisateur existe déjà'
+          message.toLowerCase().includes('utilisateur existe')
         ) {
           console.log(
-            'Utilisateur déjà existant, tentative de récupération des données...',
+            'Utilisateur dÃ©jÃ  existant, tentative de rÃ©cupÃ©ration des donnÃ©es...',
           );
-          // L'utilisateur existe déjà, essayons de récupérer ses informations
+          // L'utilisateur existe dÃ©jÃ , essayons de rÃ©cupÃ©rer ses informations
           try {
             response = await userService.getUser(steamId);
             console.log(
-              'Récupération des données utilisateur réussie:',
+              'RÃ©cupÃ©ration des donnÃ©es utilisateur rÃ©ussie:',
               response.data,
             );
           } catch (getUserError) {
             throw new Error(
-              "Impossible de récupérer les informations de l'utilisateur",
+              "Impossible de rÃ©cupÃ©rer les informations de l'utilisateur",
             );
           }
         } else {
@@ -138,24 +141,24 @@ const LoginScreen = ({navigation}) => {
         }
       }
 
-      // À ce stade, nous avons soit créé un nouvel utilisateur, soit récupéré un existant
+      // Ã€ ce stade, nous avons soit crÃ©Ã© un nouvel utilisateur, soit rÃ©cupÃ©rÃ© un existant
       if (!response || !response.data) {
-        throw new Error('Réponse du serveur invalide');
+        throw new Error('RÃ©ponse du serveur invalide');
       }
 
       // Sauvegarder le SteamID localement
       console.log('Enregistrement du SteamID dans AsyncStorage:', steamId);
       await AsyncStorage.setItem('steamId', steamId);
 
-      console.log("Navigation vers l'écran d'accueil...");
-      // Naviguer vers l'écran d'accueil
+      console.log("Navigation vers l'Ã©cran d'accueil...");
+      // Naviguer vers l'Ã©cran d'accueil
       navigation.replace('Home');
     } catch (error) {
       console.error('Erreur lors de la connexion:', error);
       Alert.alert(
         'Erreur',
         error.message ||
-          'Impossible de se connecter. Vérifiez que le serveur est accessible.',
+          'Impossible de se connecter. VÃ©rifiez que le serveur est accessible.',
       );
     } finally {
       setLoading(false);
@@ -171,7 +174,7 @@ const LoginScreen = ({navigation}) => {
       const steamAuthUrl = steamAuthService.getAuthUrl();
       console.log("URL d'authentification Steam:", steamAuthUrl);
 
-      // Ouvrir la page dans le navigateur intégré si disponible
+      // Ouvrir la page dans le navigateur intÃ©grÃ© si disponible
       if (await InAppBrowser.isAvailable()) {
         await InAppBrowser.open(steamAuthUrl, {
           // Options du navigateur
@@ -190,7 +193,7 @@ const LoginScreen = ({navigation}) => {
       console.error('Erreur lors de la connexion Steam:', error);
       Alert.alert(
         'Erreur',
-        'Impossible de lancer la connexion Steam. Veuillez réessayer.',
+        'Impossible de lancer la connexion Steam. Veuillez rÃ©essayer.',
       );
       setLoading(false);
     }
@@ -206,7 +209,7 @@ const LoginScreen = ({navigation}) => {
 
       <Text style={styles.title}>Steam Actu & Notif</Text>
       <Text style={styles.subtitle}>
-        Restez informé des dernières actualités de vos jeux Steam
+        Restez informÃ© des derniÃ¨res actualitÃ©s de vos jeux Steam
       </Text>
 
       <TouchableOpacity

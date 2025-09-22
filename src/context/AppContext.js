@@ -664,6 +664,13 @@ export const AppProvider = ({children, navigation = null}) => {
   // Vérifier si un jeu est suivi
   const isGameFollowed = appId => {
     if (!user || !user.followedGames) return false;
+
+    // Nouvelle structure : array simple d'IDs
+    if (typeof user.followedGames[0] === 'string') {
+      return user.followedGames.includes(appId);
+    }
+
+    // Ancienne structure : array d'objets (compatibilité)
     return user.followedGames.some(game => game.appId === appId);
   };
 
