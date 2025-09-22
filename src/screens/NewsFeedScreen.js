@@ -1,7 +1,9 @@
 ﻿import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
+  Linking,
   RefreshControl,
   StyleSheet,
   Text,
@@ -88,12 +90,6 @@ const NewsFeedScreen = () => {
     [followedOnly]
   );
 
-  const stripHtml = useCallback(text => {
-    if (!text) {
-      return '';
-    }
-    return text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  }, []);
 
   const formatDate = useCallback(timestamp => {
     if (!timestamp) {
@@ -130,8 +126,8 @@ const NewsFeedScreen = () => {
 
       try {
         await handleFollowGame(appId, isFollowed);
-        setFeedItems(previous =>
-          previous.map(item =>
+        setFeedItems((previous) =>
+          previous.map((item) =>
             item.appId === appId
               ? {...item, isFollowed: !isFollowed}
               : item
@@ -144,6 +140,32 @@ const NewsFeedScreen = () => {
     [handleFollowGame]
   );
 
+  const openNews = useCallback(
+    (item) => {
+      if (!item) {
+        return;
+      }
+
+      const appId = item.appId?.toString();
+      let targetUrl = item.news?.url;
+
+      if (!targetUrl && appId) {
+        targetUrl = `https://store.steampowered.com/news/app/${appId}`;
+      }
+
+      if (!targetUrl) {
+        Alert.alert('Information', "Aucun lien n'est disponible pour cette actualite.");
+        return;
+      }
+
+      Linking.openURL(targetUrl).catch((err) => {
+        console.error("Erreur lors de l'ouverture du lien:", err);
+        Alert.alert('Erreur', "Impossible d'ouvrir le lien sur Steam.");
+      });
+    },
+    []
+  );
+
   const renderItem = useCallback(
     ({item}) => {
       const appId = item.appId?.toString();
@@ -152,10 +174,13 @@ const NewsFeedScreen = () => {
           ? item.isFollowed
           : isGameFollowed(appId);
       const isFollowed = isFollowedFromData;
-      const summary = stripHtml(item.news?.contents).slice(0, 240);
 
       return (
-        <View style={styles.card}>
+        <TouchableOpacity
+          style={styles.card}
+          activeOpacity={0.9}
+          onPress={() => openNews(item)}
+        >
           <View style={styles.cardHeader}>
             <View>
               <Text style={styles.gameName}>{item.gameName}</Text>
@@ -173,21 +198,16 @@ const NewsFeedScreen = () => {
           </View>
 
           <Text style={styles.newsTitle}>{item.news?.title}</Text>
-          {summary ? (
-            <Text style={styles.newsExcerpt} numberOfLines={4}>
-              {summary}
-            </Text>
-          ) : null}
 
           <View style={styles.cardFooter}>
             <Text style={styles.footerText}>
               {item.subscribersCount || 0} abonnes suivent ce jeu
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
       );
     },
-    [formatDate, handleToggleFollow, isGameFollowed, stripHtml]
+    [formatDate, handleToggleFollow, isGameFollowed, openNews]
   );
 
   const keyExtractor = useCallback(
@@ -335,11 +355,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#212121',
     marginBottom: 8,
-  },
-  newsExcerpt: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#424242',
   },
   cardFooter: {
     marginTop: 12,
