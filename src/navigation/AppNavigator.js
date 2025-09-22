@@ -1,20 +1,21 @@
-import {NavigationContainer} from '@react-navigation/native';
+﻿import {NavigationContainer} from '@react-navigation/native';
 import {createStackNavigator} from '@react-navigation/stack';
 import React from 'react';
 
-// Importation des écrans (à créer)
+// Importation des Ã©crans (Ã  crÃ©er)
 import GameDetailsScreen from '../screens/GameDetailsScreen';
 import HomeScreen from '../screens/Home';
+import NewsFeedScreen from '../screens/NewsFeedScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
-// Création des navigateurs
+// CrÃ©ation des navigateurs
 const Stack = createStackNavigator();
 
-// Configuration du thème de navigation
+// Configuration du thÃ¨me de navigation
 const navigatorTheme = {
   colors: {
-    primary: '#1B2838', // Couleur Steam bleu foncé
+    primary: '#1B2838', // Couleur Steam bleu foncÃ©
     background: '#171A21', // Couleur de fond Steam
     card: '#1B2838',
     text: '#FFFFFF',
@@ -78,17 +79,24 @@ const AppNavigator = () => {
           }}
         />
         <Stack.Screen
+          name="NewsFeed"
+          component={NewsFeedScreen}
+          options={{
+            title: "Fil d'actu",
+          }}
+        />
+        <Stack.Screen
           name="GameDetails"
           component={GameDetailsScreen}
           options={({route}) => ({
-            title: route.params?.gameName || 'Détails du jeu',
+            title: route.params?.gameName || 'Details du jeu',
           })}
         />
         <Stack.Screen
           name="Settings"
           component={SettingsScreen}
           options={{
-            title: 'Paramètres',
+            title: 'Parametres',
           }}
         />
       </Stack.Navigator>

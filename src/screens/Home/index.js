@@ -1,4 +1,4 @@
-import {useNavigation} from '@react-navigation/native';
+﻿import {useNavigation} from '@react-navigation/native';
 import React, {useCallback, useEffect, useRef} from 'react';
 import {ActivityIndicator, Text, TouchableOpacity, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -15,25 +15,25 @@ const HomeScreen = () => {
   const navigation = useNavigation();
   const hasLeftScreen = useRef(false);
 
-  // Utiliser les événements de navigation pour détecter quand l'utilisateur revient à l'écran
+  // Utiliser les Ã©vÃ©nements de navigation pour dÃ©tecter quand l'utilisateur revient Ã  l'Ã©cran
   useEffect(() => {
-    // Quand l'écran reçoit le focus
+    // Quand l'Ã©cran reÃ§oit le focus
     const onFocus = () => {
-      // Toujours actualiser au focus pour gérer les reconnexions
+      // Toujours actualiser au focus pour gÃ©rer les reconnexions
       if (!refreshing) {
         handleRefresh();
       }
 
-      hasLeftScreen.current = false; // Réinitialiser l'état
+      hasLeftScreen.current = false; // RÃ©initialiser l'Ã©tat
     };
 
-    // Quand l'écran perd le focus (l'utilisateur navigue ailleurs)
+    // Quand l'Ã©cran perd le focus (l'utilisateur navigue ailleurs)
     const onBlur = () => {
-      console.log("Événement blur - l'utilisateur quitte l'écran Home");
+      console.log("Ã‰vÃ©nement blur - l'utilisateur quitte l'Ã©cran Home");
       hasLeftScreen.current = true;
     };
 
-    // S'abonner aux événements
+    // S'abonner aux Ã©vÃ©nements
     const focusUnsubscribe = navigation.addListener('focus', onFocus);
     const blurUnsubscribe = navigation.addListener('blur', onBlur);
 
@@ -44,15 +44,15 @@ const HomeScreen = () => {
     };
   }, [navigation, handleRefresh, refreshing]);
 
-  // Log du nombre de jeux filtrés (refresh automatique supprimé)
+  // Log du nombre de jeux filtrÃ©s (refresh automatique supprimÃ©)
   useEffect(() => {}, [filteredGames.length]);
 
-  // Fonction de déconnexion adaptée avec navigation locale
+  // Fonction de dÃ©connexion adaptÃ©e avec navigation locale
   const handleLocalLogout = useCallback(async () => {
     // Appeler la fonction handleLogout du contexte
     await handleLogout();
 
-    // Utiliser la navigation locale pour rediriger vers l'écran Login
+    // Utiliser la navigation locale pour rediriger vers l'Ã©cran Login
     navigation.reset({
       index: 0,
       routes: [{name: 'Login'}],
@@ -66,13 +66,19 @@ const HomeScreen = () => {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.headerButton}
+            onPress={() => navigation.navigate('NewsFeed')}
+          >
+            <Text style={styles.headerButtonText}>Fil d'actu</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerButton}
             onPress={() => navigation.navigate('Settings')}>
-            <Text style={styles.headerButtonText}>Paramètres</Text>
+            <Text style={styles.headerButtonText}>Parametres</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerButton}
             onPress={handleLocalLogout}>
-            <Text style={styles.headerButtonText}>Déconnexion</Text>
+            <Text style={styles.headerButtonText}>Deconnexion</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -92,7 +98,7 @@ const HomeScreen = () => {
         <View style={styles.loadingMoreContainer}>
           <ActivityIndicator size="small" color="#66C0F4" />
           <Text style={styles.loadingMoreText}>
-            Analyse des jeux en cours... Les résultats s'actualiseront
+            Analyse des jeux en cours... Les rÃ©sultats s'actualiseront
             automatiquement.
           </Text>
         </View>

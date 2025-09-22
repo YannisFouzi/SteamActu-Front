@@ -1,15 +1,15 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import URLParse from 'url-parse';
 
-// Définir l'URL de base de l'API
-// URL de production pour le backend déployé sur Render
+// DÃ©finir l'URL de base de l'API
+// URL de production pour le backend dÃ©ployÃ© sur Render
 const API_URL = 'http://10.0.2.2:5000/api';
 
-// Pour les tests en local, utiliser ces URLs à la place :
-// Émulateurs Android: 'http://10.0.2.2:5000/api'
+// Pour les tests en local, utiliser ces URLs Ã  la place :
+// Ã‰mulateurs Android: 'http://10.0.2.2:5000/api'
 // Appareils physiques: 'http://VOTRE_IP_LOCALE:5000/api'
 
-// Créer une instance axios avec la configuration de base
+// CrÃ©er une instance axios avec la configuration de base
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -24,7 +24,7 @@ const userService = {
     return api.post('/users/register', {steamId});
   },
 
-  // Récupérer les informations d'un utilisateur
+  // RÃ©cupÃ©rer les informations d'un utilisateur
   getUser: steamId => {
     return api.get(`/users/${steamId}`);
   },
@@ -39,15 +39,15 @@ const userService = {
     return api.delete(`/users/${steamId}/follow/${appId}`);
   },
 
-  // Mettre à jour les paramètres de notification
+  // Mettre Ã  jour les paramÃ¨tres de notification
   updateNotificationSettings: (steamId, settings) => {
     return api.put(`/users/${steamId}/notifications`, settings);
   },
 };
 
-// Service actualités
+// Service actualitÃ©s
 const newsService = {
-  // Récupérer les actualités d'un jeu spécifique
+  // RÃ©cupÃ©rer les actualitÃ©s d'un jeu spÃ©cifique
   getGameNews: (appId, count = 5, maxLength = 300) => {
     return api.get(`/news/game/${appId}`, {
       params: {
@@ -58,11 +58,26 @@ const newsService = {
       },
     });
   },
+  // Recuperer le fil d''actualites global
+  getNewsFeed: (steamId, {followedOnly = false, limit = 20, perGameLimit = 3, language = 'fr'} = {}) => {
+    const params = {
+      followedOnly: followedOnly ? 'true' : 'false',
+      limit,
+      perGameLimit,
+      language,
+    };
+
+    if (steamId) {
+      params.steamId = steamId;
+    }
+
+    return api.get('/news/feed', {params});
+  },
 };
 
 // Service Steam (communique directement avec l'API Steam via notre backend)
 const steamService = {
-  // Récupérer la liste des jeux possédés par un utilisateur
+  // RÃ©cupÃ©rer la liste des jeux possÃ©dÃ©s par un utilisateur
   getUserGames: (steamId, followedOnly = false) => {
     // Cette fonction utilisera notre backend comme proxy pour appeler l'API Steam
     const params = followedOnly ? {followedOnly: 'true'} : {};
@@ -84,17 +99,17 @@ const steamAuthService = {
   // URL du service d'authentification Steam OpenID
   STEAM_OPENID_URL: 'https://steamcommunity.com/openid',
 
-  // URL de retour après authentification - doit être une URL HTTP(S) valide
+  // URL de retour aprÃ¨s authentification - doit Ãªtre une URL HTTP(S) valide
   // En production, vous devriez avoir votre propre domaine avec une page de redirection
-  // URL utilisée pour le retour d'OpenID (sera remplacée par le backend)
+  // URL utilisÃ©e pour le retour d'OpenID (sera remplacÃ©e par le backend)
   RETURN_URL: `${API_URL.replace('/api', '')}/auth/steam/return`,
 
   // Notre URL scheme pour la redirection dans l'app
   APP_SCHEME_URL: 'steamnotif://auth',
 
-  // Générer l'URL d'authentification OpenID de Steam
+  // GÃ©nÃ©rer l'URL d'authentification OpenID de Steam
   getAuthUrl: () => {
-    // Construire l'URL de manière standard pour OpenID
+    // Construire l'URL de maniÃ¨re standard pour OpenID
     const params = new URLSearchParams({
       'openid.ns': 'http://specs.openid.net/auth/2.0',
       'openid.mode': 'checkid_setup',
@@ -107,9 +122,9 @@ const steamAuthService = {
     return `${steamAuthService.STEAM_OPENID_URL}/login?${params.toString()}`;
   },
 
-  // Extraire le SteamID de la réponse OpenID
+  // Extraire le SteamID de la rÃ©ponse OpenID
   extractSteamId: url => {
-    // La réponse OpenID de Steam inclut le SteamID dans l'identité
+    // La rÃ©ponse OpenID de Steam inclut le SteamID dans l'identitÃ©
     // Format typique: https://steamcommunity.com/openid/id/76561198xxxxxxxx
     try {
       const parsedUrl = new URLParse(url, true);
