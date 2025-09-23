@@ -17,6 +17,62 @@ export const useAppContext = () => useContext(AppContext);
 
 // Provider du contexte
 export const AppProvider = ({children, navigation = null}) => {
+  const RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+  const syncRecentActiveGames = async (gamesList, currentSteamId) => {
+    try {
+      if (!currentSteamId) {
+        return;
+      }
+
+      const now = Date.now();
+      const dedupeMap = new Map();
+
+      (gamesList || []).forEach((rawGame) => {
+        if (!rawGame) {
+          return;
+        }
+
+        const appId = rawGame.appid?.toString() || rawGame.appId?.toString();
+        if (!appId) {
+          return;
+        }
+
+        const rawTimestamp = Number(rawGame.lastUpdateTimestamp || 0);
+        if (!rawTimestamp) {
+          return;
+        }
+
+        const normalizedTimestamp = rawTimestamp > 1e12 ? rawTimestamp : rawTimestamp * 1000;
+        if (now - normalizedTimestamp > RECENT_WINDOW_MS) {
+          return;
+        }
+
+        const existing = dedupeMap.get(appId);
+        if (!existing || normalizedTimestamp > existing.timestamp) {
+          dedupeMap.set(appId, {
+            appId,
+            name: rawGame.name || `Jeu ${appId}`,
+            timestamp: normalizedTimestamp,
+          });
+        }
+      });
+
+      const payload = Array.from(dedupeMap.values())
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, 200)
+        .map((entry) => ({
+          appId: entry.appId,
+          name: entry.name,
+          lastNewsDate: new Date(entry.timestamp).toISOString(),
+        }));
+
+      await userService.updateRecentActiveGames(currentSteamId, payload);
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour des jeux actifs récents:", error);
+    }
+  };
+
   // États principaux
   const [games, setGames] = useState([]);
   const [filteredGames, setFilteredGames] = useState([]);
@@ -353,7 +409,9 @@ export const AppProvider = ({children, navigation = null}) => {
         }
 
         // Enfin, mettre à jour l'état des jeux et arrêter le chargement
-        setGames(Array.isArray(newGames) ? newGames : []);
+        const normalizedGames = Array.isArray(newGames) ? newGames : [];
+        setGames(normalizedGames);
+        syncRecentActiveGames(normalizedGames, savedSteamId);
         if (!isFullCheck) {
           setLoading(false);
         }
@@ -644,6 +702,7 @@ export const AppProvider = ({children, navigation = null}) => {
 
           // Mettre à jour les jeux
           setGames(newGames);
+          syncRecentActiveGames(newGames, steamId);
         }
       }
     } catch (error) {

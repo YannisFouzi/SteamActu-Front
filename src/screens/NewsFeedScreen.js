@@ -38,8 +38,7 @@ const NewsFeedScreen = () => {
 
         const response = await newsService.getNewsFeed(steamId, {
           followedOnly,
-          limit: 30,
-          perGameLimit: 3,
+          perGameLimit: 10,
         });
 
         const items = Array.isArray(response.data?.items)
@@ -199,11 +198,6 @@ const NewsFeedScreen = () => {
 
           <Text style={styles.newsTitle}>{item.news?.title}</Text>
 
-          <View style={styles.cardFooter}>
-            <Text style={styles.footerText}>
-              {item.subscribersCount || 0} abonnes suivent ce jeu
-            </Text>
-          </View>
         </TouchableOpacity>
       );
     },
@@ -355,16 +349,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#212121',
     marginBottom: 8,
-  },
-  cardFooter: {
-    marginTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    paddingTop: 8,
-  },
-  footerText: {
-    fontSize: 12,
-    color: '#757575',
   },
   emptyContainer: {
     padding: 24,

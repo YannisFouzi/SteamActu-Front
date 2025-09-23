@@ -20,18 +20,18 @@ const api = axios.create({
 // Service utilisateur
 const userService = {
   // Enregistrer un nouvel utilisateur
-  register: steamId => {
-    return api.post('/users/register', {steamId});
+  register: (steamId) => {
+    return api.post('/users/register', { steamId });
   },
 
-  // RÃ©cupÃ©rer les informations d'un utilisateur
-  getUser: steamId => {
+  // Récupérer les informations d'un utilisateur
+  getUser: (steamId) => {
     return api.get(`/users/${steamId}`);
   },
 
   // Suivre un jeu
   followGame: (steamId, appId, name, logoUrl) => {
-    return api.post(`/users/${steamId}/follow`, {appId, name, logoUrl});
+    return api.post(`/users/${steamId}/follow`, { appId, name, logoUrl });
   },
 
   // Ne plus suivre un jeu
@@ -39,9 +39,14 @@ const userService = {
     return api.delete(`/users/${steamId}/follow/${appId}`);
   },
 
-  // Mettre Ã  jour les paramÃ¨tres de notification
+  // Mettre à jour les paramètres de notification
   updateNotificationSettings: (steamId, settings) => {
     return api.put(`/users/${steamId}/notifications`, settings);
+  },
+
+  // Mettre à jour les jeux actifs récents
+  updateRecentActiveGames: (steamId, games) => {
+    return api.put(`/users/${steamId}/active-games`, { games });
   },
 };
 
@@ -59,10 +64,9 @@ const newsService = {
     });
   },
   // Recuperer le fil d''actualites global
-  getNewsFeed: (steamId, {followedOnly = false, limit = 20, perGameLimit = 3, language = 'fr'} = {}) => {
+  getNewsFeed: (steamId, {followedOnly = false, perGameLimit = 10, language = 'fr'} = {}) => {
     const params = {
       followedOnly: followedOnly ? 'true' : 'false',
-      limit,
       perGameLimit,
       language,
     };
