@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, {useEffect, useState} from 'react';
+import {useNavigation} from '@react-navigation/native';
+import React, {useCallback, useEffect, useState} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -7,58 +8,64 @@ import {
   StyleSheet,
   Switch,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
+import {useAppContext} from '../context/AppContext';
 import {userService} from '../services/api';
 
 const SettingsScreen = () => {
+  const navigation = useNavigation();
+  const {handleLogout} = useAppContext();
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [steamId, setSteamId] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoFollowEnabled, setAutoFollowEnabled] = useState(false);
 
-  // Chargement des données utilisateur au démarrage
+  // Chargement des donnees utilisateur au demarrage
   useEffect(() => {
     loadUserSettings();
   }, []);
 
-  // Fonction pour charger les paramètres de l'utilisateur
+  // Fonction pour charger les parametres de l'utilisateur
   const loadUserSettings = async () => {
     try {
       setLoading(true);
 
-      // Récupérer le SteamID stocké
+      // Recuperer le SteamID stocke
       const savedSteamId = await AsyncStorage.getItem('steamId');
 
       if (!savedSteamId) {
-        Alert.alert('Erreur', 'Utilisateur non connecté');
+        Alert.alert('Erreur', 'Utilisateur non connecte');
         return;
       }
 
       setSteamId(savedSteamId);
 
-      // Récupérer les informations utilisateur
+      // Recuperer les informations utilisateur
       const response = await userService.getUser(savedSteamId);
       const user = response.data;
 
-      // Définir l'état des notifications
+      // Definir l'etat des notifications
       setNotificationsEnabled(user.notificationSettings?.enabled ?? true);
       setAutoFollowEnabled(
         user.notificationSettings?.autoFollowNewGames ?? false,
       );
     } catch (error) {
-      console.error('Erreur lors du chargement des paramètres:', error);
+      console.error('Erreur lors du chargement des parametres:', error);
       Alert.alert(
         'Erreur',
-        'Impossible de charger vos paramètres. Veuillez réessayer.',
+        'Impossible de charger vos parametres. Veuillez reessayer.',
       );
     } finally {
       setLoading(false);
     }
   };
 
-  // Fonction pour sauvegarder les paramètres
+  // Fonction pour sauvegarder les parametres
   const saveSettings = async (
     newNotificationsEnabled,
     newAutoFollowEnabled,
@@ -71,35 +78,54 @@ const SettingsScreen = () => {
         autoFollowNewGames: newAutoFollowEnabled,
       });
 
-      console.log('Paramètres sauvegardés automatiquement');
+      console.log('Parametres sauvegardes automatiquement');
     } catch (error) {
       console.error('Erreur lors de la sauvegarde automatique:', error);
       Alert.alert(
         'Erreur',
-        'Impossible de sauvegarder vos paramètres. Veuillez réessayer.',
+        'Impossible de sauvegarder vos parametres. Veuillez reessayer.',
       );
     } finally {
       setSaving(false);
     }
   };
 
-  // Gestionnaire de changement d'état des notifications
+  // Gestionnaire de changement d'etat des notifications
   const handleToggleNotifications = async value => {
     setNotificationsEnabled(value);
     await saveSettings(value, autoFollowEnabled);
   };
 
-  // Gestionnaire de changement d'état du suivi automatique
+  // Gestionnaire de changement d'etat du suivi automatique
   const handleToggleAutoFollow = async value => {
     setAutoFollowEnabled(value);
     await saveSettings(notificationsEnabled, value);
   };
 
+  const handlePressLogout = useCallback(async () => {
+    if (loggingOut) {
+      return;
+    }
+
+    try {
+      setLoggingOut(true);
+      await handleLogout();
+      navigation.reset({
+        index: 0,
+        routes: [{name: 'Login'}],
+      });
+    } catch (error) {
+      console.error('Erreur lors de la deconnexion:', error);
+    } finally {
+      setLoggingOut(false);
+    }
+  }, [handleLogout, loggingOut, navigation]);
+
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <ActivityIndicator size="large" color="#66C0F4" />
-        <Text style={styles.loadingText}>Chargement des paramètres...</Text>
+        <Text style={styles.loadingText}>Chargement des parametres...</Text>
       </View>
     );
   }
@@ -116,13 +142,13 @@ const SettingsScreen = () => {
             onValueChange={handleToggleNotifications}
             trackColor={{false: '#767577', true: '#2A3F5A'}}
             thumbColor={notificationsEnabled ? '#66C0F4' : '#f4f3f4'}
-            disabled={saving}
+            disabled={saving || loggingOut}
           />
         </View>
 
         <Text style={styles.settingDescription}>
-          Recevez des notifications lorsque de nouvelles actualités sont
-          publiées pour les jeux que vous suivez.
+          Recevez des notifications lorsque de nouvelles actualites sont publiees
+          pour les jeux que vous suivez.
         </Text>
       </View>
 
@@ -138,13 +164,13 @@ const SettingsScreen = () => {
             onValueChange={handleToggleAutoFollow}
             trackColor={{false: '#767577', true: '#2A3F5A'}}
             thumbColor={autoFollowEnabled ? '#66C0F4' : '#f4f3f4'}
-            disabled={saving}
+            disabled={saving || loggingOut}
           />
         </View>
 
         <Text style={styles.settingDescription}>
-          Si activé, les nouveaux jeux que vous achetez seront automatiquement
-          ajoutés à votre liste de jeux suivis pour les notifications.
+          Si active, les nouveaux jeux que vous achetez seront automatiquement
+          ajoutes a votre liste de jeux suivis pour les notifications.
         </Text>
       </View>
 
@@ -156,11 +182,27 @@ const SettingsScreen = () => {
       )}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>À propos</Text>
+        <Text style={styles.sectionTitle}>Compte</Text>
+        <TouchableOpacity
+          style={[
+            styles.logoutButton,
+            loggingOut && styles.logoutButtonDisabled,
+          ]}
+          onPress={handlePressLogout}
+          disabled={loggingOut}>
+          {loggingOut ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <Text style={styles.logoutButtonText}>Se deconnecter</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>A propos</Text>
+        <Text style={styles.aboutText}>Steam Notifications v1.0.0</Text>
         <Text style={styles.aboutText}>
-          Steam Notifications v1.0.0{'\n'}
-          Cette application vous permet de recevoir des notifications pour les
-          actualités des jeux Steam que vous suivez.
+          Cette application vous permet de recevoir des notifications pour les actualites des jeux Steam que vous suivez.
         </Text>
       </View>
     </ScrollView>
@@ -222,6 +264,21 @@ const styles = StyleSheet.create({
     color: '#66C0F4',
     fontSize: 14,
     marginLeft: 8,
+  },
+  logoutButton: {
+    marginTop: 8,
+    backgroundColor: '#C0392B',
+    paddingVertical: 12,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  logoutButtonDisabled: {
+    opacity: 0.7,
+  },
+  logoutButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   aboutText: {
     fontSize: 14,

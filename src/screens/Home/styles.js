@@ -25,12 +25,7 @@ export default StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   headerButton: {
-    marginLeft: 12,
     paddingVertical: 6,
     paddingHorizontal: 8,
   },
@@ -38,6 +33,33 @@ export default StyleSheet.create({
     color: '#66C0F4',
     fontSize: 14,
     fontWeight: '500',
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#171A21',
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A475E',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  tabButton: {
+    flex: 1,
+    marginHorizontal: 6,
+    borderRadius: 4,
+    backgroundColor: '#2A3F5A',
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  tabButtonActive: {
+    backgroundColor: '#66C0F4',
+  },
+  tabButtonText: {
+    color: '#8F98A0',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  tabButtonTextActive: {
+    color: '#0B1A2B',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -79,25 +101,101 @@ export default StyleSheet.create({
   gamesList: {
     paddingTop: 8,
   },
-  followButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#67C1F5',
-    paddingHorizontal: 12,
-    minWidth: 70,
-    height: 32,
-    alignSelf: 'center',
-    borderRadius: 3,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 16,
   },
   loadingText: {
     color: '#8F98A0',
-    marginTop: 10,
+    marginTop: 12,
     fontSize: 16,
+  },
+  emptyContainer: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#8F98A0',
+    textAlign: 'center',
+  },
+  newsContainer: {
+    flex: 1,
+    backgroundColor: '#1B2838',
+  },
+  newsFilterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#171A21',
+    borderBottomWidth: 1,
+    borderBottomColor: '#2A475E',
+  },
+  newsFilterLabel: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  newsListContent: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    paddingBottom: 32,
+  },
+  newsCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+  },
+  newsCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  newsGameName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#1B2838',
+  },
+  newsMetaText: {
+    fontSize: 12,
+    color: '#4B5C6B',
+  },
+  newsFollowButton: {
+    padding: 6,
+  },
+  newsTitle: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#212121',
+  },
+  newsErrorContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#8B0000',
+  },
+  newsErrorText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  loadingMoreContainer: {
+    backgroundColor: 'rgba(35, 60, 95, 0.8)',
+    padding: 10,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+  },
+  loadingMoreText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontSize: 12,
   },
   modalOverlay: {
     flex: 1,
@@ -131,48 +229,5 @@ export default StyleSheet.create({
   },
   selectedSortOption: {
     backgroundColor: '#316282',
-  },
-  emptyContainer: {
-    padding: 24,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#8F98A0',
-    textAlign: 'center',
-  },
-  recentlyUpdatedGameItem: {
-    borderLeftWidth: 4,
-    borderLeftColor: '#66C0F4',
-  },
-  updateBadge: {
-    backgroundColor: '#66C0F4',
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginLeft: 8,
-    alignSelf: 'center',
-    height: 20,
-    justifyContent: 'center',
-  },
-  updateBadgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  loadingMoreContainer: {
-    backgroundColor: 'rgba(35, 60, 95, 0.8)',
-    padding: 10,
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
-  },
-  loadingMoreText: {
-    color: '#FFFFFF',
-    textAlign: 'center',
-    fontSize: 12,
   },
 });
