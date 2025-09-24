@@ -20,18 +20,18 @@ const api = axios.create({
 // Service utilisateur
 const userService = {
   // Enregistrer un nouvel utilisateur
-  register: (steamId) => {
-    return api.post('/users/register', { steamId });
+  register: steamId => {
+    return api.post('/users/register', {steamId});
   },
 
   // Récupérer les informations d'un utilisateur
-  getUser: (steamId) => {
+  getUser: steamId => {
     return api.get(`/users/${steamId}`);
   },
 
   // Suivre un jeu
   followGame: (steamId, appId, name, logoUrl) => {
-    return api.post(`/users/${steamId}/follow`, { appId, name, logoUrl });
+    return api.post(`/users/${steamId}/follow`, {appId, name, logoUrl});
   },
 
   // Ne plus suivre un jeu
@@ -46,7 +46,7 @@ const userService = {
 
   // Mettre à jour les jeux actifs récents
   updateRecentActiveGames: (steamId, games) => {
-    return api.put(`/users/${steamId}/active-games`, { games });
+    return api.put(`/users/${steamId}/active-games`, {games});
   },
 };
 
@@ -64,7 +64,10 @@ const newsService = {
     });
   },
   // Recuperer le fil d''actualites global
-  getNewsFeed: (steamId, {followedOnly = false, perGameLimit = 10, language = 'fr'} = {}) => {
+  getNewsFeed: (
+    steamId,
+    {followedOnly = false, perGameLimit = 10, language = 'fr'} = {},
+  ) => {
     const params = {
       followedOnly: followedOnly ? 'true' : 'false',
       perGameLimit,
