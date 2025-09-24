@@ -285,13 +285,6 @@ export const AppProvider = ({children, navigation = null}) => {
         break;
       case 'recent':
         filtered.sort((a, b) => {
-          const recentDiff =
-            getPlaytimeRecentValue(b) - getPlaytimeRecentValue(a);
-
-          if (recentDiff !== 0) {
-            return recentDiff;
-          }
-
           return getLastPlayedValue(b) - getLastPlayedValue(a);
         });
         break;
