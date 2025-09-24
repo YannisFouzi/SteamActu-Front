@@ -28,7 +28,7 @@ export const AppProvider = ({children, navigation = null}) => {
       const now = Date.now();
       const dedupeMap = new Map();
 
-      (gamesList || []).forEach((rawGame) => {
+      (gamesList || []).forEach(rawGame => {
         if (!rawGame) {
           return;
         }
@@ -43,7 +43,8 @@ export const AppProvider = ({children, navigation = null}) => {
           return;
         }
 
-        const normalizedTimestamp = rawTimestamp > 1e12 ? rawTimestamp : rawTimestamp * 1000;
+        const normalizedTimestamp =
+          rawTimestamp > 1e12 ? rawTimestamp : rawTimestamp * 1000;
         if (now - normalizedTimestamp > RECENT_WINDOW_MS) {
           return;
         }
@@ -61,7 +62,7 @@ export const AppProvider = ({children, navigation = null}) => {
       const payload = Array.from(dedupeMap.values())
         .sort((a, b) => b.timestamp - a.timestamp)
         .slice(0, 200)
-        .map((entry) => ({
+        .map(entry => ({
           appId: entry.appId,
           name: entry.name,
           lastNewsDate: new Date(entry.timestamp).toISOString(),
@@ -69,7 +70,10 @@ export const AppProvider = ({children, navigation = null}) => {
 
       await userService.updateRecentActiveGames(currentSteamId, payload);
     } catch (error) {
-      console.error("Erreur lors de la mise à jour des jeux actifs récents:", error);
+      console.error(
+        'Erreur lors de la mise à jour des jeux actifs récents:',
+        error,
+      );
     }
   };
 
@@ -93,6 +97,49 @@ export const AppProvider = ({children, navigation = null}) => {
   // Filtre pour les jeux suivis
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [followFilter, setFollowFilter] = useState('all'); // 'all', 'followed', 'unfollowed'
+
+  const toNumber = value => {
+    if (value === undefined || value === null) {
+      return 0;
+    }
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+
+  const getPlaytimeForeverValue = game => {
+    const nested = game?.playtime?.forever ?? game?.playtime?.total;
+    if (nested !== undefined && nested !== null) {
+      return toNumber(nested);
+    }
+    return toNumber(game?.playtime_forever);
+  };
+
+  const getPlaytimeRecentValue = game => {
+    const nested = game?.playtime?.recent ?? game?.playtime?.lastTwoWeeks;
+    if (nested !== undefined && nested !== null) {
+      return toNumber(nested);
+    }
+    return toNumber(game?.playtime_2weeks);
+  };
+
+  const getLastPlayedValue = game => {
+    const raw =
+      game?.rtime_last_played ??
+      game?.lastPlayTime ??
+      game?.playtime?.lastPlayed ??
+      game?.lastUpdateTimestamp ??
+      0;
+    return toNumber(raw);
+  };
+
+  const getLastUpdateValue = game => {
+    const raw =
+      game?.lastUpdateTimestamp ??
+      game?.rtime_last_played ??
+      game?.playtime?.lastPlayed ??
+      0;
+    return toNumber(raw);
+  };
 
   // Chargement initial des données
   useEffect(() => {
@@ -225,45 +272,30 @@ export const AppProvider = ({children, navigation = null}) => {
     // Appliquer le tri
     switch (sortOption) {
       case 'alphabetical':
+      case 'default':
         filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case 'recentlyUpdated':
-        filtered.sort((a, b) => {
-          const timestampA = a.lastUpdateTimestamp || 0;
-          const timestampB = b.lastUpdateTimestamp || 0;
-          return timestampB - timestampA; // Du plus récent au plus ancien
-        });
+        filtered.sort((a, b) => getLastUpdateValue(b) - getLastUpdateValue(a));
         break;
       case 'mostPlayed':
-        filtered.sort((a, b) => {
-          const playtimeA = a.playtime_forever || 0;
-          const playtimeB = b.playtime_forever || 0;
-          return playtimeB - playtimeA;
-        });
+        filtered.sort(
+          (a, b) => getPlaytimeForeverValue(b) - getPlaytimeForeverValue(a),
+        );
         break;
       case 'recent':
-        // Essayer d'abord de trier par playtime_2weeks (jeux joués dans les 2 dernières semaines)
-        // Sinon, trier par rtime_last_played (horodatage de la dernière session de jeu)
         filtered.sort((a, b) => {
-          // Priorité aux jeux joués récemment (2 dernières semaines)
-          const recentA = a.playtime_2weeks || 0;
-          const recentB = b.playtime_2weeks || 0;
+          const recentDiff =
+            getPlaytimeRecentValue(b) - getPlaytimeRecentValue(a);
 
-          if (recentA > 0 || recentB > 0) {
-            return recentB - recentA;
+          if (recentDiff !== 0) {
+            return recentDiff;
           }
 
-          // Si pas de données récentes, utiliser rtime_last_played
-          const lastPlayedA = a.rtime_last_played || 0;
-          const lastPlayedB = b.rtime_last_played || 0;
-          return lastPlayedB - lastPlayedA;
+          return getLastPlayedValue(b) - getLastPlayedValue(a);
         });
         break;
-      case 'default':
       default:
-        // Par défaut, ne change pas l'ordre ou utilise l'ordre dans lequel Steam renvoie les jeux
-        // On peut aussi utiliser un tri par nom si on préfère
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
     }
 
@@ -373,22 +405,25 @@ export const AppProvider = ({children, navigation = null}) => {
         // Vérifier les données de tri disponibles
         if (newGames.length > 0) {
           const jeuAvecLastPlayed = newGames.filter(
-            g => g.rtime_last_played > 0,
+            g => getLastPlayedValue(g) > 0,
           ).length;
           const jeuAvecPlaytime2Weeks = newGames.filter(
-            g => g.playtime_2weeks > 0,
+            g => getPlaytimeRecentValue(g) > 0,
           ).length;
           const jeuAvecPlaytime = newGames.filter(
-            g => g.playtime_forever > 0,
+            g => getPlaytimeForeverValue(g) > 0,
           ).length;
           const jeuAvecTimestamp = newGames.filter(
             g => g.lastUpdateTimestamp > 0,
           ).length;
 
-          // Ajout de lastUpdateTimestamp pour tous les jeux qui n'en ont pas
+          // Ajout d'un timestamp pour les jeux qui n'en ont pas
           newGames.forEach(game => {
             if (!game.lastUpdateTimestamp) {
-              game.lastUpdateTimestamp = game.rtime_last_played || 0;
+              const fallbackTimestamp = getLastPlayedValue(game);
+              if (fallbackTimestamp > 0) {
+                game.lastUpdateTimestamp = fallbackTimestamp;
+              }
             }
           });
         }
