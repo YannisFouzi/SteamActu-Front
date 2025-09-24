@@ -1,97 +1,284 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Steam Actu - Application Mobile
 
-# Getting Started
+Une application React Native moderne pour suivre les actualités de vos jeux Steam favoris avec notifications et gestion avancée de votre bibliothèque.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 📱 Aperçu de l'Application
 
-## Step 1: Start Metro
+**Steam Actu** est une application mobile qui vous permet de :
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+- 🎮 Visualiser votre bibliothèque Steam complète
+- 📰 Suivre les actualités de vos jeux préférés
+- 🔔 Recevoir des notifications pour les nouveaux contenus
+- 🔍 Rechercher et filtrer vos jeux
+- ⚙️ Personnaliser vos préférences de notification
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## 🏗️ Architecture Technique
 
-```sh
-# Using npm
-npm start
+### Stack Technologique
 
-# OR using Yarn
-yarn start
+- **Framework** : React Native 0.78.0
+- **Navigation** : React Navigation v7 (Stack Navigator)
+- **État Global** : Context API avec hooks personnalisés
+- **Stockage Local** : AsyncStorage
+- **Requêtes HTTP** : Axios
+- **Authentification** : Steam OpenID via navigateur intégré
+- **Icônes** : React Native Vector Icons (Ionicons)
+
+### Structure du Projet
+
+```
+frontend/
+├── src/
+│   ├── assets/           # Images et ressources statiques
+│   ├── context/          # Gestion d'état global (AppContext)
+│   ├── navigation/       # Configuration de navigation
+│   ├── screens/          # Écrans de l'application
+│   │   ├── Home/         # Écran principal avec onglets
+│   │   │   └── components/  # Composants de l'écran d'accueil
+│   │   ├── LoginScreen.js   # Authentification Steam
+│   │   ├── NewsFeedScreen.js # Fil d'actualités
+│   │   ├── SettingsScreen.js # Paramètres utilisateur
+│   │   └── GameDetailsScreen.js # Détails d'un jeu
+│   └── services/         # Services API et utilitaires
+├── android/              # Configuration Android
+├── ios/                  # Configuration iOS
+└── package.json          # Dépendances et scripts
 ```
 
-## Step 2: Build and run your app
+## 🔧 Fonctionnalités Principales
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+### 1. Authentification Steam OpenID
 
-### Android
+- Connexion sécurisée via Steam OpenID
+- Gestion automatique des tokens de session
+- Redirection native vers l'application
 
-```sh
-# Using npm
-npm run android
+### 2. Gestion de Bibliothèque
 
-# OR using Yarn
-yarn android
+- **Synchronisation automatique** avec votre bibliothèque Steam
+- **Tri avancé** : alphabétique, temps de jeu, dernière activité
+- **Filtres** : jeux suivis/non suivis, recherche textuelle
+- **Détection de nouveaux jeux** automatique
+
+### 3. Système de Suivi
+
+- Suivi/désabonnement de jeux en temps réel
+- Synchronisation bidirectionnelle avec le backend
+- Interface utilisateur réactive avec feedback immédiat
+
+### 4. Fil d'Actualités
+
+- **Actualités multi-jeux** agrégées intelligemment
+- **Filtre par jeux suivis** ou bibliothèque complète
+- **Mise à jour en temps réel** avec pull-to-refresh
+- **Navigation directe** vers Steam Store
+
+### 5. Gestion d'État Avancée
+
+- **Context API** centralisé pour l'état global
+- **Persistance automatique** des préférences utilisateur
+- **Gestion des erreurs** robuste avec retry automatique
+- **Optimisations performance** avec mémorisation
+
+## 🚀 Installation et Configuration
+
+### Prérequis
+
+- Node.js ≥ 18.0.0
+- React Native CLI
+- Android Studio (pour Android)
+- Xcode (pour iOS)
+- Un appareil/émulateur configuré
+
+### Installation
+
+1. **Cloner le projet**
+
+   ```bash
+   git clone [URL_DU_REPO]
+   cd steam-actu/frontend
+   ```
+
+2. **Installer les dépendances**
+
+   ```bash
+   npm install
+   ```
+
+3. **Configuration iOS (si applicable)**
+
+   ```bash
+   bundle install
+   bundle exec pod install
+   ```
+
+4. **Configuration Android**
+   - Ouvrir Android Studio
+   - Importer le projet `android/`
+   - Synchroniser les dépendances Gradle
+
+### Variables de Configuration
+
+Modifier `src/services/api.js` pour configurer l'URL du backend :
+
+```javascript
+// Pour développement local
+const API_URL = 'http://10.0.2.2:5000/api'; // Émulateur Android
+const API_URL = 'http://localhost:5000/api'; // Simulateur iOS
+
+// Pour production
+const API_URL = 'https://votre-backend.com/api';
 ```
 
-### iOS
+## 🏃‍♂️ Lancement de l'Application
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+### Développement
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+1. **Démarrer Metro**
 
-```sh
-bundle install
+   ```bash
+   npm start
+   ```
+
+2. **Lancer sur Android**
+
+   ```bash
+   npm run android
+   ```
+
+3. **Lancer sur iOS**
+   ```bash
+   npm run ios
+   ```
+
+### Production
+
+1. **Build Android (APK)**
+
+   ```bash
+   cd android
+   ./gradlew assembleRelease
+   ```
+
+2. **Build iOS**
+   - Ouvrir `ios/SteamNews.xcworkspace` dans Xcode
+   - Sélectionner le scheme de release
+   - Archiver et exporter
+
+## 🔌 Intégration Backend
+
+L'application communique avec un backend Node.js/Express via une API REST :
+
+### Endpoints Utilisés
+
+- `POST /api/users/register` - Enregistrement utilisateur
+- `GET /api/users/:steamId` - Informations utilisateur
+- `GET /api/steam/games/:steamId` - Bibliothèque de jeux
+- `POST /api/users/:steamId/follow` - Suivre un jeu
+- `DELETE /api/users/:steamId/follow/:appId` - Ne plus suivre
+- `GET /api/news/feed` - Fil d'actualités
+- `PUT /api/users/:steamId/notifications` - Paramètres de notification
+
+### Format des Données
+
+Les jeux sont formatés avec les propriétés suivantes :
+
+```javascript
+{
+  appid: "string",
+  name: "string",
+  playtime_forever: number,
+  playtime_2weeks: number,
+  img_icon_url: "string",
+  lastUpdateTimestamp: number,
+  isFollowed: boolean
+}
 ```
 
-Then, and every time you update your native dependencies, run:
+## 🎨 Thème et Design
 
-```sh
-bundle exec pod install
-```
+L'application utilise un thème inspiré de Steam :
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+- **Couleurs principales** :
 
-```sh
-# Using npm
-npm run ios
+  - Fond : `#171A21` (Steam Dark)
+  - Cartes : `#1B2838` (Steam Blue Dark)
+  - Accent : `#66C0F4` (Steam Blue)
+  - Texte : `#FFFFFF` / `#8F98A0`
 
-# OR using Yarn
-yarn ios
-```
+- **Typographie** : Police système avec variants (regular, medium, bold)
+- **Icônes** : Ionicons pour la cohérence cross-platform
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## 📱 Fonctionnalités Spécifiques
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+### Gestion des États d'Application
 
-## Step 3: Modify your app
+- **Foreground/Background** : Synchronisation automatique au retour
+- **Connectivité** : Gestion des erreurs réseau avec retry
+- **Performance** : Lazy loading et mémorisation des composants
 
-Now that you have successfully run the app, let's make changes!
+### Optimisations
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+- **FlatList optimisée** avec `keyExtractor` et `getItemLayout`
+- **Images mises en cache** automatiquement
+- **Debounce sur la recherche** pour éviter les appels excessifs
+- **Pagination intelligente** des actualités
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+### Accessibilité
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+- Support des lecteurs d'écran
+- Contraste élevé respecté
+- Tailles de police adaptatives
+- Navigation au clavier (focus management)
 
-## Congratulations! :tada:
+## 🐛 Débogage
 
-You've successfully run and modified your React Native App. :partying_face:
+### Outils de Développement
 
-### Now what?
+- **Flipper** : Débogage réseau et état
+- **React Native Debugger** : Inspection des composants
+- **Console logs** : Journalisation détaillée des actions
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+### Problèmes Courants
 
-# Troubleshooting
+1. **Erreur de connexion backend**
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+   - Vérifier l'URL dans `api.js`
+   - S'assurer que le backend est démarré
+   - Vérifier les paramètres réseau
 
-# Learn More
+2. **Authentification Steam échoue**
 
-To learn more about React Native, take a look at the following resources:
+   - Vérifier la configuration OpenID
+   - S'assurer que les redirections sont correctes
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+3. **Performances lentes**
+   - Activer Hermes (Android)
+   - Optimiser les re-renders avec `useMemo`/`useCallback`
+
+## 📚 Scripts Disponibles
+
+- `npm start` - Démarre Metro bundler
+- `npm run android` - Lance sur Android
+- `npm run ios` - Lance sur iOS
+- `npm run lint` - Analyse du code avec ESLint
+- `npm test` - Lance les tests Jest
+
+## 🔄 Mise à Jour
+
+Pour mettre à jour l'application :
+
+1. Sauvegarder les modifications locales
+2. Mettre à jour les dépendances : `npm update`
+3. Nettoyer les caches : `npm start --reset-cache`
+4. Rebuilder les projets natifs si nécessaire
+
+## 🤝 Contribution
+
+L'application suit les bonnes pratiques React Native :
+
+- Code TypeScript/JavaScript moderne (ES6+)
+- Hooks fonctionnels privilégiés
+- Architecture modulaire et réutilisable
+- Tests unitaires avec Jest
+- Linting avec ESLint + Prettier
