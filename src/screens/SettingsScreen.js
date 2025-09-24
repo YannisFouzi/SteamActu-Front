@@ -133,8 +133,6 @@ const SettingsScreen = () => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Notifications</Text>
-
         <View style={styles.settingRow}>
           <Text style={styles.settingLabel}>Activer les notifications</Text>
           <Switch
@@ -147,14 +145,12 @@ const SettingsScreen = () => {
         </View>
 
         <Text style={styles.settingDescription}>
-          Recevez des notifications lorsque de nouvelles actualites sont publiees
-          pour les jeux que vous suivez.
+          Recevez des notifications lorsque de nouvelles actualites sont
+          publiees pour les jeux que vous suivez.
         </Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Suivi automatique</Text>
-
         <View style={styles.settingRow}>
           <Text style={styles.settingLabel}>
             Suivre automatiquement les nouveaux jeux
@@ -169,8 +165,8 @@ const SettingsScreen = () => {
         </View>
 
         <Text style={styles.settingDescription}>
-          Si active, les nouveaux jeux que vous achetez seront automatiquement
-          ajoutes a votre liste de jeux suivis pour les notifications.
+          Les nouveaux jeux que vous achetez seront automatiquement ajoutes a
+          votre liste de jeux suivis pour les notifications.
         </Text>
       </View>
 
@@ -182,7 +178,6 @@ const SettingsScreen = () => {
       )}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Compte</Text>
         <TouchableOpacity
           style={[
             styles.logoutButton,
@@ -202,7 +197,8 @@ const SettingsScreen = () => {
         <Text style={styles.sectionTitle}>A propos</Text>
         <Text style={styles.aboutText}>Steam Notifications v1.0.0</Text>
         <Text style={styles.aboutText}>
-          Cette application vous permet de recevoir des notifications pour les actualites des jeux Steam que vous suivez.
+          Cette application vous permet de recevoir des notifications pour les
+          actualites des jeux Steam que vous suivez.
         </Text>
       </View>
     </ScrollView>

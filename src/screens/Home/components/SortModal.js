@@ -45,7 +45,7 @@ const SortModal = () => {
               sortOption === 'default' && styles.selectedSortOption,
             ]}
             onPress={() => handleSortOptionChange('default')}>
-            <Text style={styles.sortOptionText}>Par défaut</Text>
+            <Text style={styles.sortOptionText}>Ordre alphabétique</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
