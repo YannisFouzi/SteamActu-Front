@@ -1,13 +1,27 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useRef,
   useState,
 } from 'react';
 import {Alert, AppState} from 'react-native';
+import {
+  useAsyncStorage,
+  useLastVerificationDate,
+} from '../hooks/useAsyncStorage';
+import {useGameSync} from '../hooks/useGameSync';
 import {steamService, userService} from '../services/api';
+import {
+  getGameAppId,
+  getGameIconUrl,
+  getLastPlayedValue,
+  getLastUpdateValue,
+  getPlaytimeForeverValue,
+  isRecentlyUpdated,
+} from '../utils/gameHelpers';
 
 // Création du contexte
 const AppContext = createContext();
@@ -17,65 +31,9 @@ export const useAppContext = () => useContext(AppContext);
 
 // Provider du contexte
 export const AppProvider = ({children, navigation = null}) => {
-  const RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
-
-  const syncRecentActiveGames = async (gamesList, currentSteamId) => {
-    try {
-      if (!currentSteamId) {
-        return;
-      }
-
-      const now = Date.now();
-      const dedupeMap = new Map();
-
-      (gamesList || []).forEach(rawGame => {
-        if (!rawGame) {
-          return;
-        }
-
-        const appId = rawGame.appid?.toString() || rawGame.appId?.toString();
-        if (!appId) {
-          return;
-        }
-
-        const rawTimestamp = Number(rawGame.lastUpdateTimestamp || 0);
-        if (!rawTimestamp) {
-          return;
-        }
-
-        const normalizedTimestamp =
-          rawTimestamp > 1e12 ? rawTimestamp : rawTimestamp * 1000;
-        if (now - normalizedTimestamp > RECENT_WINDOW_MS) {
-          return;
-        }
-
-        const existing = dedupeMap.get(appId);
-        if (!existing || normalizedTimestamp > existing.timestamp) {
-          dedupeMap.set(appId, {
-            appId,
-            name: rawGame.name || `Jeu ${appId}`,
-            timestamp: normalizedTimestamp,
-          });
-        }
-      });
-
-      const payload = Array.from(dedupeMap.values())
-        .sort((a, b) => b.timestamp - a.timestamp)
-        .slice(0, 200)
-        .map(entry => ({
-          appId: entry.appId,
-          name: entry.name,
-          lastNewsDate: new Date(entry.timestamp).toISOString(),
-        }));
-
-      await userService.updateRecentActiveGames(currentSteamId, payload);
-    } catch (error) {
-      console.error(
-        'Erreur lors de la mise à jour des jeux actifs récents:',
-        error,
-      );
-    }
-  };
+  // Hooks personnalisés
+  const {syncRecentActiveGames} = useGameSync();
+  const {updateVerificationDate, isOlderThanOneDay} = useLastVerificationDate();
 
   // États principaux
   const [games, setGames] = useState([]);
@@ -92,54 +50,14 @@ export const AppProvider = ({children, navigation = null}) => {
   // Recherche et tri
   const [searchQuery, setSearchQuery] = useState('');
   const [sortModalVisible, setSortModalVisible] = useState(false);
-  const [sortOption, setSortOption] = useState('default');
+  const [sortOption, setSortOption] = useAsyncStorage('sortOption', 'default');
 
   // Filtre pour les jeux suivis
   const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [followFilter, setFollowFilter] = useState('all'); // 'all', 'followed', 'unfollowed'
-
-  const toNumber = value => {
-    if (value === undefined || value === null) {
-      return 0;
-    }
-    const parsed = Number(value);
-    return Number.isNaN(parsed) ? 0 : parsed;
-  };
-
-  const getPlaytimeForeverValue = game => {
-    const nested = game?.playtime?.forever ?? game?.playtime?.total;
-    if (nested !== undefined && nested !== null) {
-      return toNumber(nested);
-    }
-    return toNumber(game?.playtime_forever);
-  };
-
-  const getPlaytimeRecentValue = game => {
-    const nested = game?.playtime?.recent ?? game?.playtime?.lastTwoWeeks;
-    if (nested !== undefined && nested !== null) {
-      return toNumber(nested);
-    }
-    return toNumber(game?.playtime_2weeks);
-  };
-
-  const getLastPlayedValue = game => {
-    const raw =
-      game?.rtime_last_played ??
-      game?.lastPlayTime ??
-      game?.playtime?.lastPlayed ??
-      game?.lastUpdateTimestamp ??
-      0;
-    return toNumber(raw);
-  };
-
-  const getLastUpdateValue = game => {
-    const raw =
-      game?.lastUpdateTimestamp ??
-      game?.rtime_last_played ??
-      game?.playtime?.lastPlayed ??
-      0;
-    return toNumber(raw);
-  };
+  const [followFilter, setFollowFilter] = useAsyncStorage(
+    'followFilter',
+    'all',
+  );
 
   // Chargement initial des données
   useEffect(() => {
@@ -158,27 +76,7 @@ export const AppProvider = ({children, navigation = null}) => {
       appState.current = nextAppState;
     });
 
-    // Charger l'option de tri sauvegardée
-    const getSavedSortOption = async () => {
-      try {
-        const savedOption = await AsyncStorage.getItem('sortOption');
-        if (savedOption) {
-          setSortOption(savedOption);
-        }
-      } catch (error) {}
-    };
-    getSavedSortOption();
-
-    // Charger l'option de filtre sauvegardée
-    const getSavedFilterOption = async () => {
-      try {
-        const savedFilter = await AsyncStorage.getItem('followFilter');
-        if (savedFilter) {
-          setFollowFilter(savedFilter);
-        }
-      } catch (error) {}
-    };
-    getSavedFilterOption();
+    // Les options de tri et filtre sont maintenant gérées par useAsyncStorage
 
     return () => {
       subscription.remove();
@@ -194,39 +92,7 @@ export const AppProvider = ({children, navigation = null}) => {
     }
   }, [steamId]);
 
-  // Persister l'option de tri
-  useEffect(() => {
-    if (sortOption) {
-      const saveSortOption = async () => {
-        try {
-          await AsyncStorage.setItem('sortOption', sortOption);
-        } catch (error) {
-          console.error(
-            "Erreur lors de la sauvegarde de l'option de tri:",
-            error,
-          );
-        }
-      };
-      saveSortOption();
-    }
-  }, [sortOption]);
-
-  // Persister l'option de filtre
-  useEffect(() => {
-    if (followFilter) {
-      const saveFilterOption = async () => {
-        try {
-          await AsyncStorage.setItem('followFilter', followFilter);
-        } catch (error) {
-          console.error(
-            "Erreur lors de la sauvegarde de l'option de filtre:",
-            error,
-          );
-        }
-      };
-      saveFilterOption();
-    }
-  }, [followFilter]);
+  // La persistance des options est maintenant gérée automatiquement par useAsyncStorage
 
   // Filtrer et trier les jeux quand les critères changent
   useEffect(() => {
@@ -238,7 +104,13 @@ export const AppProvider = ({children, navigation = null}) => {
   }, [games, searchQuery, sortOption, followFilter]);
 
   // Filtrer et trier les jeux
-  const filterAndSortGames = () => {
+  const filterAndSortGames = useCallback(() => {
+    console.log(
+      '🔍 filterAndSortGames appelée (mémorisée) - searchQuery:',
+      searchQuery,
+      'games count:',
+      games?.length,
+    );
     if (!games || !Array.isArray(games)) {
       console.log('Aucun jeu à filtrer ou format incorrect');
       setFilteredGames([]);
@@ -246,11 +118,6 @@ export const AppProvider = ({children, navigation = null}) => {
     }
 
     let filtered = [...games];
-
-    // Vérifier les données disponibles pour le débogage
-    if (filtered.length > 0) {
-      const sampleGame = filtered[0];
-    }
 
     // Appliquer le filtre de recherche
     if (searchQuery && searchQuery.trim() !== '') {
@@ -263,7 +130,7 @@ export const AppProvider = ({children, navigation = null}) => {
     // Appliquer le filtre de suivi
     if (followFilter !== 'all') {
       filtered = filtered.filter(game => {
-        const appId = (game.appid || game.appId || '').toString();
+        const appId = getGameAppId(game);
         const isFollowed = isGameFollowed(appId);
         return followFilter === 'followed' ? isFollowed : !isFollowed;
       });
@@ -292,16 +159,11 @@ export const AppProvider = ({children, navigation = null}) => {
         break;
     }
 
-    // LOG E : Analyser les jeux après filtrage
-    const filteredWithTimestamp = filtered.filter(
-      game => game.lastUpdateTimestamp > 0,
-    );
     setFilteredGames(filtered);
-  };
+  }, [games, searchQuery, followFilter, sortOption, isGameFollowed]);
 
   // Fonction pour charger les données
   const loadData = async (isFullCheck = false) => {
-    const loadId = Date.now();
     try {
       if (isFullCheck) {
         setLoading(true);
@@ -348,11 +210,6 @@ export const AppProvider = ({children, navigation = null}) => {
             savedSteamId,
             shouldFetchFollowedOnly,
           );
-          // LOG D : Analyser la réponse reçue
-          const receivedGames = gamesResponse.data || [];
-          const gamesWithTimestamp = receivedGames.filter(
-            game => game.lastUpdateTimestamp > 0,
-          );
         } catch (error) {
           setLoading(false);
           Alert.alert(
@@ -397,19 +254,6 @@ export const AppProvider = ({children, navigation = null}) => {
 
         // Vérifier les données de tri disponibles
         if (newGames.length > 0) {
-          const jeuAvecLastPlayed = newGames.filter(
-            g => getLastPlayedValue(g) > 0,
-          ).length;
-          const jeuAvecPlaytime2Weeks = newGames.filter(
-            g => getPlaytimeRecentValue(g) > 0,
-          ).length;
-          const jeuAvecPlaytime = newGames.filter(
-            g => getPlaytimeForeverValue(g) > 0,
-          ).length;
-          const jeuAvecTimestamp = newGames.filter(
-            g => g.lastUpdateTimestamp > 0,
-          ).length;
-
           // Ajout d'un timestamp pour les jeux qui n'en ont pas
           newGames.forEach(game => {
             if (!game.lastUpdateTimestamp) {
@@ -487,13 +331,10 @@ export const AppProvider = ({children, navigation = null}) => {
         );
       }
 
-      await AsyncStorage.setItem('lastVerificationDate', Date.now().toString());
+      updateVerificationDate();
       setLastRefreshTime(Date.now());
-
-      // Log final pour débogage
-      setTimeout(() => {}, 1500);
     } catch (error) {
-      console.error(`[${loadId}] 🔴 LOAD ERROR - ${error.message}`);
+      console.error('🔴 LOAD ERROR -', error.message);
       setLoading(false);
       setRefreshing(false);
 
@@ -519,26 +360,11 @@ export const AppProvider = ({children, navigation = null}) => {
   // Vérifier la dernière date de vérification
   const checkLastVerificationDate = async () => {
     try {
-      const savedVerificationDate = await AsyncStorage.getItem(
-        'lastVerificationDate',
-      );
-
-      if (savedVerificationDate) {
-        const lastDate = parseInt(savedVerificationDate, 10);
-        const now = Date.now();
-        const oneDayMs = 24 * 60 * 60 * 1000;
-
-        if (now - lastDate > oneDayMs) {
-          console.log("Plus d'un jour s'est écoulé, vérification complète...");
-          loadData(true);
-        } else if (Date.now() - lastRefreshTime > 300000) {
-          checkForNewGames();
-        }
-      } else {
-        await AsyncStorage.setItem(
-          'lastVerificationDate',
-          Date.now().toString(),
-        );
+      if (isOlderThanOneDay()) {
+        console.log("Plus d'un jour s'est écoulé, vérification complète...");
+        loadData(true);
+      } else if (Date.now() - lastRefreshTime > 300000) {
+        checkForNewGames();
       }
     } catch (error) {
       console.error('Erreur lors de la vérification de la date:', error);
@@ -547,7 +373,6 @@ export const AppProvider = ({children, navigation = null}) => {
 
   // Fonction pour rafraîchir les données
   const handleRefresh = () => {
-    const refreshId = Date.now();
     setRefreshing(true);
     loadData()
       .then(() => {
@@ -616,7 +441,7 @@ export const AppProvider = ({children, navigation = null}) => {
 
       // Trouver le jeu dans la liste
       const game = games.find(g => {
-        const gameId = (g.appid || g.appId || '').toString();
+        const gameId = getGameAppId(g);
         return gameId === appIdString;
       });
 
@@ -630,7 +455,7 @@ export const AppProvider = ({children, navigation = null}) => {
 
       // Mettre à jour l'état localement d'abord pour une UI réactive
       const updatedGames = games.map(g => {
-        const gameId = (g.appid || g.appId || '').toString();
+        const gameId = getGameAppId(g);
         if (gameId === appIdString) {
           return {...g, isFollowed: !isFollowed};
         }
@@ -648,9 +473,7 @@ export const AppProvider = ({children, navigation = null}) => {
             steamId,
             appIdString,
             game.name,
-            game.img_icon_url
-              ? `http://media.steampowered.com/steamcommunity/public/images/apps/${appIdString}/${game.img_icon_url}.jpg`
-              : null,
+            getGameIconUrl(appIdString, game.img_icon_url),
           );
           console.log('Jeu suivi avec succès:', game.name);
         } else {
@@ -738,15 +561,7 @@ export const AppProvider = ({children, navigation = null}) => {
     }
   };
 
-  // Vérifier si un jeu a été mis à jour récemment (dans les dernières 24 heures)
-  const isRecentlyUpdated = timestamp => {
-    if (!timestamp) return false;
-
-    const now = Date.now();
-    const oneDayMs = 24 * 60 * 60 * 1000;
-
-    return now - timestamp < oneDayMs;
-  };
+  // La fonction isRecentlyUpdated est maintenant importée des utilitaires
 
   // Vérifier si un jeu est suivi
   const isGameFollowed = appId => {

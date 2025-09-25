@@ -1,6 +1,8 @@
 import React from 'react';
 import {FlatList, RefreshControl, Text, View} from 'react-native';
+import {COLORS} from '../../../constants/theme';
 import {useAppContext} from '../../../context/AppContext';
+import {getGameAppId} from '../../../utils/gameHelpers';
 import styles from '../styles';
 import GameItemAlt from './GameItemAlt';
 
@@ -19,16 +21,17 @@ const GamesList = () => {
     <FlatList
       data={filteredGames}
       renderItem={({item}) => <GameItemAlt game={item} />}
-      keyExtractor={(item, index) =>
-        item.appid ? `${item.appid}-${index}` : `game-${index}`
-      }
+      keyExtractor={(item, index) => {
+        const appId = getGameAppId(item);
+        return appId ? `${appId}-${index}` : `game-${index}`;
+      }}
       contentContainerStyle={styles.gamesList}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
           onRefresh={handleRefresh}
-          colors={['#66C0F4']}
-          tintColor="#66C0F4"
+          colors={[COLORS.STEAM_BLUE]}
+          tintColor={COLORS.STEAM_BLUE}
         />
       }
       ListEmptyComponent={renderEmptyList}

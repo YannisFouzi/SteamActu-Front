@@ -9,43 +9,26 @@ import {
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import {COLORS} from '../../../constants/theme';
 import {useAppContext} from '../../../context/AppContext';
+import {
+  formatRelativeDate,
+  getGameAppId,
+  isValidGame,
+} from '../../../utils/gameHelpers';
 
 const GameItemAlt = ({game}) => {
   const navigation = useNavigation();
   const {handleFollowGame, isRecentlyUpdated, isGameFollowed} = useAppContext();
 
-  // S'assurer que nous avons un appId valide
-  const appId = game?.appid?.toString() || game?.appId?.toString();
-  const isFollowed = isGameFollowed(appId);
-
-  const formatDate = timestamp => {
-    if (!timestamp) return 'Jamais';
-
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInMs = now - date;
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
-
-    if (diffInHours < 24) {
-      return `Il y a ${diffInHours} heure${diffInHours > 1 ? 's' : ''}`;
-    } else if (diffInDays < 7) {
-      return `Il y a ${diffInDays} jour${diffInDays > 1 ? 's' : ''}`;
-    } else {
-      const day = date.getDate().toString().padStart(2, '0');
-      const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
-    }
-  };
-
-  const isRecent = isRecentlyUpdated(game.lastUpdateTimestamp);
-
-  // Ne pas rendre le composant si nous n'avons pas les données minimales requises
-  if (!game || !game.name) {
+  // Validation et extraction des données du jeu
+  if (!isValidGame(game)) {
     return null;
   }
+
+  const appId = getGameAppId(game);
+  const isFollowed = isGameFollowed(appId);
+  const isRecent = isRecentlyUpdated(game.lastUpdateTimestamp);
 
   return (
     <TouchableOpacity
@@ -72,7 +55,7 @@ const GameItemAlt = ({game}) => {
             {game.name}
           </Text>
           <Text style={styles.lastUpdate}>
-            Dernière MAJ: {formatDate(game.lastUpdateTimestamp)}
+            Dernière MAJ: {formatRelativeDate(game.lastUpdateTimestamp)}
           </Text>
         </View>
 
@@ -81,8 +64,6 @@ const GameItemAlt = ({game}) => {
           onPress={() => {
             if (appId) {
               handleFollowGame(appId, isFollowed);
-            } else {
-              console.error('ID du jeu non trouvé:', game);
             }
           }}>
           <Icon
@@ -98,7 +79,7 @@ const GameItemAlt = ({game}) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#fff',
+    backgroundColor: COLORS.WHITE,
     borderRadius: 8,
     marginBottom: 8,
     elevation: 2,
@@ -119,7 +100,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   updateBadgeText: {
-    color: 'white',
+    color: COLORS.WHITE,
     fontSize: 10,
     fontWeight: 'bold',
   },

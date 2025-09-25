@@ -1,6 +1,8 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {COLORS} from '../../../constants/theme';
 import {useAppContext} from '../../../context/AppContext';
+import {useDebounce} from '../../../hooks/useDebounce';
 import styles from '../styles';
 
 const SearchBar = () => {
@@ -12,10 +14,22 @@ const SearchBar = () => {
     filterAndSortGames,
   } = useAppContext();
 
+  // Debouncer la recherche pour éviter les appels excessifs
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Appliquer le filtrage quand la recherche debouncée change
+  useEffect(() => {
+    console.log(
+      '🔍 SearchBar useEffect déclenché - debouncedSearchQuery:',
+      debouncedSearchQuery,
+    );
+    filterAndSortGames();
+  }, [debouncedSearchQuery, filterAndSortGames]);
+
   // Gérer le changement de texte dans la recherche
   const handleSearchChange = text => {
     setSearchQuery(text);
-    filterAndSortGames(); // Appliquer immédiatement le filtrage
+    // Le filtrage sera appliqué automatiquement via useEffect + debounce
   };
 
   return (
@@ -23,7 +37,7 @@ const SearchBar = () => {
       <TextInput
         style={styles.searchInput}
         placeholder="Rechercher un jeu..."
-        placeholderTextColor="#8F98A0"
+        placeholderTextColor={COLORS.STEAM_TEXT_GRAY}
         value={searchQuery}
         onChangeText={handleSearchChange}
       />

@@ -2,102 +2,51 @@
 import {createStackNavigator} from '@react-navigation/stack';
 import React from 'react';
 
-// Importation des Ã©crans (Ã  crÃ©er)
+// Importation des Ã©crans
 import GameDetailsScreen from '../screens/GameDetailsScreen';
 import HomeScreen from '../screens/Home';
-import NewsFeedScreen from '../screens/NewsFeedScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
-// CrÃ©ation des navigateurs
-const Stack = createStackNavigator();
+// Importation du thÃ¨me centralisÃ©
+import {
+  DEFAULT_SCREEN_OPTIONS,
+  NAVIGATION_THEME,
+  SCREEN_CONFIGS,
+} from '../constants/theme';
 
-// Configuration du thÃ¨me de navigation
-const navigatorTheme = {
-  colors: {
-    primary: '#1B2838', // Couleur Steam bleu foncÃ©
-    background: '#171A21', // Couleur de fond Steam
-    card: '#1B2838',
-    text: '#FFFFFF',
-    border: '#2A475E',
-    notification: '#66C0F4', // Bleu Steam clair
-  },
-  fonts: {
-    regular: {
-      fontFamily: 'System',
-      fontWeight: 'normal',
-    },
-    medium: {
-      fontFamily: 'System',
-      fontWeight: '500',
-    },
-    light: {
-      fontFamily: 'System',
-      fontWeight: '300',
-    },
-    thin: {
-      fontFamily: 'System',
-      fontWeight: '100',
-    },
-    bold: {
-      fontFamily: 'System',
-      fontWeight: 'bold',
-    },
-  },
-};
+// CrÃ©ation du navigateur
+const Stack = createStackNavigator();
 
 // Navigateur principal
 const AppNavigator = () => {
   return (
-    <NavigationContainer theme={navigatorTheme}>
+    <NavigationContainer theme={NAVIGATION_THEME}>
       <Stack.Navigator
         initialRouteName="Login"
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: '#1B2838',
-          },
-          headerTintColor: '#FFFFFF',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-        }}>
+        screenOptions={DEFAULT_SCREEN_OPTIONS}>
         <Stack.Screen
           name="Login"
           component={LoginScreen}
-          options={{
-            title: 'Connexion Steam',
-            headerShown: false,
-          }}
+          options={SCREEN_CONFIGS.Login}
         />
+
         <Stack.Screen
           name="Home"
           component={HomeScreen}
-          options={{
-            title: 'Mes Jeux',
-            headerBackVisible: false,
-            headerShown: false,
-          }}
+          options={SCREEN_CONFIGS.Home}
         />
-        <Stack.Screen
-          name="NewsFeed"
-          component={NewsFeedScreen}
-          options={{
-            title: "Fil d'actu",
-          }}
-        />
+
         <Stack.Screen
           name="GameDetails"
           component={GameDetailsScreen}
-          options={({route}) => ({
-            title: route.params?.gameName || 'Details du jeu',
-          })}
+          options={SCREEN_CONFIGS.GameDetails.getDynamicOptions}
         />
+
         <Stack.Screen
           name="Settings"
           component={SettingsScreen}
-          options={{
-            title: 'Parametres',
-          }}
+          options={SCREEN_CONFIGS.Settings}
         />
       </Stack.Navigator>
     </NavigationContainer>

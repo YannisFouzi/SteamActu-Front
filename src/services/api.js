@@ -1,21 +1,53 @@
 ﻿import axios from 'axios';
-import URLParse from 'url-parse';
 
-// DÃ©finir l'URL de base de l'API
-// URL de production pour le backend dÃ©ployÃ© sur Render
-const API_URL = 'http://10.0.2.2:5000/api';
+// Configuration de l'environnement
+const CONFIG = {
+  // URL de base selon l'environnement
+  API_URL: __DEV__
+    ? 'http://10.0.2.2:5000/api' // Développement (émulateur Android)
+    : 'https://your-production-api.com/api', // Production
 
-// Pour les tests en local, utiliser ces URLs Ã  la place :
-// Ã‰mulateurs Android: 'http://10.0.2.2:5000/api'
-// Appareils physiques: 'http://VOTRE_IP_LOCALE:5000/api'
+  // Paramètres par défaut pour les actualités
+  DEFAULT_NEWS_PARAMS: {
+    language: 'fr',
+    steamOnly: 'true',
+  },
 
-// CrÃ©er une instance axios avec la configuration de base
+  // Limites par défaut
+  DEFAULT_LIMITS: {
+    newsCount: 5,
+    newsMaxLength: 300,
+    perGameLimit: 10,
+  },
+};
+
+// Créer une instance axios avec la configuration de base
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: CONFIG.API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // Timeout de 10 secondes
 });
+
+// Intercepteur pour la gestion globale des erreurs
+api.interceptors.response.use(
+  response => response,
+  error => {
+    // Log des erreurs pour le débogage
+    if (__DEV__) {
+      console.error('API Error:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+    }
+
+    // Retourner l'erreur pour que les composants puissent la gérer
+    return Promise.reject(error);
+  },
+);
 
 // Service utilisateur
 const userService = {
@@ -50,23 +82,31 @@ const userService = {
   },
 };
 
-// Service actualitÃ©s
+// Service actualités
 const newsService = {
-  // RÃ©cupÃ©rer les actualitÃ©s d'un jeu spÃ©cifique
-  getGameNews: (appId, count = 5, maxLength = 300) => {
+  // Récupérer les actualités d'un jeu spécifique
+  getGameNews: (
+    appId,
+    count = CONFIG.DEFAULT_LIMITS.newsCount,
+    maxLength = CONFIG.DEFAULT_LIMITS.newsMaxLength,
+  ) => {
     return api.get(`/news/game/${appId}`, {
       params: {
         count,
         maxLength,
-        language: 'fr',
-        steamOnly: 'true',
+        ...CONFIG.DEFAULT_NEWS_PARAMS,
       },
     });
   },
-  // Recuperer le fil d''actualites global
+
+  // Récupérer le fil d'actualités global
   getNewsFeed: (
     steamId,
-    {followedOnly = false, perGameLimit = 10, language = 'fr'} = {},
+    {
+      followedOnly = false,
+      perGameLimit = CONFIG.DEFAULT_LIMITS.perGameLimit,
+      language = CONFIG.DEFAULT_NEWS_PARAMS.language,
+    } = {},
   ) => {
     const params = {
       followedOnly: followedOnly ? 'true' : 'false',
@@ -84,65 +124,41 @@ const newsService = {
 
 // Service Steam (communique directement avec l'API Steam via notre backend)
 const steamService = {
-  // RÃ©cupÃ©rer la liste des jeux possÃ©dÃ©s par un utilisateur
+  // Récupérer la liste des jeux possédés par un utilisateur
   getUserGames: (steamId, followedOnly = false) => {
-    // Cette fonction utilisera notre backend comme proxy pour appeler l'API Steam
     const params = followedOnly ? {followedOnly: 'true'} : {};
-    const callId = Date.now();
-
-    return api
-      .get(`/steam/games/${steamId}`, {params})
-      .then(response => {
-        return response;
-      })
-      .catch(error => {
-        throw error;
-      });
+    return api.get(`/steam/games/${steamId}`, {params});
   },
 };
 
 // Service Steam OpenID pour l'authentification
 const steamAuthService = {
-  // URL du service d'authentification Steam OpenID
+  // URLs et constantes de configuration
   STEAM_OPENID_URL: 'https://steamcommunity.com/openid',
-
-  // URL de retour aprÃ¨s authentification - doit Ãªtre une URL HTTP(S) valide
-  // En production, vous devriez avoir votre propre domaine avec une page de redirection
-  // URL utilisÃ©e pour le retour d'OpenID (sera remplacÃ©e par le backend)
-  RETURN_URL: `${API_URL.replace('/api', '')}/auth/steam/return`,
-
-  // Notre URL scheme pour la redirection dans l'app
+  RETURN_URL: `${CONFIG.API_URL.replace('/api', '')}/auth/steam/return`,
   APP_SCHEME_URL: 'steamnotif://auth',
 
-  // GÃ©nÃ©rer l'URL d'authentification OpenID de Steam
+  // Paramètres OpenID constants
+  OPENID_PARAMS: {
+    'openid.ns': 'http://specs.openid.net/auth/2.0',
+    'openid.mode': 'checkid_setup',
+    'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
+    'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select',
+  },
+
+  // Générer l'URL d'authentification OpenID de Steam
   getAuthUrl: () => {
-    // Construire l'URL de maniÃ¨re standard pour OpenID
     const params = new URLSearchParams({
-      'openid.ns': 'http://specs.openid.net/auth/2.0',
-      'openid.mode': 'checkid_setup',
+      ...steamAuthService.OPENID_PARAMS,
       'openid.return_to': steamAuthService.RETURN_URL,
       'openid.realm': steamAuthService.RETURN_URL,
-      'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
-      'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select',
     });
 
     return `${steamAuthService.STEAM_OPENID_URL}/login?${params.toString()}`;
   },
-
-  // Extraire le SteamID de la rÃ©ponse OpenID
-  extractSteamId: url => {
-    // La rÃ©ponse OpenID de Steam inclut le SteamID dans l'identitÃ©
-    // Format typique: https://steamcommunity.com/openid/id/76561198xxxxxxxx
-    try {
-      const parsedUrl = new URLParse(url, true);
-      const identity = parsedUrl.query['openid.identity'] || '';
-      const matches = identity.match(/\/id\/(\d+)$/);
-      return matches ? matches[1] : null;
-    } catch (error) {
-      console.error("Erreur lors de l'extraction du SteamID:", error);
-      return null;
-    }
-  },
 };
+
+// Export de la configuration pour les tests et le debugging
+export const apiConfig = CONFIG;
 
 export {newsService, steamAuthService, steamService, userService};
