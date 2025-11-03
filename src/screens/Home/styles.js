@@ -258,6 +258,44 @@ export default StyleSheet.create({
   wishlistList: {
     padding: 12,
   },
+  // 🎨 Style horizontal final (comme "Mes jeux")
+  wishlistCardHorizontal: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.WHITE,
+    borderRadius: 8,
+    marginBottom: 8,
+    overflow: 'hidden',
+    elevation: 2,
+    shadowColor: COLORS.BLACK,
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  wishlistImageHorizontal: {
+    width: 120,
+    height: 80,
+    backgroundColor: COLORS.STEAM_GRAY,
+  },
+  wishlistInfoHorizontal: {
+    flex: 1,
+    padding: 12,
+    justifyContent: 'center',
+  },
+  wishlistNameHorizontal: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#212121',
+    marginBottom: 4,
+  },
+  wishlistDateHorizontal: {
+    fontSize: 12,
+    color: '#757575',
+  },
+  wishlistFollowButton: {
+    justifyContent: 'center',
+    padding: 12,
+  },
+  // ❌ Anciens styles (conservés pour migration)
   wishlistCard: {
     flexDirection: 'row',
     backgroundColor: COLORS.STEAM_NAVY,
@@ -292,6 +330,115 @@ export default StyleSheet.create({
     fontSize: 11,
     color: COLORS.STEAM_TEXT_GRAY,
     fontStyle: 'italic',
+  },
+  wishlistDateSmall: {
+    fontSize: 10,
+    color: COLORS.STEAM_TEXT_GRAY,
+    fontStyle: 'italic',
+  },
+  // 🎨 Style 1 : Horizontal (Image à gauche)
+  wishlistCardStyle1: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.STEAM_DARK,
+    borderRadius: 8,
+    marginBottom: 12,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#FF6B6B', // Rouge pour identifier
+  },
+  wishlistImageStyle1: {
+    width: 140,
+    height: 100,
+    backgroundColor: COLORS.STEAM_GRAY,
+  },
+  wishlistInfoStyle1: {
+    flex: 1,
+    padding: 12,
+    justifyContent: 'center',
+  },
+  // 🎨 Style 2 : Vertical (Image en haut)
+  wishlistCardStyle2: {
+    backgroundColor: COLORS.STEAM_DARK,
+    borderRadius: 8,
+    marginBottom: 12,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#4ECDC4', // Turquoise pour identifier
+  },
+  wishlistImageStyle2: {
+    width: '100%',
+    height: 140,
+    backgroundColor: COLORS.STEAM_GRAY,
+  },
+  wishlistInfoStyle2: {
+    padding: 12,
+  },
+  // 🎨 Style 3 : Overlay (Image en fond)
+  wishlistCardStyle3: {
+    backgroundColor: COLORS.STEAM_DARK,
+    borderRadius: 8,
+    marginBottom: 12,
+    overflow: 'hidden',
+    height: 180,
+    borderWidth: 2,
+    borderColor: '#FFE66D', // Jaune pour identifier
+  },
+  wishlistImageStyle3: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    backgroundColor: COLORS.STEAM_GRAY,
+  },
+  wishlistOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    padding: 12,
+  },
+  wishlistNameOverlay: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.WHITE,
+    marginBottom: 4,
+  },
+  wishlistDateOverlay: {
+    fontSize: 11,
+    color: COLORS.STEAM_TEXT_GRAY,
+    fontStyle: 'italic',
+  },
+  // 🎨 Style 4 : Compact (Petite image)
+  wishlistCardStyle4: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.STEAM_DARK,
+    borderRadius: 8,
+    marginBottom: 12,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#A8DADC', // Bleu clair pour identifier
+    paddingVertical: 8,
+  },
+  wishlistImageStyle4: {
+    width: 80,
+    height: 60,
+    backgroundColor: COLORS.STEAM_GRAY,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  wishlistInfoStyle4: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    justifyContent: 'center',
+  },
+  // Label pour identifier les styles
+  styleLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: COLORS.STEAM_BLUE,
+    marginBottom: 4,
+    textTransform: 'uppercase',
   },
   clearButton: {
     marginLeft: 8,

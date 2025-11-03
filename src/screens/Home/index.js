@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Ionicons';
 import LoadingContainer from '../../components/common/LoadingContainer';
 import {COLORS} from '../../constants/theme';
 import {useAppContext} from '../../context/AppContext';
@@ -65,6 +66,7 @@ const HomeScreen = () => {
     handleRefresh,
     steamId,
     handleFollowGame,
+    isGameFollowed,
   } = useAppContext();
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState(TABS.NEWS);
@@ -335,38 +337,62 @@ const HomeScreen = () => {
               ) : (
                 <FlatList
                   data={getSortedWishlist()}
-                  renderItem={({item}) => (
-                    <TouchableOpacity
-                      style={styles.wishlistCard}
-                      onPress={() =>
-                        navigation.navigate('GameDetails', {
-                          appId: item.appid.toString(),
-                          gameName: item.name,
-                        })
-                      }>
-                      <Image
-                        source={{uri: item.header_image || item.capsule}}
-                        style={styles.wishlistImage}
-                        resizeMode="cover"
-                      />
-                      <View style={styles.wishlistInfo}>
-                        <Text style={styles.wishlistName} numberOfLines={2}>
-                          {item.name}
-                        </Text>
-                        {item.release_string && (
-                          <Text style={styles.wishlistRelease}>
-                            {item.release_string}
+                  renderItem={({item}) => {
+                    const appId = item.appid?.toString();
+                    const isFollowed = appId ? isGameFollowed(appId) : false;
+
+                    return (
+                      <TouchableOpacity
+                        style={styles.wishlistCardHorizontal}
+                        onPress={() =>
+                          navigation.navigate('GameDetails', {
+                            appId: appId,
+                            gameName: item.name,
+                          })
+                        }>
+                        <Image
+                          source={{uri: item.header_image || item.capsule}}
+                          style={styles.wishlistImageHorizontal}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.wishlistInfoHorizontal}>
+                          <Text
+                            style={styles.wishlistNameHorizontal}
+                            numberOfLines={2}>
+                            {item.name}
                           </Text>
-                        )}
-                        <Text style={styles.wishlistDate}>
-                          Ajouté le{' '}
-                          {new Date(item.date_added * 1000).toLocaleDateString(
-                            'fr-FR',
-                          )}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  )}
+                          <Text style={styles.wishlistDateHorizontal}>
+                            Ajouté le{' '}
+                            {new Date(item.date_added * 1000).toLocaleDateString(
+                              'fr-FR',
+                            )}
+                          </Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.wishlistFollowButton}
+                          onPress={e => {
+                            e.stopPropagation();
+                            if (appId) {
+                              // Passer les infos du jeu pour la wishlist
+                              handleFollowGame(appId, isFollowed, {
+                                name: item.name,
+                                logoUrl: item.header_image || item.capsule,
+                              });
+                            }
+                          }}>
+                          <Icon
+                            name={
+                              isFollowed
+                                ? 'notifications'
+                                : 'notifications-outline'
+                            }
+                            size={24}
+                            color={isFollowed ? '#4CAF50' : '#757575'}
+                          />
+                        </TouchableOpacity>
+                      </TouchableOpacity>
+                    );
+                  }}
                   keyExtractor={item => item.appid.toString()}
                   contentContainerStyle={styles.wishlistList}
                   ListEmptyComponent={

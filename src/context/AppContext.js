@@ -420,7 +420,8 @@ export const AppProvider = ({children, navigation = null}) => {
   };
 
   // Fonction pour gérer le suivi/désabonnement d'un jeu
-  const handleFollowGame = async (appId, isFollowed) => {
+  // gameData : {name, logoUrl} pour les jeux non possédés (wishlist)
+  const handleFollowGame = async (appId, isFollowed, gameData = null) => {
     try {
       if (!steamId) {
         console.error('SteamID non trouvé');
@@ -440,19 +441,23 @@ export const AppProvider = ({children, navigation = null}) => {
       console.log('État isFollowed:', isFollowed);
       console.log('Nombre total de jeux:', games.length);
 
-      // Trouver le jeu dans la liste
+      // Trouver le jeu dans la liste ou utiliser gameData (wishlist)
       const game = games.find(g => {
         const gameId = getGameAppId(g);
         return gameId === appIdString;
       });
 
-      if (!game) {
+      // Si le jeu n'est pas dans "Mes jeux", utiliser gameData (wishlist)
+      if (!game && !gameData) {
         console.error('Jeu non trouvé dans la liste:', appIdString);
         console.log('=== Fin handleFollowGame (erreur) ===');
         return;
       }
 
-      console.log('Jeu trouvé:', game.name);
+      const gameName = game ? game.name : gameData.name;
+      const gameIcon = game ? getGameIconUrl(appIdString, game.img_icon_url) : gameData.logoUrl;
+
+      console.log('Jeu trouvé:', gameName);
 
       // Mettre à jour l'état localement d'abord pour une UI réactive
       const updatedGames = games.map(g => {
@@ -473,14 +478,14 @@ export const AppProvider = ({children, navigation = null}) => {
           await userService.followGame(
             steamId,
             appIdString,
-            game.name,
-            getGameIconUrl(appIdString, game.img_icon_url),
+            gameName,
+            gameIcon,
           );
-          console.log('Jeu suivi avec succès:', game.name);
+          console.log('Jeu suivi avec succès:', gameName);
         } else {
           // Ne plus suivre le jeu
           await userService.unfollowGame(steamId, appIdString);
-          console.log('Jeu retiré des suivis:', game.name);
+          console.log('Jeu retiré des suivis:', gameName);
         }
 
         // Recharger les données de l'utilisateur
