@@ -33,6 +33,16 @@ const TAB_ITEMS = [
   {key: TABS.FOLLOW_GAMES, label: 'Suivre un jeu'},
 ];
 
+const NEWS_TABS = {
+  FOLLOWED: 'followed',
+  ALL_GAMES: 'allGames',
+};
+
+const NEWS_TAB_ITEMS = [
+  {key: NEWS_TABS.FOLLOWED, label: 'Jeux suivis'},
+  {key: NEWS_TABS.ALL_GAMES, label: 'Tous mes jeux'},
+];
+
 const FOLLOW_GAME_TABS = {
   MY_GAMES: 'myGames',
   WISHLIST: 'wishlist',
@@ -54,16 +64,17 @@ const HomeScreen = () => {
     handleFollowGame,
   } = useAppContext();
   const navigation = useNavigation();
-  const [activeTab, setActiveTab] = useState(TABS.FOLLOW_GAMES);
+  const [activeTab, setActiveTab] = useState(TABS.NEWS);
+  const [activeNewsTab, setActiveNewsTab] = useState(NEWS_TABS.FOLLOWED);
   const [activeFollowTab, setActiveFollowTab] = useState(
     FOLLOW_GAME_TABS.MY_GAMES,
   );
-  const [showFollowedNewsOnly, setShowFollowedNewsOnly] = useState(false);
   const [wishlistSearchQuery, setWishlistSearchQuery] = useState('');
   const [wishlistSortBy, setWishlistSortBy] = useState('recent'); // 'recent' ou 'alphabetical'
 
   const isNewsTab = activeTab === TABS.NEWS;
   const isFollowGamesTab = activeTab === TABS.FOLLOW_GAMES;
+  const showFollowedNewsOnly = activeNewsTab === NEWS_TABS.FOLLOWED;
 
   // Hook wishlist
   const {
@@ -194,6 +205,29 @@ const HomeScreen = () => {
         ))}
       </View>
 
+      {/* Sous-onglets pour "Actus" */}
+      {isNewsTab && (
+        <View style={styles.subTabsContainer}>
+          {NEWS_TAB_ITEMS.map(tab => (
+            <TouchableOpacity
+              key={tab.key}
+              style={[
+                styles.subTabButton,
+                activeNewsTab === tab.key && styles.subTabButtonActive,
+              ]}
+              onPress={() => setActiveNewsTab(tab.key)}>
+              <Text
+                style={[
+                  styles.subTabButtonText,
+                  activeNewsTab === tab.key && styles.subTabButtonTextActive,
+                ]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
       {/* Sous-onglets pour "Suivre un jeu" */}
       {isFollowGamesTab && (
         <View style={styles.subTabsContainer}>
@@ -222,7 +256,6 @@ const HomeScreen = () => {
         <NewsTab
           steamId={steamId}
           showFollowedNewsOnly={showFollowedNewsOnly}
-          setShowFollowedNewsOnly={setShowFollowedNewsOnly}
           newsState={newsState}
           fetchNews={fetchNews}
           handleFollowGame={handleNewsToggleFollow}

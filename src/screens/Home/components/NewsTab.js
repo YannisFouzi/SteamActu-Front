@@ -4,7 +4,6 @@ import {
   FlatList,
   Linking,
   RefreshControl,
-  Switch,
   Text,
   TouchableOpacity,
   View,
@@ -23,7 +22,6 @@ import styles from '../styles';
 const NewsTab = ({
   steamId,
   showFollowedNewsOnly,
-  setShowFollowedNewsOnly,
   newsState,
   fetchNews,
   handleFollowGame,
@@ -145,16 +143,6 @@ const NewsTab = ({
 
   return (
     <View style={styles.newsContainer}>
-      <View style={styles.newsFilterRow}>
-        <Text style={styles.newsFilterLabel}>Jeux suivis uniquement</Text>
-        <Switch
-          value={showFollowedNewsOnly}
-          onValueChange={setShowFollowedNewsOnly}
-          trackColor={{false: '#2A3F5A', true: '#2A3F5A'}}
-          thumbColor={showFollowedNewsOnly ? COLORS.STEAM_BLUE : '#f4f3f4'}
-        />
-      </View>
-
       {activeNewsState?.error ? (
         <View style={styles.newsErrorContainer}>
           <Text style={styles.newsErrorText}>{activeNewsState.error}</Text>
