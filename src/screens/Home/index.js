@@ -21,6 +21,7 @@ import FilterModal from './components/FilterModal';
 import GamesList from './components/GamesList';
 import NewsTab from './components/NewsTab';
 import SearchBar from './components/SearchBar';
+import SearchGameTab from './components/SearchGameTab';
 import SortModal from './components/SortModal';
 import styles from './styles';
 
@@ -416,18 +417,7 @@ const HomeScreen = () => {
               )}
             </>
           ) : (
-            // Onglet "Chercher un jeu" - placeholder
-            <View style={styles.placeholderContainer}>
-              <Text style={styles.placeholderEmoji}>🔍</Text>
-              <Text style={styles.placeholderTitle}>Chercher un jeu</Text>
-              <Text style={styles.placeholderText}>
-                Fonctionnalité en cours de développement
-              </Text>
-              <Text style={styles.placeholderSubtext}>
-                Vous pourrez bientôt rechercher et suivre n'importe quel jeu
-                Steam
-              </Text>
-            </View>
+            <SearchGameTab styles={styles} />
           )}
         </>
       ) : null}

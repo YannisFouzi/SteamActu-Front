@@ -124,15 +124,17 @@ const newsService = {
 
 // Service Steam (communique directement avec l'API Steam via notre backend)
 const steamService = {
-  // Récupérer la liste des jeux possédés par un utilisateur
   getUserGames: (steamId, followedOnly = false) => {
     const params = followedOnly ? {followedOnly: 'true'} : {};
     return api.get(`/steam/games/${steamId}`, {params});
   },
 
-  // 🆕 Récupérer la wishlist d'un utilisateur
   getUserWishlist: steamId => {
     return api.get(`/steam/wishlist/${steamId}`);
+  },
+
+  searchGames: (query, limit = 5) => {
+    return api.get('/steam/search', {params: {q: query, limit}});
   },
 };
 

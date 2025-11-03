@@ -477,4 +477,53 @@ export default StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  searchTabContainer: {
+    flex: 1,
+  },
+  searchInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.STEAM_DARK,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    margin: 16,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    color: COLORS.WHITE,
+    fontSize: 16,
+  },
+  searchResultsList: {
+    padding: 16,
+    paddingTop: 0,
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyIcon: {
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: COLORS.WHITE,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: COLORS.STEAM_TEXT_GRAY,
+    textAlign: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: COLORS.WHITE,
+    marginTop: 12,
+  },
 });
