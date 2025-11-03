@@ -1,4 +1,3 @@
-import {useNavigation} from '@react-navigation/native';
 import React from 'react';
 import {
   Image,
@@ -16,7 +15,6 @@ import {
 } from '../../../utils/gameHelpers';
 
 const GameItemAlt = ({game}) => {
-  const navigation = useNavigation();
   const {handleFollowGame, isGameFollowed} = useAppContext();
   const [imageError, setImageError] = React.useState(false);
 
@@ -32,10 +30,7 @@ const GameItemAlt = ({game}) => {
   const gameImageUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
 
   return (
-    <TouchableOpacity
-      style={styles.container}
-      onPress={() => navigation.navigate('GameDetails', {game})}>
-      {/* 🎨 Image du jeu (comme wishlist) */}
+    <View style={styles.container}>
       {imageError ? (
         <View style={styles.gameImagePlaceholder}>
           <Icon name="game-controller-outline" size={32} color="#999" />
@@ -49,18 +44,15 @@ const GameItemAlt = ({game}) => {
         />
       )}
 
-      {/* 📝 Infos du jeu */}
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={2}>
           {game.name}
         </Text>
       </View>
 
-      {/* 🔔 Bouton follow */}
       <TouchableOpacity
         style={styles.followButton}
-        onPress={e => {
-          e.stopPropagation();
+        onPress={() => {
           if (appId) {
             handleFollowGame(appId, isFollowed);
           }
@@ -71,7 +63,7 @@ const GameItemAlt = ({game}) => {
           color={isFollowed ? '#4CAF50' : '#757575'}
         />
       </TouchableOpacity>
-    </TouchableOpacity>
+    </View>
   );
 };
 

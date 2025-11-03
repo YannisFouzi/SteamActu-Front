@@ -1,4 +1,3 @@
-import {useNavigation} from '@react-navigation/native';
 import React, {useCallback, useState} from 'react';
 import {
   ActivityIndicator,
@@ -15,7 +14,6 @@ import {useAppContext} from '../../../context/AppContext';
 import {steamService} from '../../../services/api';
 
 const SearchGameTab = ({styles}) => {
-  const navigation = useNavigation();
   const {handleFollowGame, isGameFollowed} = useAppContext();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,13 +58,7 @@ const SearchGameTab = ({styles}) => {
     const isFollowed = isGameFollowed(appId);
 
     return (
-      <TouchableOpacity
-        style={styles.wishlistCardHorizontal}
-        onPress={() =>
-          navigation.navigate('GameDetails', {
-            game: {appid: item.appid, name: item.name},
-          })
-        }>
+      <View style={styles.wishlistCardHorizontal}>
         <Image
           source={{uri: item.header_image}}
           style={styles.wishlistImageHorizontal}
@@ -79,8 +71,7 @@ const SearchGameTab = ({styles}) => {
         </View>
         <TouchableOpacity
           style={styles.wishlistFollowButton}
-          onPress={e => {
-            e.stopPropagation();
+          onPress={() => {
             handleFollowGame(appId, isFollowed, {
               name: item.name,
               logoUrl: item.header_image,
@@ -92,7 +83,7 @@ const SearchGameTab = ({styles}) => {
             color={isFollowed ? '#4CAF50' : '#757575'}
           />
         </TouchableOpacity>
-      </TouchableOpacity>
+      </View>
     );
   };
 

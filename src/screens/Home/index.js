@@ -343,14 +343,7 @@ const HomeScreen = () => {
                     const isFollowed = appId ? isGameFollowed(appId) : false;
 
                     return (
-                      <TouchableOpacity
-                        style={styles.wishlistCardHorizontal}
-                        onPress={() =>
-                          navigation.navigate('GameDetails', {
-                            appId: appId,
-                            gameName: item.name,
-                          })
-                        }>
+                      <View style={styles.wishlistCardHorizontal}>
                         <Image
                           source={{uri: item.header_image || item.capsule}}
                           style={styles.wishlistImageHorizontal}
@@ -371,10 +364,8 @@ const HomeScreen = () => {
                         </View>
                         <TouchableOpacity
                           style={styles.wishlistFollowButton}
-                          onPress={e => {
-                            e.stopPropagation();
+                          onPress={() => {
                             if (appId) {
-                              // Passer les infos du jeu pour la wishlist
                               handleFollowGame(appId, isFollowed, {
                                 name: item.name,
                                 logoUrl: item.header_image || item.capsule,
@@ -391,7 +382,7 @@ const HomeScreen = () => {
                             color={isFollowed ? '#4CAF50' : '#757575'}
                           />
                         </TouchableOpacity>
-                      </TouchableOpacity>
+                      </View>
                     );
                   }}
                   keyExtractor={item => item.appid.toString()}
