@@ -35,12 +35,15 @@ const TAB_ITEMS = [
 
 const NEWS_TABS = {
   FOLLOWED: 'followed',
-  ALL_GAMES: 'allGames',
+  // ⚠️ DÉSACTIVÉ : Onglet "Tous mes jeux" trop gourmand en ressources
+  // Pour réactiver : décommenter ci-dessous + cron checkNews + newsFeedService
+  // ALL_GAMES: 'allGames',
 };
 
 const NEWS_TAB_ITEMS = [
   {key: NEWS_TABS.FOLLOWED, label: 'Jeux suivis'},
-  {key: NEWS_TABS.ALL_GAMES, label: 'Tous mes jeux'},
+  // ⚠️ DÉSACTIVÉ : Voir commentaire ligne 38
+  // {key: NEWS_TABS.ALL_GAMES, label: 'Tous mes jeux'},
 ];
 
 const FOLLOW_GAME_TABS = {
@@ -206,7 +209,8 @@ const HomeScreen = () => {
       </View>
 
       {/* Sous-onglets pour "Actus" */}
-      {isNewsTab && (
+      {/* ⚠️ DÉSACTIVÉ : Plus besoin de sous-onglets avec un seul choix */}
+      {/* {isNewsTab && NEWS_TAB_ITEMS.length > 1 && (
         <View style={styles.subTabsContainer}>
           {NEWS_TAB_ITEMS.map(tab => (
             <TouchableOpacity
@@ -226,7 +230,7 @@ const HomeScreen = () => {
             </TouchableOpacity>
           ))}
         </View>
-      )}
+      )} */}
 
       {/* Sous-onglets pour "Suivre un jeu" */}
       {isFollowGamesTab && (

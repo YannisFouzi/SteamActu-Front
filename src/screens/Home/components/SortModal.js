@@ -7,7 +7,9 @@ const SORT_OPTIONS = [
   {value: 'default', label: 'Ordre alphabétique'},
   {value: 'recent', label: 'Joué récemment'},
   {value: 'mostPlayed', label: 'Plus joué'},
-  {value: 'recentlyUpdated', label: 'Mis à jour récemment'},
+  // ⚠️ DÉSACTIVÉ : Tri trop lent (fetch news pour chaque jeu)
+  // Pour réactiver : décommenter la ligne ci-dessous ET steam.js ligne 116
+  // {value: 'recentlyUpdated', label: 'Mis à jour récemment'},
 ];
 
 const SortModal = () => {

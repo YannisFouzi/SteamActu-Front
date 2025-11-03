@@ -28,13 +28,17 @@ const GameItemAlt = ({game}) => {
 
   const appId = getGameAppId(game);
   const isFollowed = isGameFollowed(appId);
-  const isRecent = isRecentlyUpdated(game.lastUpdateTimestamp);
+  // ⚠️ DÉSACTIVÉ : Badge trop lent (nécessite fetch news)
+  // Pour réactiver : décommenter ci-dessous ET steam.js ligne 116
+  // const isRecent = isRecentlyUpdated(game.lastUpdateTimestamp);
+  const isRecent = false; // Toujours false pour désactiver le badge
 
   return (
     <TouchableOpacity
       style={[styles.container, isRecent && styles.recentlyUpdatedGameItem]}
       onPress={() => navigation.navigate('GameDetails', {game})}>
-      {isRecent && (
+      {/* ⚠️ Badge "Nouveau" désactivé - voir commentaire ligne 31 */}
+      {false && isRecent && (
         <View style={styles.updateBadge}>
           <Text style={styles.updateBadgeText}>Nouveau</Text>
         </View>
@@ -54,9 +58,10 @@ const GameItemAlt = ({game}) => {
           <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
             {game.name}
           </Text>
-          <Text style={styles.lastUpdate}>
+          {/* ⚠️ DÉSACTIVÉ : Date MAJ incorrecte sans fetch news */}
+          {/* <Text style={styles.lastUpdate}>
             Dernière MAJ: {formatRelativeDate(game.lastUpdateTimestamp)}
-          </Text>
+          </Text> */}
         </View>
 
         <Pressable

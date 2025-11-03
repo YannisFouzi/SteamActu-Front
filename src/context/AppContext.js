@@ -142,9 +142,10 @@ export const AppProvider = ({children, navigation = null}) => {
       case 'default':
         filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
-      case 'recentlyUpdated':
-        filtered.sort((a, b) => getLastUpdateValue(b) - getLastUpdateValue(a));
-        break;
+      // ⚠️ DÉSACTIVÉ : Tri trop lent - voir SortModal.js
+      // case 'recentlyUpdated':
+      //   filtered.sort((a, b) => getLastUpdateValue(b) - getLastUpdateValue(a));
+      //   break;
       case 'mostPlayed':
         filtered.sort(
           (a, b) => getPlaytimeForeverValue(b) - getPlaytimeForeverValue(a),
