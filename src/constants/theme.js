@@ -210,9 +210,6 @@ export const SCREEN_CONFIGS = {
   Settings: {
     title: 'Paramètres',
   },
-  Wishlist: {
-    headerShown: false,
-  },
   GameDetails: {
     // Configuration dynamique dans le navigateur
     getDynamicOptions: route => ({

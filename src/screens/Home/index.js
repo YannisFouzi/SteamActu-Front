@@ -1,11 +1,21 @@
 import {useNavigation} from '@react-navigation/native';
 import React, {useCallback, useEffect, useState} from 'react';
-import {ActivityIndicator, Text, TouchableOpacity, View} from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  RefreshControl,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import LoadingContainer from '../../components/common/LoadingContainer';
 import {COLORS} from '../../constants/theme';
 import {useAppContext} from '../../context/AppContext';
 import {useNewsManager} from '../../hooks/useNewsManager';
+import {useWishlist} from '../../hooks/useWishlist';
 import FilterModal from './components/FilterModal';
 import GamesList from './components/GamesList';
 import NewsTab from './components/NewsTab';
@@ -15,12 +25,24 @@ import styles from './styles';
 
 const TABS = {
   NEWS: 'news',
-  MY_GAMES: 'myGames',
+  FOLLOW_GAMES: 'followGames',
 };
 
 const TAB_ITEMS = [
   {key: TABS.NEWS, label: 'Actus'},
-  {key: TABS.MY_GAMES, label: 'Mes jeux'},
+  {key: TABS.FOLLOW_GAMES, label: 'Suivre un jeu'},
+];
+
+const FOLLOW_GAME_TABS = {
+  MY_GAMES: 'myGames',
+  WISHLIST: 'wishlist',
+  SEARCH: 'search',
+};
+
+const FOLLOW_GAME_TAB_ITEMS = [
+  {key: FOLLOW_GAME_TABS.MY_GAMES, label: 'Mes jeux'},
+  {key: FOLLOW_GAME_TABS.WISHLIST, label: 'Wishlist'},
+  {key: FOLLOW_GAME_TABS.SEARCH, label: 'Chercher un jeu'},
 ];
 
 const HomeScreen = () => {
@@ -32,10 +54,26 @@ const HomeScreen = () => {
     handleFollowGame,
   } = useAppContext();
   const navigation = useNavigation();
-  const [activeTab, setActiveTab] = useState(TABS.MY_GAMES);
+  const [activeTab, setActiveTab] = useState(TABS.FOLLOW_GAMES);
+  const [activeFollowTab, setActiveFollowTab] = useState(
+    FOLLOW_GAME_TABS.MY_GAMES,
+  );
   const [showFollowedNewsOnly, setShowFollowedNewsOnly] = useState(false);
+  const [wishlistSearchQuery, setWishlistSearchQuery] = useState('');
+  const [wishlistSortBy, setWishlistSortBy] = useState('recent'); // 'recent' ou 'alphabetical'
 
   const isNewsTab = activeTab === TABS.NEWS;
+  const isFollowGamesTab = activeTab === TABS.FOLLOW_GAMES;
+
+  // Hook wishlist
+  const {
+    wishlist,
+    loading: wishlistLoading,
+    refreshing: wishlistRefreshing,
+    fetchWishlist,
+    handleRefresh: handleWishlistRefresh,
+    filterWishlist,
+  } = useWishlist(steamId);
 
   // Hook personnalisé pour la gestion des news
   const {
@@ -52,6 +90,26 @@ const HomeScreen = () => {
       fetchNews();
     }
   }, [isNewsTab, isNewsInitialized, isNewsLoading, fetchNews]);
+
+  // Charger la wishlist au premier accès
+  useEffect(() => {
+    if (
+      isFollowGamesTab &&
+      activeFollowTab === FOLLOW_GAME_TABS.WISHLIST &&
+      steamId &&
+      wishlist.length === 0 &&
+      !wishlistLoading
+    ) {
+      fetchWishlist();
+    }
+  }, [
+    isFollowGamesTab,
+    activeFollowTab,
+    steamId,
+    wishlist.length,
+    wishlistLoading,
+    fetchWishlist,
+  ]);
 
   useEffect(() => {
     const onFocus = () => {
@@ -86,24 +144,36 @@ const HomeScreen = () => {
     [handleFollowGame, updateNewsFollowStatus],
   );
 
+  // Tri de la wishlist
+  const getSortedWishlist = useCallback(() => {
+    let filtered = wishlistSearchQuery
+      ? filterWishlist(wishlistSearchQuery)
+      : wishlist;
+
+    if (wishlistSortBy === 'recent') {
+      // Tri par date d'ajout (plus récents d'abord)
+      return [...filtered].sort((a, b) => b.date_added - a.date_added);
+    } else if (wishlistSortBy === 'alphabetical') {
+      // Tri alphabétique
+      return [...filtered].sort((a, b) =>
+        a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
+      );
+    }
+    return filtered;
+  }, [wishlist, wishlistSearchQuery, wishlistSortBy, filterWishlist]);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>Steam Actu</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => navigation.navigate('Wishlist')}>
-            <Text style={styles.headerButtonText}>💝 Wishlist</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => navigation.navigate('Settings')}>
-            <Text style={styles.headerButtonText}>⚙️</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => navigation.navigate('Settings')}>
+          <Text style={styles.headerButtonText}>⚙️</Text>
+        </TouchableOpacity>
       </View>
 
+      {/* Onglets principaux */}
       <View style={styles.tabsContainer}>
         {TAB_ITEMS.map(tab => (
           <TouchableOpacity
@@ -124,6 +194,30 @@ const HomeScreen = () => {
         ))}
       </View>
 
+      {/* Sous-onglets pour "Suivre un jeu" */}
+      {isFollowGamesTab && (
+        <View style={styles.subTabsContainer}>
+          {FOLLOW_GAME_TAB_ITEMS.map(tab => (
+            <TouchableOpacity
+              key={tab.key}
+              style={[
+                styles.subTabButton,
+                activeFollowTab === tab.key && styles.subTabButtonActive,
+              ]}
+              onPress={() => setActiveFollowTab(tab.key)}>
+              <Text
+                style={[
+                  styles.subTabButtonText,
+                  activeFollowTab === tab.key && styles.subTabButtonTextActive,
+                ]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {/* Contenu selon l'onglet actif */}
       {isNewsTab ? (
         <NewsTab
           steamId={steamId}
@@ -133,18 +227,151 @@ const HomeScreen = () => {
           fetchNews={fetchNews}
           handleFollowGame={handleNewsToggleFollow}
         />
-      ) : (
+      ) : isFollowGamesTab ? (
         <>
-          <SearchBar />
-          {gamesLoading ? (
-            <LoadingContainer text="Chargement des jeux..." />
+          {activeFollowTab === FOLLOW_GAME_TABS.MY_GAMES ? (
+            <>
+              <SearchBar />
+              {gamesLoading ? (
+                <LoadingContainer text="Chargement des jeux..." />
+              ) : (
+                <GamesList />
+              )}
+            </>
+          ) : activeFollowTab === FOLLOW_GAME_TABS.WISHLIST ? (
+            <>
+              {/* Boutons de tri */}
+              <View style={styles.wishlistSortContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.wishlistSortButton,
+                    wishlistSortBy === 'recent' &&
+                      styles.wishlistSortButtonActive,
+                  ]}
+                  onPress={() => setWishlistSortBy('recent')}>
+                  <Text
+                    style={[
+                      styles.wishlistSortButtonText,
+                      wishlistSortBy === 'recent' &&
+                        styles.wishlistSortButtonTextActive,
+                    ]}>
+                    📅 Récemment ajoutés
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.wishlistSortButton,
+                    wishlistSortBy === 'alphabetical' &&
+                      styles.wishlistSortButtonActive,
+                  ]}
+                  onPress={() => setWishlistSortBy('alphabetical')}>
+                  <Text
+                    style={[
+                      styles.wishlistSortButtonText,
+                      wishlistSortBy === 'alphabetical' &&
+                        styles.wishlistSortButtonTextActive,
+                    ]}>
+                    🔤 Alphabétique
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.searchContainer}>
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Rechercher dans la wishlist..."
+                  placeholderTextColor={COLORS.STEAM_TEXT_GRAY}
+                  value={wishlistSearchQuery}
+                  onChangeText={setWishlistSearchQuery}
+                />
+                {wishlistSearchQuery !== '' && (
+                  <TouchableOpacity
+                    style={styles.clearButton}
+                    onPress={() => setWishlistSearchQuery('')}>
+                    <Text style={styles.clearButtonText}>✕</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {wishlistLoading && !wishlistRefreshing ? (
+                <LoadingContainer text="Chargement de la wishlist..." />
+              ) : (
+                <FlatList
+                  data={getSortedWishlist()}
+                  renderItem={({item}) => (
+                    <TouchableOpacity
+                      style={styles.wishlistCard}
+                      onPress={() =>
+                        navigation.navigate('GameDetails', {
+                          appId: item.appid.toString(),
+                          gameName: item.name,
+                        })
+                      }>
+                      <Image
+                        source={{uri: item.header_image || item.capsule}}
+                        style={styles.wishlistImage}
+                        resizeMode="cover"
+                      />
+                      <View style={styles.wishlistInfo}>
+                        <Text style={styles.wishlistName} numberOfLines={2}>
+                          {item.name}
+                        </Text>
+                        {item.release_string && (
+                          <Text style={styles.wishlistRelease}>
+                            {item.release_string}
+                          </Text>
+                        )}
+                        <Text style={styles.wishlistDate}>
+                          Ajouté le{' '}
+                          {new Date(item.date_added * 1000).toLocaleDateString(
+                            'fr-FR',
+                          )}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  )}
+                  keyExtractor={item => item.appid.toString()}
+                  contentContainerStyle={styles.wishlistList}
+                  ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                      <Text style={styles.emptyText}>
+                        {wishlistSearchQuery
+                          ? 'Aucun jeu trouvé'
+                          : 'Votre wishlist est vide'}
+                      </Text>
+                    </View>
+                  }
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={wishlistRefreshing}
+                      onRefresh={handleWishlistRefresh}
+                      tintColor={COLORS.STEAM_BLUE}
+                      colors={[COLORS.STEAM_BLUE]}
+                    />
+                  }
+                />
+              )}
+            </>
           ) : (
-            <GamesList />
+            // Onglet "Chercher un jeu" - placeholder
+            <View style={styles.placeholderContainer}>
+              <Text style={styles.placeholderEmoji}>🔍</Text>
+              <Text style={styles.placeholderTitle}>Chercher un jeu</Text>
+              <Text style={styles.placeholderText}>
+                Fonctionnalité en cours de développement
+              </Text>
+              <Text style={styles.placeholderSubtext}>
+                Vous pourrez bientôt rechercher et suivre n'importe quel jeu
+                Steam
+              </Text>
+            </View>
           )}
         </>
-      )}
+      ) : null}
 
-      {activeTab === TABS.MY_GAMES && refreshing ? (
+      {activeTab === TABS.FOLLOW_GAMES &&
+      activeFollowTab === FOLLOW_GAME_TABS.MY_GAMES &&
+      refreshing ? (
         <View style={styles.loadingMoreContainer}>
           <ActivityIndicator size="small" color={COLORS.STEAM_BLUE} />
           <Text style={styles.loadingMoreText}>

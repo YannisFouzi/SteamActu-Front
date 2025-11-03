@@ -24,18 +24,13 @@ export default StyleSheet.create({
   title: {
     ...TEXT_STYLES.title,
   },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   headerButton: {
     paddingVertical: 6,
     paddingHorizontal: 8,
   },
   headerButtonText: {
     ...TEXT_STYLES.accent,
-    fontSize: 14,
+    fontSize: 18,
   },
   tabsContainer: {
     flexDirection: 'row',
@@ -200,5 +195,139 @@ export default StyleSheet.create({
   },
   selectedSortOption: {
     backgroundColor: COLORS.STEAM_LIGHT_BLUE,
+  },
+  // Sous-onglets
+  subTabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.STEAM_NAVY,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.STEAM_BORDER,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+  },
+  subTabButton: {
+    flex: 1,
+    marginHorizontal: 4,
+    borderRadius: 4,
+    backgroundColor: COLORS.STEAM_GRAY,
+    paddingVertical: 6,
+    alignItems: 'center',
+  },
+  subTabButtonActive: {
+    backgroundColor: COLORS.STEAM_LIGHT_BLUE,
+  },
+  subTabButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.STEAM_TEXT_GRAY,
+  },
+  subTabButtonTextActive: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.WHITE,
+  },
+  // Wishlist
+  wishlistSortContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: COLORS.STEAM_DARK,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.STEAM_BORDER,
+    gap: 8,
+  },
+  wishlistSortButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: COLORS.STEAM_GRAY,
+    alignItems: 'center',
+  },
+  wishlistSortButtonActive: {
+    backgroundColor: COLORS.STEAM_BLUE,
+  },
+  wishlistSortButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.STEAM_TEXT_GRAY,
+  },
+  wishlistSortButtonTextActive: {
+    color: COLORS.WHITE,
+  },
+  wishlistList: {
+    padding: 12,
+  },
+  wishlistCard: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.STEAM_NAVY,
+    borderRadius: 8,
+    marginBottom: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: COLORS.STEAM_BORDER,
+  },
+  wishlistImage: {
+    width: 120,
+    height: 90,
+    backgroundColor: COLORS.STEAM_GRAY,
+  },
+  wishlistInfo: {
+    flex: 1,
+    padding: 12,
+    justifyContent: 'center',
+  },
+  wishlistName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.WHITE,
+    marginBottom: 4,
+  },
+  wishlistRelease: {
+    fontSize: 12,
+    color: COLORS.STEAM_TEXT_GRAY,
+    marginBottom: 4,
+  },
+  wishlistDate: {
+    fontSize: 11,
+    color: COLORS.STEAM_TEXT_GRAY,
+    fontStyle: 'italic',
+  },
+  clearButton: {
+    marginLeft: 8,
+    padding: 8,
+  },
+  clearButtonText: {
+    fontSize: 18,
+    color: COLORS.STEAM_TEXT_GRAY,
+  },
+  // Placeholder
+  placeholderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  placeholderEmoji: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  placeholderTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: COLORS.WHITE,
+    marginBottom: 12,
+  },
+  placeholderText: {
+    fontSize: 16,
+    color: COLORS.STEAM_TEXT_GRAY,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  placeholderSubtext: {
+    fontSize: 14,
+    color: COLORS.STEAM_TEXT_GRAY,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
