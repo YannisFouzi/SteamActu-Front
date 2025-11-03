@@ -2,7 +2,6 @@ import {useNavigation} from '@react-navigation/native';
 import React from 'react';
 import {
   Image,
-  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -12,14 +11,14 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {COLORS} from '../../../constants/theme';
 import {useAppContext} from '../../../context/AppContext';
 import {
-  formatRelativeDate,
   getGameAppId,
   isValidGame,
 } from '../../../utils/gameHelpers';
 
 const GameItemAlt = ({game}) => {
   const navigation = useNavigation();
-  const {handleFollowGame, isRecentlyUpdated, isGameFollowed} = useAppContext();
+  const {handleFollowGame, isGameFollowed} = useAppContext();
+  const [imageError, setImageError] = React.useState(false);
 
   // Validation et extraction des données du jeu
   if (!isValidGame(game)) {
@@ -28,113 +27,83 @@ const GameItemAlt = ({game}) => {
 
   const appId = getGameAppId(game);
   const isFollowed = isGameFollowed(appId);
-  // ⚠️ DÉSACTIVÉ : Badge trop lent (nécessite fetch news)
-  // Pour réactiver : décommenter ci-dessous ET steam.js ligne 116
-  // const isRecent = isRecentlyUpdated(game.lastUpdateTimestamp);
-  const isRecent = false; // Toujours false pour désactiver le badge
+
+  // Construire l'URL de l'image du jeu (header image Steam)
+  const gameImageUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
 
   return (
     <TouchableOpacity
-      style={[styles.container, isRecent && styles.recentlyUpdatedGameItem]}
+      style={styles.container}
       onPress={() => navigation.navigate('GameDetails', {game})}>
-      {/* ⚠️ Badge "Nouveau" désactivé - voir commentaire ligne 31 */}
-      {false && isRecent && (
-        <View style={styles.updateBadge}>
-          <Text style={styles.updateBadgeText}>Nouveau</Text>
+      {/* 🎨 Image du jeu (comme wishlist) */}
+      {imageError ? (
+        <View style={styles.gameImagePlaceholder}>
+          <Icon name="game-controller-outline" size={32} color="#999" />
         </View>
+      ) : (
+        <Image
+          source={{uri: gameImageUrl}}
+          style={styles.gameImage}
+          resizeMode="cover"
+          onError={() => setImageError(true)}
+        />
       )}
-      <View style={styles.content}>
-        <View style={styles.imageContainer}>
-          {game.logoUrl ? (
-            <Image source={{uri: game.logoUrl}} style={styles.logo} />
-          ) : (
-            <View style={styles.placeholderLogo}>
-              <Text style={styles.placeholderText}>🎮</Text>
-            </View>
-          )}
-        </View>
 
-        <View style={styles.info}>
-          <Text style={styles.name} numberOfLines={1} ellipsizeMode="tail">
-            {game.name}
-          </Text>
-          {/* ⚠️ DÉSACTIVÉ : Date MAJ incorrecte sans fetch news */}
-          {/* <Text style={styles.lastUpdate}>
-            Dernière MAJ: {formatRelativeDate(game.lastUpdateTimestamp)}
-          </Text> */}
-        </View>
-
-        <Pressable
-          style={styles.followButton}
-          onPress={() => {
-            if (appId) {
-              handleFollowGame(appId, isFollowed);
-            }
-          }}>
-          <Icon
-            name={isFollowed ? 'notifications' : 'notifications-outline'}
-            size={24}
-            color={isFollowed ? '#4CAF50' : '#757575'}
-          />
-        </Pressable>
+      {/* 📝 Infos du jeu */}
+      <View style={styles.info}>
+        <Text style={styles.name} numberOfLines={2}>
+          {game.name}
+        </Text>
       </View>
+
+      {/* 🔔 Bouton follow */}
+      <TouchableOpacity
+        style={styles.followButton}
+        onPress={e => {
+          e.stopPropagation();
+          if (appId) {
+            handleFollowGame(appId, isFollowed);
+          }
+        }}>
+        <Icon
+          name={isFollowed ? 'notifications' : 'notifications-outline'}
+          size={24}
+          color={isFollowed ? '#4CAF50' : '#757575'}
+        />
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
+  // 🎨 Style horizontal identique à la wishlist
   container: {
+    flexDirection: 'row',
     backgroundColor: COLORS.WHITE,
     borderRadius: 8,
     marginBottom: 8,
-    elevation: 2,
     overflow: 'hidden',
+    elevation: 2,
+    shadowColor: COLORS.BLACK,
+    shadowOffset: {width: 0, height: 1},
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
-  recentlyUpdatedGameItem: {
-    borderLeftWidth: 5,
-    borderLeftColor: '#4CAF50',
-  },
-  updateBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderBottomLeftRadius: 8,
-    zIndex: 1,
-  },
-  updateBadgeText: {
-    color: COLORS.WHITE,
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  content: {
-    flexDirection: 'row',
-    padding: 12,
-  },
-  imageContainer: {
-    marginRight: 12,
-  },
-  logo: {
-    width: 50,
-    height: 50,
-    borderRadius: 4,
+  gameImage: {
+    width: 120,
+    height: 80,
     backgroundColor: '#f0f0f0',
   },
-  placeholderLogo: {
-    width: 50,
-    height: 50,
-    borderRadius: 4,
+  gameImagePlaceholder: {
+    width: 120,
+    height: 80,
     backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  placeholderText: {
-    fontSize: 24,
-  },
   info: {
     flex: 1,
+    padding: 12,
     justifyContent: 'center',
   },
   name: {
@@ -142,14 +111,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#212121',
   },
-  lastUpdate: {
-    fontSize: 12,
-    color: '#757575',
-    marginTop: 2,
-  },
   followButton: {
     justifyContent: 'center',
-    padding: 8,
+    padding: 12,
   },
 });
 
