@@ -7,6 +7,7 @@ import GameDetailsScreen from '../screens/GameDetailsScreen';
 import HomeScreen from '../screens/Home';
 import LoginScreen from '../screens/LoginScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import WishlistScreen from '../screens/WishlistScreen';
 
 // Importation du thÃ¨me centralisÃ©
 import {
@@ -47,6 +48,12 @@ const AppNavigator = () => {
           name="Settings"
           component={SettingsScreen}
           options={SCREEN_CONFIGS.Settings}
+        />
+
+        <Stack.Screen
+          name="Wishlist"
+          component={WishlistScreen}
+          options={SCREEN_CONFIGS.Wishlist}
         />
       </Stack.Navigator>
     </NavigationContainer>

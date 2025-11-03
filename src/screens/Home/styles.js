@@ -24,6 +24,11 @@ export default StyleSheet.create({
   title: {
     ...TEXT_STYLES.title,
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   headerButton: {
     paddingVertical: 6,
     paddingHorizontal: 8,

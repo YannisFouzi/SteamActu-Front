@@ -129,6 +129,11 @@ const steamService = {
     const params = followedOnly ? {followedOnly: 'true'} : {};
     return api.get(`/steam/games/${steamId}`, {params});
   },
+
+  // 🆕 Récupérer la wishlist d'un utilisateur
+  getUserWishlist: steamId => {
+    return api.get(`/steam/wishlist/${steamId}`);
+  },
 };
 
 // Service Steam OpenID pour l'authentification
