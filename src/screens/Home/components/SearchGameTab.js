@@ -12,6 +12,7 @@ import GameCard from '../../../components/common/GameCard';
 import {COLORS} from '../../../constants/theme';
 import {useAppContext} from '../../../context/AppContext';
 import {steamService} from '../../../services/api';
+import NoResultsPlaceholder from './NoResultsPlaceholder';
 
 const SearchGameTab = ({styles}) => {
   const {handleFollowGame, isGameFollowed} = useAppContext();
@@ -72,42 +73,18 @@ const SearchGameTab = ({styles}) => {
     );
   };
 
-  return (
-    <View style={styles.searchTabContainer}>
-      <View style={styles.searchInputContainer}>
-        <Icon
-          name="search"
-          size={20}
-          color={COLORS.STEAM_TEXT_GRAY}
-          style={styles.searchIcon}
-        />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Rechercher un jeu Steam..."
-          placeholderTextColor={COLORS.STEAM_TEXT_GRAY}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity
-            onPress={() => {
-              setSearchQuery('');
-              setSearchResults([]);
-              setHasSearched(false);
-            }}>
-            <Icon name="close-circle" size={20} color={COLORS.STEAM_TEXT_GRAY} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {searching ? (
+  const renderSearchContent = () => {
+    if (searching) {
+      return (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={COLORS.STEAM_BLUE} />
           <Text style={styles.loadingText}>Recherche en cours...</Text>
         </View>
-      ) : !hasSearched ? (
+      );
+    }
+
+    if (!hasSearched) {
+      return (
         <View style={styles.centerContainer}>
           <Icon
             name="search"
@@ -117,32 +94,67 @@ const SearchGameTab = ({styles}) => {
           />
           <Text style={styles.emptyTitle}>Rechercher un jeu</Text>
           <Text style={styles.emptyText}>
-            Tapez au moins 2 caractères pour commencer
+            Tapez au moins 2 caract��res pour commencer
           </Text>
         </View>
-      ) : searchResults.length === 0 ? (
-        <View style={styles.centerContainer}>
+      );
+    }
+
+    if (searchResults.length === 0) {
+      return <NoResultsPlaceholder styles={styles} />;
+    }
+
+    return (
+      <FlatList
+        data={searchResults}
+        renderItem={renderGameItem}
+        keyExtractor={item => item.appid.toString()}
+        contentContainerStyle={styles.searchResultsList}
+      />
+    );
+  };
+
+  return (
+    <View style={styles.searchTabContainer}>
+      <View style={styles.searchSection}>
+        <View style={styles.searchBarContainer}>
           <Icon
-            name="sad-outline"
-            size={64}
+            name="search"
+            size={20}
             color={COLORS.STEAM_TEXT_GRAY}
-            style={styles.emptyIcon}
+            style={styles.searchIcon}
           />
-          <Text style={styles.emptyTitle}>Aucun résultat</Text>
-          <Text style={styles.emptyText}>
-            Essayez avec d'autres mots-clés
-          </Text>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Rechercher un jeu Steam..."
+            placeholderTextColor={COLORS.STEAM_TEXT_GRAY}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              style={styles.searchClearButton}
+              onPress={() => {
+                setSearchQuery('');
+                setSearchResults([]);
+                setHasSearched(false);
+              }}>
+              <Icon
+                name="close-circle"
+                size={20}
+                color={COLORS.STEAM_TEXT_GRAY}
+              />
+            </TouchableOpacity>
+          )}
         </View>
-      ) : (
-        <FlatList
-          data={searchResults}
-          renderItem={renderGameItem}
-          keyExtractor={item => item.appid.toString()}
-          contentContainerStyle={styles.searchResultsList}
-        />
-      )}
+      </View>
+
+      {renderSearchContent()}
     </View>
   );
 };
 
 export default SearchGameTab;
+

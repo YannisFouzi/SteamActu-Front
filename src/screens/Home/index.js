@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Ionicons';
 import GameCard from '../../components/common/GameCard';
 import LoadingContainer from '../../components/common/LoadingContainer';
 import {COLORS} from '../../constants/theme';
@@ -20,9 +21,11 @@ import FilterModal from './components/FilterModal';
 import FollowedGamesTab from './components/FollowedGamesTab';
 import GamesList from './components/GamesList';
 import NewsTab from './components/NewsTab';
+import NoResultsPlaceholder from './components/NoResultsPlaceholder';
 import SearchBar from './components/SearchBar';
 import SearchGameTab from './components/SearchGameTab';
 import SortModal from './components/SortModal';
+import SortOptions from './components/SortOptions';
 import styles from './styles';
 
 const TABS = {
@@ -57,6 +60,17 @@ const FOLLOW_GAME_TAB_ITEMS = [
   {key: FOLLOW_GAME_TABS.SEARCH, label: 'Chercher un jeu'},
 ];
 
+const MY_GAMES_SORT_OPTIONS = [
+  {value: 'default', label: 'Alphabetique'},
+  {value: 'recent', label: 'Joue recent'},
+  {value: 'mostPlayed', label: 'Plus joues'},
+];
+
+const WISHLIST_SORT_OPTIONS = [
+  {value: 'recent', label: 'Recemment ajoutes'},
+  {value: 'alphabetical', label: 'Alphabetique'},
+];
+
 const HomeScreen = () => {
   const {
     loading: gamesLoading,
@@ -67,6 +81,9 @@ const HomeScreen = () => {
     games,
     handleFollowGame,
     isGameFollowed,
+    sortOption,
+    setSortOption,
+    filterAndSortGames,
   } = useAppContext();
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState(TABS.NEWS);
@@ -76,6 +93,13 @@ const HomeScreen = () => {
   );
   const [wishlistSearchQuery, setWishlistSearchQuery] = useState('');
   const [wishlistSortBy, setWishlistSortBy] = useState('recent');
+  const handleMyGamesSortChange = useCallback(
+    option => {
+      setSortOption(option);
+      filterAndSortGames(option);
+    },
+    [filterAndSortGames, setSortOption],
+  );
 
   const isNewsTab = activeTab === TABS.NEWS;
   const isFollowGamesTab = activeTab === TABS.FOLLOW_GAMES;
@@ -180,6 +204,15 @@ const HomeScreen = () => {
     return filtered;
   }, [wishlist, wishlistSearchQuery, wishlistSortBy, filterWishlist]);
 
+  const wishlistEmptyComponent =
+    wishlistSearchQuery !== '' ? (
+      <NoResultsPlaceholder styles={styles} />
+    ) : (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>Votre wishlist est vide</Text>
+      </View>
+    );
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -275,6 +308,11 @@ const HomeScreen = () => {
           {activeFollowTab === FOLLOW_GAME_TABS.MY_GAMES ? (
             <>
               <SearchBar />
+              <SortOptions
+                options={MY_GAMES_SORT_OPTIONS}
+                selectedValue={sortOption}
+                onSelect={handleMyGamesSortChange}
+              />
               {gamesLoading ? (
                 <LoadingContainer text="Chargement des jeux..." />
               ) : (
@@ -283,58 +321,42 @@ const HomeScreen = () => {
             </>
           ) : activeFollowTab === FOLLOW_GAME_TABS.WISHLIST ? (
             <>
-              {/* Boutons de tri */}
-              <View style={styles.wishlistSortContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.wishlistSortButton,
-                    wishlistSortBy === 'recent' &&
-                      styles.wishlistSortButtonActive,
-                  ]}
-                  onPress={() => setWishlistSortBy('recent')}>
-                  <Text
-                    style={[
-                      styles.wishlistSortButtonText,
-                      wishlistSortBy === 'recent' &&
-                        styles.wishlistSortButtonTextActive,
-                    ]}>
-                    📅 Récemment ajoutés
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.wishlistSortButton,
-                    wishlistSortBy === 'alphabetical' &&
-                      styles.wishlistSortButtonActive,
-                  ]}
-                  onPress={() => setWishlistSortBy('alphabetical')}>
-                  <Text
-                    style={[
-                      styles.wishlistSortButtonText,
-                      wishlistSortBy === 'alphabetical' &&
-                        styles.wishlistSortButtonTextActive,
-                    ]}>
-                    🔤 Alphabétique
-                  </Text>
-                </TouchableOpacity>
+              <View style={styles.searchSection}>
+                <View style={styles.searchBarContainer}>
+                  <Icon
+                    name="search"
+                    size={20}
+                    color={COLORS.STEAM_TEXT_GRAY}
+                    style={styles.searchIcon}
+                  />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Rechercher dans ma wishlist..."
+                    placeholderTextColor={COLORS.STEAM_TEXT_GRAY}
+                    value={wishlistSearchQuery}
+                    onChangeText={setWishlistSearchQuery}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                  {wishlistSearchQuery !== '' && (
+                    <TouchableOpacity
+                      style={styles.searchClearButton}
+                      onPress={() => setWishlistSearchQuery('')}>
+                      <Icon
+                        name="close-circle"
+                        size={20}
+                        color={COLORS.STEAM_TEXT_GRAY}
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
 
-              <View style={styles.searchContainer}>
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Rechercher dans ma wishlist..."
-                  placeholderTextColor={COLORS.STEAM_TEXT_GRAY}
-                  value={wishlistSearchQuery}
-                  onChangeText={setWishlistSearchQuery}
-                />
-                {wishlistSearchQuery !== '' && (
-                  <TouchableOpacity
-                    style={styles.clearButton}
-                    onPress={() => setWishlistSearchQuery('')}>
-                    <Text style={styles.clearButtonText}>✕</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+              <SortOptions
+                options={WISHLIST_SORT_OPTIONS}
+                selectedValue={wishlistSortBy}
+                onSelect={setWishlistSortBy}
+              />
 
               {wishlistLoading && !wishlistRefreshing ? (
                 <LoadingContainer text="Chargement de la wishlist..." />
@@ -344,9 +366,6 @@ const HomeScreen = () => {
                   renderItem={({item}) => {
                     const appId = item.appid?.toString();
                     const isFollowed = appId ? isGameFollowed(appId) : false;
-                    const dateText = `Ajouté le ${new Date(
-                      item.date_added * 1000,
-                    ).toLocaleDateString('fr-FR')}`;
 
                     return (
                       <GameCard
@@ -361,22 +380,12 @@ const HomeScreen = () => {
                             });
                           }
                         }}
-                        showDate={true}
-                        dateText={dateText}
                       />
                     );
                   }}
                   keyExtractor={item => item.appid.toString()}
                   contentContainerStyle={styles.wishlistList}
-                  ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                      <Text style={styles.emptyText}>
-                        {wishlistSearchQuery
-                          ? 'Aucun jeu trouvé'
-                          : 'Votre wishlist est vide'}
-                      </Text>
-                    </View>
-                  }
+                  ListEmptyComponent={wishlistEmptyComponent}
                   refreshControl={
                     <RefreshControl
                       refreshing={wishlistRefreshing}

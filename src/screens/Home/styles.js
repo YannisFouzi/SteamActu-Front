@@ -57,42 +57,29 @@ export default StyleSheet.create({
   tabButtonTextActive: {
     ...TEXT_STYLES.tabButtonActive,
   },
-  searchContainer: {
+  searchSection: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  searchBarContainer: {
     flexDirection: 'row',
-    backgroundColor: COLORS.STEAM_GRAY,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.STEAM_NAVY,
+    backgroundColor: COLORS.STEAM_DARK,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  searchIcon: {
+    marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    backgroundColor: COLORS.STEAM_LIGHT_BLUE,
-    borderRadius: 3,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
     color: COLORS.WHITE,
-    fontSize: 14,
+    fontSize: 16,
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    marginLeft: 10,
-    justifyContent: 'space-between',
-    width: 130,
-  },
-  actionButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: COLORS.STEAM_LIGHT_BLUE,
-    borderRadius: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minWidth: 60,
-  },
-  actionButtonText: {
-    color: COLORS.WHITE,
-    fontSize: 14,
+  searchClearButton: {
+    marginLeft: 8,
   },
   gamesList: {
     padding: 12,
@@ -183,19 +170,6 @@ export default StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  sortOption: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 3,
-    marginBottom: 8,
-  },
-  sortOptionText: {
-    color: COLORS.WHITE,
-    fontSize: 16,
-  },
-  selectedSortOption: {
-    backgroundColor: COLORS.STEAM_LIGHT_BLUE,
-  },
   // Sous-onglets
   subTabsContainer: {
     flexDirection: 'row',
@@ -226,33 +200,29 @@ export default StyleSheet.create({
     fontWeight: '600',
     color: COLORS.WHITE,
   },
-  // Wishlist
-  wishlistSortContainer: {
+  sortOptionsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: COLORS.STEAM_DARK,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.STEAM_BORDER,
-    gap: 8,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
-  wishlistSortButton: {
+  sortOptionButton: {
     flex: 1,
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
-    backgroundColor: COLORS.STEAM_GRAY,
+    backgroundColor: COLORS.STEAM_DARK,
     alignItems: 'center',
+    marginHorizontal: 4,
   },
-  wishlistSortButtonActive: {
+  sortOptionButtonActive: {
     backgroundColor: COLORS.STEAM_BLUE,
   },
-  wishlistSortButtonText: {
+  sortOptionText: {
     fontSize: 13,
     fontWeight: '600',
     color: COLORS.STEAM_TEXT_GRAY,
   },
-  wishlistSortButtonTextActive: {
+  sortOptionTextActive: {
     color: COLORS.WHITE,
   },
   wishlistList: {
@@ -443,23 +413,6 @@ export default StyleSheet.create({
   searchTabContainer: {
     flex: 1,
   },
-  searchInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.STEAM_DARK,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    margin: 16,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    color: COLORS.WHITE,
-    fontSize: 16,
-  },
   searchResultsList: {
     padding: 12,
   },
@@ -492,3 +445,7 @@ export default StyleSheet.create({
     padding: 12,
   },
 });
+
+
+
+

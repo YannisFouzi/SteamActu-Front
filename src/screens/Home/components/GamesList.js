@@ -5,17 +5,22 @@ import {useAppContext} from '../../../context/AppContext';
 import {getGameAppId} from '../../../utils/gameHelpers';
 import styles from '../styles';
 import GameItemAlt from './GameItemAlt';
+import NoResultsPlaceholder from './NoResultsPlaceholder';
 
 const GamesList = () => {
-  const {filteredGames, refreshing, handleRefresh} = useAppContext();
+  const {filteredGames, refreshing, handleRefresh, searchQuery} =
+    useAppContext();
 
-  const renderEmptyList = () => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>
-        Aucun jeu trouvé. Essayez de modifier vos critères de recherche.
-      </Text>
-    </View>
-  );
+  const renderEmptyList = () =>
+    searchQuery && searchQuery.trim() !== '' ? (
+      <NoResultsPlaceholder styles={styles} />
+    ) : (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>
+          Aucun jeu disponible pour le moment.
+        </Text>
+      </View>
+    );
 
   return (
     <FlatList
