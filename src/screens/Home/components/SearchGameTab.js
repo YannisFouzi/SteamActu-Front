@@ -2,13 +2,13 @@ import React, {useCallback, useState} from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import GameCard from '../../../components/common/GameCard';
 import {COLORS} from '../../../constants/theme';
 import {useAppContext} from '../../../context/AppContext';
 import {steamService} from '../../../services/api';
@@ -58,32 +58,17 @@ const SearchGameTab = ({styles}) => {
     const isFollowed = isGameFollowed(appId);
 
     return (
-      <View style={styles.wishlistCardHorizontal}>
-        <Image
-          source={{uri: item.header_image}}
-          style={styles.wishlistImageHorizontal}
-          resizeMode="cover"
-        />
-        <View style={styles.wishlistInfoHorizontal}>
-          <Text style={styles.wishlistNameHorizontal} numberOfLines={2}>
-            {item.name}
-          </Text>
-        </View>
-        <TouchableOpacity
-          style={styles.wishlistFollowButton}
-          onPress={() => {
-            handleFollowGame(appId, isFollowed, {
-              name: item.name,
-              logoUrl: item.header_image,
-            });
-          }}>
-          <Icon
-            name={isFollowed ? 'notifications' : 'notifications-outline'}
-            size={24}
-            color={isFollowed ? '#4CAF50' : '#757575'}
-          />
-        </TouchableOpacity>
-      </View>
+      <GameCard
+        game={{name: item.name}}
+        imageUrl={item.header_image}
+        isFollowed={isFollowed}
+        onFollowPress={() => {
+          handleFollowGame(appId, isFollowed, {
+            name: item.name,
+            logoUrl: item.header_image,
+          });
+        }}
+      />
     );
   };
 

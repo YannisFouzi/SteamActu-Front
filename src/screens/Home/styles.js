@@ -95,7 +95,7 @@ export default StyleSheet.create({
     fontSize: 14,
   },
   gamesList: {
-    paddingTop: 8,
+    padding: 12,
   },
   loadingContainer: {
     flex: 1,
@@ -256,43 +256,6 @@ export default StyleSheet.create({
     color: COLORS.WHITE,
   },
   wishlistList: {
-    padding: 12,
-  },
-  // 🎨 Style horizontal final (comme "Mes jeux")
-  wishlistCardHorizontal: {
-    flexDirection: 'row',
-    backgroundColor: COLORS.WHITE,
-    borderRadius: 8,
-    marginBottom: 8,
-    overflow: 'hidden',
-    elevation: 2,
-    shadowColor: COLORS.BLACK,
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  wishlistImageHorizontal: {
-    width: 120,
-    height: 80,
-    backgroundColor: COLORS.STEAM_GRAY,
-  },
-  wishlistInfoHorizontal: {
-    flex: 1,
-    padding: 12,
-    justifyContent: 'center',
-  },
-  wishlistNameHorizontal: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#212121',
-    marginBottom: 4,
-  },
-  wishlistDateHorizontal: {
-    fontSize: 12,
-    color: '#757575',
-  },
-  wishlistFollowButton: {
-    justifyContent: 'center',
     padding: 12,
   },
   // ❌ Anciens styles (conservés pour migration)
@@ -498,8 +461,7 @@ export default StyleSheet.create({
     fontSize: 16,
   },
   searchResultsList: {
-    padding: 16,
-    paddingTop: 0,
+    padding: 12,
   },
   centerContainer: {
     flex: 1,
@@ -525,5 +487,8 @@ export default StyleSheet.create({
     fontSize: 16,
     color: COLORS.WHITE,
     marginTop: 12,
+  },
+  followedGamesList: {
+    padding: 12,
   },
 });

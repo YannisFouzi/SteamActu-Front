@@ -80,6 +80,10 @@ const userService = {
   updateRecentActiveGames: (steamId, games) => {
     return api.put(`/users/${steamId}/active-games`, {games});
   },
+
+  getFollowedGamesDetails: steamId => {
+    return api.get(`/users/${steamId}/followed-games-details`);
+  },
 };
 
 // Service actualités

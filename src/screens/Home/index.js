@@ -12,12 +12,14 @@ import {
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
+import GameCard from '../../components/common/GameCard';
 import LoadingContainer from '../../components/common/LoadingContainer';
 import {COLORS} from '../../constants/theme';
 import {useAppContext} from '../../context/AppContext';
 import {useNewsManager} from '../../hooks/useNewsManager';
 import {useWishlist} from '../../hooks/useWishlist';
 import FilterModal from './components/FilterModal';
+import FollowedGamesTab from './components/FollowedGamesTab';
 import GamesList from './components/GamesList';
 import NewsTab from './components/NewsTab';
 import SearchBar from './components/SearchBar';
@@ -36,16 +38,13 @@ const TAB_ITEMS = [
 ];
 
 const NEWS_TABS = {
-  FOLLOWED: 'followed',
-  // ⚠️ DÉSACTIVÉ : Onglet "Tous mes jeux" trop gourmand en ressources
-  // Pour réactiver : décommenter ci-dessous + cron checkNews + newsFeedService
-  // ALL_GAMES: 'allGames',
+  FEED: 'feed',
+  FOLLOWED_GAMES: 'followedGames',
 };
 
 const NEWS_TAB_ITEMS = [
-  {key: NEWS_TABS.FOLLOWED, label: 'Jeux suivis'},
-  // ⚠️ DÉSACTIVÉ : Voir commentaire ligne 38
-  // {key: NEWS_TABS.ALL_GAMES, label: 'Tous mes jeux'},
+  {key: NEWS_TABS.FEED, label: 'Feed'},
+  {key: NEWS_TABS.FOLLOWED_GAMES, label: 'Jeux suivis'},
 ];
 
 const FOLLOW_GAME_TABS = {
@@ -66,21 +65,25 @@ const HomeScreen = () => {
     refreshing,
     handleRefresh,
     steamId,
+    user,
+    games,
     handleFollowGame,
     isGameFollowed,
   } = useAppContext();
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState(TABS.NEWS);
-  const [activeNewsTab, setActiveNewsTab] = useState(NEWS_TABS.FOLLOWED);
+  const [activeNewsTab, setActiveNewsTab] = useState(NEWS_TABS.FEED);
   const [activeFollowTab, setActiveFollowTab] = useState(
     FOLLOW_GAME_TABS.MY_GAMES,
   );
   const [wishlistSearchQuery, setWishlistSearchQuery] = useState('');
-  const [wishlistSortBy, setWishlistSortBy] = useState('recent'); // 'recent' ou 'alphabetical'
+  const [wishlistSortBy, setWishlistSortBy] = useState('recent');
 
   const isNewsTab = activeTab === TABS.NEWS;
   const isFollowGamesTab = activeTab === TABS.FOLLOW_GAMES;
-  const showFollowedNewsOnly = activeNewsTab === NEWS_TABS.FOLLOWED;
+  const isFeedTab = activeNewsTab === NEWS_TABS.FEED;
+  const isFollowedGamesTab = activeNewsTab === NEWS_TABS.FOLLOWED_GAMES;
+  const showFollowedNewsOnly = true;
 
   // Hook wishlist
   const {
@@ -211,9 +214,7 @@ const HomeScreen = () => {
         ))}
       </View>
 
-      {/* Sous-onglets pour "Actus" */}
-      {/* ⚠️ DÉSACTIVÉ : Plus besoin de sous-onglets avec un seul choix */}
-      {/* {isNewsTab && NEWS_TAB_ITEMS.length > 1 && (
+      {isNewsTab && (
         <View style={styles.subTabsContainer}>
           {NEWS_TAB_ITEMS.map(tab => (
             <TouchableOpacity
@@ -233,7 +234,7 @@ const HomeScreen = () => {
             </TouchableOpacity>
           ))}
         </View>
-      )} */}
+      )}
 
       {/* Sous-onglets pour "Suivre un jeu" */}
       {isFollowGamesTab && (
@@ -260,13 +261,17 @@ const HomeScreen = () => {
 
       {/* Contenu selon l'onglet actif */}
       {isNewsTab ? (
-        <NewsTab
-          steamId={steamId}
-          showFollowedNewsOnly={showFollowedNewsOnly}
-          newsState={newsState}
-          fetchNews={fetchNews}
-          handleFollowGame={handleNewsToggleFollow}
-        />
+        isFeedTab ? (
+          <NewsTab
+            steamId={steamId}
+            showFollowedNewsOnly={true}
+            newsState={newsState}
+            fetchNews={fetchNews}
+            handleFollowGame={handleNewsToggleFollow}
+          />
+        ) : (
+          <FollowedGamesTab styles={styles} />
+        )
       ) : isFollowGamesTab ? (
         <>
           {activeFollowTab === FOLLOW_GAME_TABS.MY_GAMES ? (
@@ -341,48 +346,26 @@ const HomeScreen = () => {
                   renderItem={({item}) => {
                     const appId = item.appid?.toString();
                     const isFollowed = appId ? isGameFollowed(appId) : false;
+                    const dateText = `Ajouté le ${new Date(
+                      item.date_added * 1000,
+                    ).toLocaleDateString('fr-FR')}`;
 
                     return (
-                      <View style={styles.wishlistCardHorizontal}>
-                        <Image
-                          source={{uri: item.header_image || item.capsule}}
-                          style={styles.wishlistImageHorizontal}
-                          resizeMode="cover"
-                        />
-                        <View style={styles.wishlistInfoHorizontal}>
-                          <Text
-                            style={styles.wishlistNameHorizontal}
-                            numberOfLines={2}>
-                            {item.name}
-                          </Text>
-                          <Text style={styles.wishlistDateHorizontal}>
-                            Ajouté le{' '}
-                            {new Date(item.date_added * 1000).toLocaleDateString(
-                              'fr-FR',
-                            )}
-                          </Text>
-                        </View>
-                        <TouchableOpacity
-                          style={styles.wishlistFollowButton}
-                          onPress={() => {
-                            if (appId) {
-                              handleFollowGame(appId, isFollowed, {
-                                name: item.name,
-                                logoUrl: item.header_image || item.capsule,
-                              });
-                            }
-                          }}>
-                          <Icon
-                            name={
-                              isFollowed
-                                ? 'notifications'
-                                : 'notifications-outline'
-                            }
-                            size={24}
-                            color={isFollowed ? '#4CAF50' : '#757575'}
-                          />
-                        </TouchableOpacity>
-                      </View>
+                      <GameCard
+                        game={{name: item.name}}
+                        imageUrl={item.header_image || item.capsule}
+                        isFollowed={isFollowed}
+                        onFollowPress={() => {
+                          if (appId) {
+                            handleFollowGame(appId, isFollowed, {
+                              name: item.name,
+                              logoUrl: item.header_image || item.capsule,
+                            });
+                          }
+                        }}
+                        showDate={true}
+                        dateText={dateText}
+                      />
                     );
                   }}
                   keyExtractor={item => item.appid.toString()}
