@@ -3,7 +3,6 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Image,
   RefreshControl,
   Text,
   TextInput,
@@ -11,7 +10,6 @@ import {
   View,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/Ionicons';
 import GameCard from '../../components/common/GameCard';
 import LoadingContainer from '../../components/common/LoadingContainer';
 import {COLORS} from '../../constants/theme';
@@ -324,7 +322,7 @@ const HomeScreen = () => {
               <View style={styles.searchContainer}>
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Rechercher dans la wishlist..."
+                  placeholder="Rechercher dans ma wishlist..."
                   placeholderTextColor={COLORS.STEAM_TEXT_GRAY}
                   value={wishlistSearchQuery}
                   onChangeText={setWishlistSearchQuery}

@@ -36,7 +36,7 @@ const SearchBar = () => {
     <View style={styles.searchContainer}>
       <TextInput
         style={styles.searchInput}
-        placeholder="Rechercher un jeu..."
+        placeholder="Rechercher dans mes jeux..."
         placeholderTextColor={COLORS.STEAM_TEXT_GRAY}
         value={searchQuery}
         onChangeText={handleSearchChange}
