@@ -482,16 +482,22 @@ export const AppProvider = ({children, navigation = null}) => {
             gameIcon,
           );
           console.log('Jeu suivi avec succès:', gameName);
+
+          // Mettre à jour l'état local
+          setUser(prevUser => ({
+            ...prevUser,
+            followedGames: [...prevUser.followedGames, appIdString]
+          }));
         } else {
           // Ne plus suivre le jeu
           await userService.unfollowGame(steamId, appIdString);
           console.log('Jeu retiré des suivis:', gameName);
-        }
 
-        // Recharger les données de l'utilisateur
-        const userResponse = await userService.getUser(steamId);
-        if (userResponse.data) {
-          setUser(userResponse.data);
+          // Mettre à jour l'état local
+          setUser(prevUser => ({
+            ...prevUser,
+            followedGames: prevUser.followedGames.filter(id => id !== appIdString)
+          }));
         }
 
         // Forcer le rafraîchissement de la liste filtrée

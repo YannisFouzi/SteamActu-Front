@@ -37,7 +37,7 @@ const FollowedGamesTab = ({styles}) => {
 
   const renderGameItem = ({item}) => {
     const isFollowed = isGameFollowed(item.appId);
-    const imageUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${item.appId}/header.jpg`;
+    const imageUrl = item.imageUrl || `https://cdn.cloudflare.steamstatic.com/steam/apps/${item.appId}/header.jpg`;
 
     return (
       <GameCard
