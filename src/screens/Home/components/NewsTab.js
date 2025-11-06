@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo} from 'react';
+﻿import React, {useCallback, useMemo} from 'react';
 import {
   Alert,
   FlatList,
@@ -9,28 +9,23 @@ import {
   View,
 } from 'react-native';
 import LoadingContainer from '../../../components/common/LoadingContainer';
-import FollowToggle from '../../../components/common/FollowToggle';
 import {COLORS} from '../../../constants/theme';
-import {useAppContext} from '../../../context/AppContext';
 import {formatRelativeDate} from '../../../utils/gameHelpers';
 import styles from '../styles';
 
 /**
  * Composant pour l'onglet News
- * Extrait du HomeScreen pour réduire la complexité
+ * Extrait du HomeScreen pour rÃ©duire la complexitÃ©
  */
 const NewsTab = ({
   steamId,
   showFollowedNewsOnly,
   newsState,
   fetchNews,
-  onToggleFollow,
 }) => {
-  const {isGameFollowed} = useAppContext();
-
   const activeNewsState = newsState?.news || null;
 
-  // Formater une date relative avec les minutes (spécifique aux news)
+  // Formater une date relative avec les minutes (spÃ©cifique aux news)
   const formatDate = useCallback(timestamp => {
     return formatRelativeDate(timestamp, {
       includeMinutes: true,
@@ -53,7 +48,7 @@ const NewsTab = ({
     if (!targetUrl) {
       Alert.alert(
         'Information',
-        "Aucun lien n'est disponible pour cette actualité.",
+        "Aucun lien n'est disponible pour cette actualitÃ©.",
       );
       return;
     }
@@ -66,10 +61,10 @@ const NewsTab = ({
 
   const renderEmptyNewsList = useMemo(() => {
     const message = !steamId
-      ? 'Connectez-vous pour afficher vos actualités.'
+      ? 'Connectez-vous pour afficher vos actualitÃ©s.'
       : showFollowedNewsOnly
-      ? 'Aucune actualité récente pour vos jeux suivis.'
-      : 'Aucune actualité disponible pour le moment.';
+      ? 'Aucune actualitÃ© rÃ©cente pour vos jeux suivis.'
+      : 'Aucune actualitÃ© disponible pour le moment.';
 
     return () => (
       <View style={styles.emptyContainer}>
@@ -84,13 +79,6 @@ const NewsTab = ({
         return null;
       }
 
-      const appId = item.appId?.toString();
-      const rawFollowed =
-        typeof item.isFollowed === 'boolean'
-          ? item.isFollowed
-          : isGameFollowed(appId);
-      const isFollowed = rawFollowed;
-
       return (
         <TouchableOpacity
           style={styles.newsCard}
@@ -103,27 +91,12 @@ const NewsTab = ({
                 {formatDate(item.news?.date)}
               </Text>
             </View>
-            <FollowToggle
-              appId={appId}
-              name={item.gameName}
-              isFollowed={isFollowed}
-              size={22}
-              style={styles.newsFollowButton}
-              onToggle={({appId: toggledAppId, previousIsFollowed}) => {
-                if (onToggleFollow) {
-                  onToggleFollow({
-                    appId: toggledAppId,
-                    previousIsFollowed,
-                  });
-                }
-              }}
-            />
           </View>
           <Text style={styles.newsTitle}>{item.news?.title}</Text>
         </TouchableOpacity>
       );
     },
-    [formatDate, isGameFollowed, onToggleFollow, openNews],
+    [formatDate, openNews],
   );
 
   const newsKeyExtractor = useCallback(
@@ -140,7 +113,7 @@ const NewsTab = ({
       ) : null}
 
       {activeNewsState?.loading ? (
-        <LoadingContainer text="Chargement du fil d'actualités..." />
+        <LoadingContainer text="Chargement du fil d'actualitÃ©s..." />
       ) : (
         <FlatList
           data={activeNewsState?.items || []}

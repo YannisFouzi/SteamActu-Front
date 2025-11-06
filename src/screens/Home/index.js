@@ -119,7 +119,6 @@ const HomeScreen = () => {
   const {
     newsState,
     fetchNews,
-    updateNewsFollowStatus,
     isNewsInitialized,
     isNewsLoading,
   } = useNewsManager(steamId, showFollowedNewsOnly);
@@ -170,14 +169,6 @@ const HomeScreen = () => {
   }, [navigation, handleRefresh, refreshing, isNewsTab, fetchNews]);
 
   // Gestionnaire pour le suivi/désuivi des jeux depuis les news
-  const handleNewsToggleFollow = useCallback(
-    ({appId, previousIsFollowed}) => {
-      if (!appId) return;
-      updateNewsFollowStatus(appId, previousIsFollowed);
-    },
-    [updateNewsFollowStatus],
-  );
-
   // Tri de la wishlist
   const getSortedWishlist = useCallback(() => {
     let filtered = wishlistSearchQuery
@@ -290,7 +281,6 @@ const HomeScreen = () => {
             showFollowedNewsOnly={true}
             newsState={newsState}
             fetchNews={fetchNews}
-            onToggleFollow={handleNewsToggleFollow}
           />
         ) : (
           <FollowedGamesTab styles={styles} />
