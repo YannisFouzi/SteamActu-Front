@@ -168,10 +168,6 @@ const HomeScreen = () => {
 
   useEffect(() => {
     const onFocus = () => {
-      if (!refreshing) {
-        handleRefresh();
-      }
-
       if (isNewsTab) {
         fetchNews({silent: true});
       }
@@ -182,7 +178,7 @@ const HomeScreen = () => {
     return () => {
       focusUnsubscribe();
     };
-  }, [navigation, handleRefresh, refreshing, isNewsTab, fetchNews]);
+  }, [navigation, isNewsTab, fetchNews]);
 
   // Gestionnaire pour le suivi/désuivi des jeux depuis les news
   // Tri de la wishlist
