@@ -13,6 +13,7 @@ export const useUserSettings = () => {
   const [steamId, setSteamId] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoFollowEnabled, setAutoFollowEnabled] = useState(false);
+  const [autoFollowWishlistEnabled, setAutoFollowWishlistEnabled] = useState(false);
 
   // Charger les paramètres de l'utilisateur depuis AsyncStorage
   const loadUserSettings = useCallback(async () => {
@@ -32,6 +33,7 @@ export const useUserSettings = () => {
         'notificationsEnabled',
       );
       const savedAutoFollow = await AsyncStorage.getItem('autoFollowEnabled');
+      const savedAutoFollowWishlist = await AsyncStorage.getItem('autoFollowWishlistEnabled');
 
       // Utiliser les valeurs sauvegardées ou les valeurs par défaut
       setNotificationsEnabled(
@@ -39,6 +41,9 @@ export const useUserSettings = () => {
       );
       setAutoFollowEnabled(
         savedAutoFollow !== null ? JSON.parse(savedAutoFollow) : false,
+      );
+      setAutoFollowWishlistEnabled(
+        savedAutoFollowWishlist !== null ? JSON.parse(savedAutoFollowWishlist) : false,
       );
 
       return true;
@@ -54,7 +59,7 @@ export const useUserSettings = () => {
 
   // Sauvegarder les paramètres
   const saveSettings = useCallback(
-    async (newNotificationsEnabled, newAutoFollowEnabled) => {
+    async (newNotificationsEnabled, newAutoFollowEnabled, newAutoFollowWishlistEnabled) => {
       try {
         setSaving(true);
 
@@ -67,12 +72,17 @@ export const useUserSettings = () => {
           'autoFollowEnabled',
           JSON.stringify(newAutoFollowEnabled),
         );
+        await AsyncStorage.setItem(
+          'autoFollowWishlistEnabled',
+          JSON.stringify(newAutoFollowWishlistEnabled),
+        );
 
         // Synchroniser avec le backend (optionnel, pour la cohérence)
         try {
           await userService.updateNotificationSettings(steamId, {
             enabled: newNotificationsEnabled,
             autoFollowNewGames: newAutoFollowEnabled,
+            autoFollowWishlistGames: newAutoFollowWishlistEnabled,
           });
         } catch (apiError) {
           console.warn(
@@ -101,18 +111,27 @@ export const useUserSettings = () => {
   const handleToggleNotifications = useCallback(
     async value => {
       setNotificationsEnabled(value);
-      await saveSettings(value, autoFollowEnabled);
+      await saveSettings(value, autoFollowEnabled, autoFollowWishlistEnabled);
     },
-    [autoFollowEnabled, saveSettings],
+    [autoFollowEnabled, autoFollowWishlistEnabled, saveSettings],
   );
 
-  // Gestionnaire pour le suivi automatique
+  // Gestionnaire pour le suivi automatique (bibliothèque)
   const handleToggleAutoFollow = useCallback(
     async value => {
       setAutoFollowEnabled(value);
-      await saveSettings(notificationsEnabled, value);
+      await saveSettings(notificationsEnabled, value, autoFollowWishlistEnabled);
     },
-    [notificationsEnabled, saveSettings],
+    [notificationsEnabled, autoFollowWishlistEnabled, saveSettings],
+  );
+
+  // Gestionnaire pour le suivi automatique (wishlist)
+  const handleToggleAutoFollowWishlist = useCallback(
+    async value => {
+      setAutoFollowWishlistEnabled(value);
+      await saveSettings(notificationsEnabled, autoFollowEnabled, value);
+    },
+    [notificationsEnabled, autoFollowEnabled, saveSettings],
   );
 
   // Charger les paramètres au démarrage
@@ -126,8 +145,10 @@ export const useUserSettings = () => {
     steamId,
     notificationsEnabled,
     autoFollowEnabled,
+    autoFollowWishlistEnabled,
     handleToggleNotifications,
     handleToggleAutoFollow,
+    handleToggleAutoFollowWishlist,
     loadUserSettings,
   };
 };

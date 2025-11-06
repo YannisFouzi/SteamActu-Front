@@ -28,8 +28,10 @@ const SettingsScreen = () => {
     saving,
     notificationsEnabled,
     autoFollowEnabled,
+    autoFollowWishlistEnabled,
     handleToggleNotifications,
     handleToggleAutoFollow,
+    handleToggleAutoFollowWishlist,
   } = useUserSettings();
 
   // Gestionnaire pour la déconnexion
@@ -125,6 +127,14 @@ const SettingsScreen = () => {
         description="Les nouveaux jeux que vous achetez seront automatiquement ajoutés à votre liste de jeux suivis pour les notifications."
         value={autoFollowEnabled}
         onValueChange={handleToggleAutoFollow}
+        disabled={saving || loggingOut}
+      />
+
+      <SettingSection
+        label="Suivre automatiquement les jeux de la wishlist"
+        description="Les nouveaux jeux que vous ajoutez à votre wishlist Steam seront automatiquement ajoutés à votre liste de jeux suivis."
+        value={autoFollowWishlistEnabled}
+        onValueChange={handleToggleAutoFollowWishlist}
         disabled={saving || loggingOut}
       />
 
