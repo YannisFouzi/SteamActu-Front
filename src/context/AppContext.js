@@ -419,62 +419,68 @@ export const AppProvider = ({children, navigation = null}) => {
     }
   };
 
-  // Fonction pour gérer le suivi/désabonnement d'un jeu
-  // gameData : {name, logoUrl} pour les jeux non possédés (wishlist)
-  const handleFollowGame = async (appId, isFollowed, gameData = null) => {
+  // Fonction pour gerer le suivi/desabonnement d'un jeu
+  const handleFollowGame = async (gameMeta = {}) => {
     try {
       if (!steamId) {
         console.error('SteamID non trouvé');
-        return;
+        return false;
       }
 
-      if (!appId) {
+      const rawAppId = gameMeta?.appId ?? gameMeta?.appid;
+      if (!rawAppId) {
         console.error('AppID non trouvé');
-        return;
+        return false;
       }
 
-      // Convertir l'appId en chaîne
-      const appIdString = appId.toString();
+      const appIdString = rawAppId.toString();
 
       console.log('=== Début handleFollowGame ===');
       console.log('AppID reçu:', appIdString);
-      console.log('État isFollowed:', isFollowed);
+      console.log(
+        'État isFollowed (fourni):',
+        typeof gameMeta.isFollowed === 'boolean' ? gameMeta.isFollowed : 'non fourni',
+      );
       console.log('Nombre total de jeux:', games.length);
 
-      // Trouver le jeu dans la liste ou utiliser gameData (wishlist)
-      const game = games.find(g => {
-        const gameId = getGameAppId(g);
-        return gameId === appIdString;
-      });
+      const isFollowed =
+        typeof gameMeta.isFollowed === 'boolean'
+          ? gameMeta.isFollowed
+          : isGameFollowed(appIdString);
 
-      // Si le jeu n'est pas dans "Mes jeux", utiliser gameData (wishlist)
-      if (!game && !gameData) {
-        console.error('Jeu non trouvé dans la liste:', appIdString);
-        console.log('=== Fin handleFollowGame (erreur) ===');
-        return;
+      const game = games.find(g => getGameAppId(g) === appIdString);
+
+      const gameName =
+        gameMeta.name ||
+        game?.name ||
+        `Jeu ${appIdString}`;
+      const gameIcon =
+        gameMeta.imageUrl ||
+        gameMeta.logoUrl ||
+        (game ? getGameIconUrl(appIdString, game.img_icon_url) : '') ||
+        '';
+
+      console.log('Jeu cible:', gameName);
+
+      const previousGames = games;
+      let localToggleApplied = false;
+
+      if (game) {
+        const updatedGames = games.map(g => {
+          if (getGameAppId(g) === appIdString) {
+            localToggleApplied = true;
+            return {...g, isFollowed: !isFollowed};
+          }
+          return g;
+        });
+
+        if (localToggleApplied) {
+          setGames(updatedGames);
+        }
       }
 
-      const gameName = game ? game.name : gameData.name;
-      const gameIcon = game ? getGameIconUrl(appIdString, game.img_icon_url) : gameData.logoUrl;
-
-      console.log('Jeu trouvé:', gameName);
-
-      // Mettre à jour l'état localement d'abord pour une UI réactive
-      const updatedGames = games.map(g => {
-        const gameId = getGameAppId(g);
-        if (gameId === appIdString) {
-          return {...g, isFollowed: !isFollowed};
-        }
-        return g;
-      });
-
-      // Mettre à jour l'état des jeux
-      setGames(updatedGames);
-
       try {
-        // Appeler l'API pour mettre à jour le suivi
         if (!isFollowed) {
-          // Suivre le jeu
           await userService.followGame(
             steamId,
             appIdString,
@@ -483,37 +489,68 @@ export const AppProvider = ({children, navigation = null}) => {
           );
           console.log('Jeu suivi avec succès:', gameName);
 
-          // Mettre à jour l'état local
-          setUser(prevUser => ({
-            ...prevUser,
-            followedGames: [...prevUser.followedGames, appIdString]
-          }));
+          setUser(prevUser => {
+            if (!prevUser) return prevUser;
+
+            const current = Array.isArray(prevUser.followedGames)
+              ? prevUser.followedGames
+                  .map(item =>
+                    typeof item === 'string'
+                      ? item
+                      : item?.appId?.toString(),
+                  )
+                  .filter(Boolean)
+              : [];
+
+            if (current.includes(appIdString)) {
+              return {...prevUser, followedGames: current};
+            }
+
+            return {
+              ...prevUser,
+              followedGames: [...current, appIdString],
+            };
+          });
         } else {
-          // Ne plus suivre le jeu
           await userService.unfollowGame(steamId, appIdString);
           console.log('Jeu retiré des suivis:', gameName);
 
-          // Mettre à jour l'état local
-          setUser(prevUser => ({
-            ...prevUser,
-            followedGames: prevUser.followedGames.filter(id => id !== appIdString)
-          }));
+          setUser(prevUser => {
+            if (!prevUser) return prevUser;
+
+            const current = Array.isArray(prevUser.followedGames)
+              ? prevUser.followedGames
+                  .map(item =>
+                    typeof item === 'string'
+                      ? item
+                      : item?.appId?.toString(),
+                  )
+                  .filter(Boolean)
+              : [];
+
+            return {
+              ...prevUser,
+              followedGames: current.filter(id => id !== appIdString),
+            };
+          });
         }
 
-        // Forcer le rafraîchissement de la liste filtrée
         filterAndSortGames();
 
         console.log('=== Fin handleFollowGame (succès) ===');
+        return true;
       } catch (apiError) {
         console.error('Erreur API lors de la modification du suivi:', apiError);
 
-        // Restaurer l'état précédent
-        setGames(games);
+        if (localToggleApplied) {
+          setGames(previousGames);
+        }
 
         Alert.alert(
           'Erreur',
           'Impossible de modifier le suivi du jeu. Veuillez réessayer.',
         );
+        return false;
       }
     } catch (error) {
       console.error('Erreur lors de la modification du suivi:', error);
@@ -521,6 +558,7 @@ export const AppProvider = ({children, navigation = null}) => {
         'Erreur',
         'Une erreur inattendue est survenue. Veuillez réessayer.',
       );
+      return false;
     }
   };
 

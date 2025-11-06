@@ -12,7 +12,7 @@ import {useAppContext} from '../../../context/AppContext';
 import {userService} from '../../../services/api';
 
 const FollowedGamesTab = ({styles}) => {
-  const {steamId, handleFollowGame, isGameFollowed} = useAppContext();
+  const {steamId} = useAppContext();
   const [followedGames, setFollowedGames] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -36,16 +36,26 @@ const FollowedGamesTab = ({styles}) => {
   }, [fetchFollowedGames]);
 
   const renderGameItem = ({item}) => {
-    const isFollowed = isGameFollowed(item.appId);
-    const imageUrl = item.imageUrl || `https://cdn.cloudflare.steamstatic.com/steam/apps/${item.appId}/header.jpg`;
+    const appId = item.appId?.toString();
+    const imageUrl =
+      item.imageUrl ||
+      `https://cdn.cloudflare.steamstatic.com/steam/apps/${item.appId}/header.jpg`;
 
     return (
       <GameCard
         game={{name: item.name}}
         imageUrl={imageUrl}
-        isFollowed={isFollowed}
-        onFollowPress={() => {
-          handleFollowGame(item.appId, isFollowed);
+        followConfig={{
+          appId,
+          name: item.name,
+          imageUrl,
+          onToggle: ({nextIsFollowed}) => {
+            if (!nextIsFollowed && appId) {
+              setFollowedGames(prev =>
+                prev.filter(game => game.appId?.toString() !== appId),
+              );
+            }
+          },
         }}
       />
     );
@@ -81,7 +91,7 @@ const FollowedGamesTab = ({styles}) => {
     <FlatList
       data={followedGames}
       renderItem={renderGameItem}
-      keyExtractor={item => item.appId}
+      keyExtractor={item => item.appId?.toString()}
       contentContainerStyle={styles.followedGamesList}
     />
   );

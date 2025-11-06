@@ -79,8 +79,6 @@ const HomeScreen = () => {
     steamId,
     user,
     games,
-    handleFollowGame,
-    isGameFollowed,
     sortOption,
     setSortOption,
     filterAndSortGames,
@@ -173,17 +171,11 @@ const HomeScreen = () => {
 
   // Gestionnaire pour le suivi/désuivi des jeux depuis les news
   const handleNewsToggleFollow = useCallback(
-    async (appId, isFollowed) => {
+    ({appId, previousIsFollowed}) => {
       if (!appId) return;
-
-      try {
-        await handleFollowGame(appId, isFollowed);
-        updateNewsFollowStatus(appId, isFollowed);
-      } catch (error) {
-        console.error('Erreur lors du changement de suivi:', error);
-      }
+      updateNewsFollowStatus(appId, previousIsFollowed);
     },
-    [handleFollowGame, updateNewsFollowStatus],
+    [updateNewsFollowStatus],
   );
 
   // Tri de la wishlist
@@ -298,7 +290,7 @@ const HomeScreen = () => {
             showFollowedNewsOnly={true}
             newsState={newsState}
             fetchNews={fetchNews}
-            handleFollowGame={handleNewsToggleFollow}
+            onToggleFollow={handleNewsToggleFollow}
           />
         ) : (
           <FollowedGamesTab styles={styles} />
@@ -365,21 +357,19 @@ const HomeScreen = () => {
                   data={getSortedWishlist()}
                   renderItem={({item}) => {
                     const appId = item.appid?.toString();
-                    const isFollowed = appId ? isGameFollowed(appId) : false;
-
                     return (
                       <GameCard
                         game={{name: item.name}}
                         imageUrl={item.header_image || item.capsule}
-                        isFollowed={isFollowed}
-                        onFollowPress={() => {
-                          if (appId) {
-                            handleFollowGame(appId, isFollowed, {
-                              name: item.name,
-                              logoUrl: item.header_image || item.capsule,
-                            });
-                          }
-                        }}
+                        followConfig={
+                          appId
+                            ? {
+                                appId,
+                                name: item.name,
+                                imageUrl: item.header_image || item.capsule,
+                              }
+                            : null
+                        }
                       />
                     );
                   }}

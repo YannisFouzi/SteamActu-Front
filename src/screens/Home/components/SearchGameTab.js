@@ -10,13 +10,10 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import GameCard from '../../../components/common/GameCard';
 import {COLORS} from '../../../constants/theme';
-import {useAppContext} from '../../../context/AppContext';
 import {steamService} from '../../../services/api';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
 
 const SearchGameTab = ({styles}) => {
-  const {handleFollowGame, isGameFollowed} = useAppContext();
-
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -56,18 +53,14 @@ const SearchGameTab = ({styles}) => {
 
   const renderGameItem = ({item}) => {
     const appId = item.appid.toString();
-    const isFollowed = isGameFollowed(appId);
-
     return (
       <GameCard
         game={{name: item.name}}
         imageUrl={item.header_image}
-        isFollowed={isFollowed}
-        onFollowPress={() => {
-          handleFollowGame(appId, isFollowed, {
-            name: item.name,
-            logoUrl: item.header_image,
-          });
+        followConfig={{
+          appId,
+          name: item.name,
+          imageUrl: item.header_image,
         }}
       />
     );

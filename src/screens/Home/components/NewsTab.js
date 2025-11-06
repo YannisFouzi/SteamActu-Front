@@ -8,8 +8,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
 import LoadingContainer from '../../../components/common/LoadingContainer';
+import FollowToggle from '../../../components/common/FollowToggle';
 import {COLORS} from '../../../constants/theme';
 import {useAppContext} from '../../../context/AppContext';
 import {formatRelativeDate} from '../../../utils/gameHelpers';
@@ -24,7 +24,7 @@ const NewsTab = ({
   showFollowedNewsOnly,
   newsState,
   fetchNews,
-  handleFollowGame,
+  onToggleFollow,
 }) => {
   const {isGameFollowed} = useAppContext();
 
@@ -63,22 +63,6 @@ const NewsTab = ({
       Alert.alert('Erreur', "Impossible d'ouvrir le lien sur Steam.");
     });
   }, []);
-
-  const handleNewsToggleFollow = useCallback(
-    async (appId, isFollowed) => {
-      if (!appId) {
-        return;
-      }
-
-      try {
-        await handleFollowGame(appId, isFollowed);
-        // La mise à jour de l'état sera gérée par le parent
-      } catch (error) {
-        console.error('Erreur lors du changement de suivi:', error);
-      }
-    },
-    [handleFollowGame],
-  );
 
   const renderEmptyNewsList = useMemo(() => {
     const message = !steamId
@@ -119,21 +103,27 @@ const NewsTab = ({
                 {formatDate(item.news?.date)}
               </Text>
             </View>
-            <TouchableOpacity
+            <FollowToggle
+              appId={appId}
+              name={item.gameName}
+              isFollowed={isFollowed}
+              size={22}
               style={styles.newsFollowButton}
-              onPress={() => handleNewsToggleFollow(appId, isFollowed)}>
-              <Icon
-                name={isFollowed ? 'notifications' : 'notifications-outline'}
-                size={22}
-                color={isFollowed ? '#4CAF50' : '#757575'}
-              />
-            </TouchableOpacity>
+              onToggle={({appId: toggledAppId, previousIsFollowed}) => {
+                if (onToggleFollow) {
+                  onToggleFollow({
+                    appId: toggledAppId,
+                    previousIsFollowed,
+                  });
+                }
+              }}
+            />
           </View>
           <Text style={styles.newsTitle}>{item.news?.title}</Text>
         </TouchableOpacity>
       );
     },
-    [formatDate, handleNewsToggleFollow, isGameFollowed, openNews],
+    [formatDate, isGameFollowed, onToggleFollow, openNews],
   );
 
   const newsKeyExtractor = useCallback(

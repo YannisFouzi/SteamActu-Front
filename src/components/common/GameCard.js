@@ -1,23 +1,17 @@
 import React, {useState} from 'react';
-import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Image, StyleSheet, Text, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {COLORS} from '../../constants/theme';
+import FollowToggle from './FollowToggle';
 
 const GameCard = ({
   game,
   imageUrl,
-  isFollowed = false,
-  onFollowPress,
+  followConfig = null,
   showDate = false,
   dateText = '',
 }) => {
   const [imageError, setImageError] = useState(false);
-
-  const handleFollowPress = () => {
-    if (onFollowPress) {
-      onFollowPress();
-    }
-  };
 
   return (
     <View style={styles.card}>
@@ -43,13 +37,20 @@ const GameCard = ({
           <Text style={styles.date}>{dateText}</Text>
         ) : null}
       </View>
-      <TouchableOpacity style={styles.followButton} onPress={handleFollowPress}>
-        <Icon
-          name={isFollowed ? 'notifications' : 'notifications-outline'}
-          size={24}
-          color={isFollowed ? '#4CAF50' : '#757575'}
+      {followConfig ? (
+        <FollowToggle
+          appId={followConfig.appId}
+          name={followConfig.name || game.name}
+          imageUrl={followConfig.imageUrl || imageUrl}
+          isFollowed={followConfig.isFollowed}
+          size={followConfig.size}
+          activeColor={followConfig.activeColor}
+          inactiveColor={followConfig.inactiveColor}
+          style={styles.followButton}
+          onToggle={followConfig.onToggle}
+          testID={followConfig.testID}
         />
-      </TouchableOpacity>
+      ) : null}
     </View>
   );
 };
