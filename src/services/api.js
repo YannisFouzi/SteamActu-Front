@@ -17,7 +17,7 @@ const CONFIG = {
   DEFAULT_LIMITS: {
     newsCount: 5,
     newsMaxLength: 300,
-    perGameLimit: 10,
+    perGameLimit: 20,
   },
 };
 

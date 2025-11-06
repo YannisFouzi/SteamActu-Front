@@ -61,7 +61,7 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
       try {
         const response = await newsService.getNewsFeed(steamId, {
           followedOnly: showFollowedNewsOnly,
-          perGameLimit: 10,
+          perGameLimit: 20,
         });
 
         const items = Array.isArray(response.data?.items)
