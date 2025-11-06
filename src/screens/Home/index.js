@@ -1,5 +1,5 @@
 import {useNavigation} from '@react-navigation/native';
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -104,6 +104,7 @@ const HomeScreen = () => {
   const isFeedTab = activeNewsTab === NEWS_TABS.FEED;
   const isFollowedGamesTab = activeNewsTab === NEWS_TABS.FOLLOWED_GAMES;
   const showFollowedNewsOnly = true;
+  const previousTabState = useRef({isNewsTab, isFeedTab});
 
   // Hook wishlist
   const {
@@ -129,6 +130,21 @@ const HomeScreen = () => {
       fetchNews();
     }
   }, [isNewsTab, isNewsInitialized, isNewsLoading, fetchNews]);
+
+  // Rafraîchir automatiquement le feed quand on revient sur l'onglet Actus
+  useEffect(() => {
+    const hasJustBecomeFeed =
+      isNewsTab &&
+      isFeedTab &&
+      (!previousTabState.current.isNewsTab ||
+        !previousTabState.current.isFeedTab);
+
+    if (hasJustBecomeFeed && isNewsInitialized) {
+      fetchNews({silent: true});
+    }
+
+    previousTabState.current = {isNewsTab, isFeedTab};
+  }, [isNewsTab, isFeedTab, isNewsInitialized, fetchNews]);
 
   // Charger la wishlist au premier accès
   useEffect(() => {
