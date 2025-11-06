@@ -25,15 +25,15 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
   // Fonction pour récupérer les actualités
   const fetchNews = useCallback(
     async (options = {}) => {
-      console.log(
-        '🔄 useNewsManager: fetchNews appelée - steamId:',
-        steamId,
-        'showFollowedNewsOnly:',
-        showFollowedNewsOnly,
-      );
+      console.log('\n📰 [NEWS] fetchNews appelée');
+      console.log('📰 [NEWS] steamId:', steamId || '(vide)');
+      console.log('📰 [NEWS] showFollowedNewsOnly:', showFollowedNewsOnly);
+      console.log('📰 [NEWS] silent:', options.silent);
+      
       const silent = options.silent === true;
 
       if (!steamId) {
+        console.log('📰 [NEWS] ❌ Pas de steamId → état vide');
         setNewsState(prev => ({
           ...prev,
           news: {
@@ -43,6 +43,8 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
         }));
         return;
       }
+      
+      console.log('📰 [NEWS] ⏳ Chargement des actualités...');
 
       setNewsState(prev => {
         const previous = prev.news || createInitialNewsState();
@@ -59,6 +61,7 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
       });
 
       try {
+        console.log('📰 [NEWS] 🔄 GET /news/feed (perGameLimit: 20)');
         const response = await newsService.getNewsFeed(steamId, {
           followedOnly: showFollowedNewsOnly,
           perGameLimit: 20,
@@ -67,6 +70,9 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
         const items = Array.isArray(response.data?.items)
           ? response.data.items
           : [];
+
+        console.log('📰 [NEWS] ✅ News récupérées:', items.length, 'items');
+        console.log('📰 [NEWS] ✅ Chargement terminé\n');
 
         setNewsState(prev => {
           const previous = prev.news || createInitialNewsState();
@@ -83,7 +89,7 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
           };
         });
       } catch (error) {
-        console.error('Erreur lors du chargement du fil:', error);
+        console.error('📰 [NEWS] ❌ Erreur lors du chargement du fil:', error);
         setNewsState(prev => {
           const previous = prev.news || createInitialNewsState();
           return {
@@ -123,10 +129,9 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
 
   // Réinitialiser les news quand le steamId change
   useEffect(() => {
-    console.log(
-      '🔄 useNewsManager: useEffect steamId déclenché - steamId:',
-      steamId,
-    );
+    console.log('\n📰 [NEWS useEffect[steamId]] Déclenché');
+    console.log('📰 [NEWS useEffect[steamId]] steamId:', steamId || '(vide)');
+    console.log('📰 [NEWS useEffect[steamId]] Reset newsState');
     setNewsState({
       news: createInitialNewsState(),
     });

@@ -61,6 +61,7 @@ export const AppProvider = ({children, navigation = null}) => {
 
   // Chargement initial des données
   useEffect(() => {
+    console.log('\n🎬 [INIT] useEffect initial (mount) déclenché');
     loadData();
 
     // Configurer la détection du changement d'état de l'application
@@ -69,14 +70,12 @@ export const AppProvider = ({children, navigation = null}) => {
         appState.current.match(/inactive|background/) &&
         nextAppState === 'active'
       ) {
-        console.log('App revenue au premier plan!');
+        console.log('📱 [APPSTATE] App revenue au premier plan!');
         checkLastVerificationDate();
       }
 
       appState.current = nextAppState;
     });
-
-    // Les options de tri et filtre sont maintenant gérées par useAsyncStorage
 
     return () => {
       subscription.remove();
@@ -85,10 +84,25 @@ export const AppProvider = ({children, navigation = null}) => {
 
   // Surveiller les changements de steamId pour recharger les données après reconnexion
   useEffect(() => {
-    if (steamId) {
-      // Utiliser setRefreshing pour afficher les indicateurs de chargement
-      setRefreshing(true);
-      loadData().finally(() => setRefreshing(false));
+    console.log('\n🔄 [useEffect[steamId]] Déclenché');
+    console.log('🔄 [useEffect[steamId]] steamId:', steamId || '(vide)');
+    console.log('🔄 [useEffect[steamId]] games.length:', games.length);
+    console.log('🔄 [useEffect[steamId]] loading:', loading);
+    console.log('🔄 [useEffect[steamId]] refreshing:', refreshing);
+    
+    // Charger les données uniquement si :
+    // - steamId existe
+    // - Aucune donnée chargée (games.length === 0)
+    // - Aucun chargement en cours (évite double appel)
+    if (steamId && games.length === 0 && !loading && !refreshing) {
+      console.log('🔄 [useEffect[steamId]] ✅ Condition remplie → appel loadData()');
+      loadData();
+    } else if (loading || refreshing) {
+      console.log('🔄 [useEffect[steamId]] ⏭️ Skip (chargement en cours)');
+    } else if (steamId && games.length > 0) {
+      console.log('🔄 [useEffect[steamId]] ⏭️ Skip (jeux déjà chargés)');
+    } else {
+      console.log('🔄 [useEffect[steamId]] ⏭️ Skip (pas de steamId)');
     }
   }, [steamId]);
 
@@ -164,62 +178,81 @@ export const AppProvider = ({children, navigation = null}) => {
   }, [games, searchQuery, followFilter, sortOption, isGameFollowed]);
 
   // Fonction pour charger les données
-  const loadData = async (isFullCheck = false) => {
+  const loadData = async (forceReload = false) => {
     try {
-      if (isFullCheck) {
-        setLoading(true);
-      }
+      console.log('\n📦 [LOADDATA] Début loadData...');
+      console.log('📦 [LOADDATA] forceReload:', forceReload);
+      console.log('📦 [LOADDATA] steamId actuel (state):', steamId || '(vide)');
+      console.log('📦 [LOADDATA] games.length:', games.length);
 
       // Vérifier s'il y a un identifiant Steam enregistré
       const savedSteamId = await AsyncStorage.getItem('steamId');
+      console.log('📦 [LOADDATA] savedSteamId (AsyncStorage):', savedSteamId || '(vide)');
 
       // Si pas d'identifiant, retourner à l'écran de connexion
       if (!savedSteamId) {
+        console.log('📦 [LOADDATA] ❌ Pas de steamId dans AsyncStorage → Navigation Login');
         setLoading(false);
         if (navigation) {
           navigation.navigate('Login');
-          return; // Sortir de la fonction sans erreur
         }
         return;
       }
 
-      // Si c'est le même steamId, forcer quand même le rechargement (reconnexion)
-      if (steamId === savedSteamId) {
-        // Afficher l'indicateur de chargement pour la reconnexion
-        if (!isFullCheck) {
-          setRefreshing(true);
-        }
-      } else {
+      // Si steamId change, le mettre à jour dans le state
+      const isReconnection = steamId === '' && savedSteamId !== '';
+      if (steamId !== savedSteamId) {
+        console.log('📦 [LOADDATA] 🔄 steamId différent → setSteamId()');
+        console.log('📦 [LOADDATA] isReconnection:', isReconnection);
         setSteamId(savedSteamId);
-        return; // Laisser useEffect[steamId] gérer le chargement
       }
 
-      setSteamId(savedSteamId);
+      // Déterminer si on doit recharger
+      const shouldReload = forceReload || isReconnection || games.length === 0;
+      console.log('📦 [LOADDATA] shouldReload:', shouldReload);
+      console.log('📦 [LOADDATA]   - forceReload:', forceReload);
+      console.log('📦 [LOADDATA]   - isReconnection:', isReconnection);
+      console.log('📦 [LOADDATA]   - games.length === 0:', games.length === 0);
+
+      if (!shouldReload) {
+        console.log('📦 [LOADDATA] ⏭️ Skip reload (déjà chargé)\n');
+        return;
+      }
+
+      console.log('📦 [LOADDATA] ⏳ Chargement des données depuis MongoDB...');
+      
+      // Afficher les indicateurs de chargement
+      setLoading(forceReload);
+      setRefreshing(!forceReload);
 
       try {
-        // Récupérer les informations de l'utilisateur
+        // Récupérer les informations de l'utilisateur depuis MongoDB
+        console.log('📦 [LOADDATA] 🔄 GET /users/' + savedSteamId);
         const userResponse = await userService.getUser(savedSteamId);
         setUser(userResponse.data);
+        console.log('📦 [LOADDATA] ✅ User récupéré:', userResponse.data.username);
 
-        // Vérifier si nous pouvons utiliser getAllUserGames ou si nous devons revenir à getUserGames
+        // Récupérer les jeux depuis MongoDB
+        const shouldFetchFollowedOnly = followFilter === 'followed';
+        console.log('📦 [LOADDATA] 🔄 GET /steam/games/' + savedSteamId + ' (followedOnly:', shouldFetchFollowedOnly + ')');
+        
         let gamesResponse;
         try {
-          // Utiliser directement getUserGames (méthode fiable)
-          // Si le filtre est sur "followed", on ne récupère que les jeux suivis
-          const shouldFetchFollowedOnly = followFilter === 'followed';
           gamesResponse = await steamService.getUserGames(
             savedSteamId,
             shouldFetchFollowedOnly,
           );
         } catch (error) {
+          console.log('📦 [LOADDATA] ❌ Erreur lors de la récupération des jeux');
           setLoading(false);
+          setRefreshing(false);
           Alert.alert(
             'Erreur de connexion',
             'Impossible de récupérer vos jeux. Veuillez vérifier votre connexion et réessayer.',
             [
               {
                 text: 'Réessayer',
-                onPress: () => loadData(isFullCheck),
+                onPress: () => loadData(forceReload),
               },
               {
                 text: 'Déconnexion',
@@ -234,28 +267,21 @@ export const AppProvider = ({children, navigation = null}) => {
         // Adapter la structure selon la réponse reçue
         let newGames = [];
         if (gamesResponse.data && gamesResponse.data.games) {
-          // Nouvelle structure (getAllUserGames)
           newGames = gamesResponse.data.games;
-          console.log(
-            `Structure getAllUserGames détectée. ${newGames.length} jeux reçus.`,
-          );
+          console.log('📦 [LOADDATA] ✅ Structure getAllUserGames:', newGames.length, 'jeux');
         } else if (
           gamesResponse.data &&
           Array.isArray(gamesResponse.data.games)
         ) {
-          // Ancienne structure (getUserGames)
           newGames = gamesResponse.data.games;
-          console.log(
-            `Structure getUserGames détectée. ${newGames.length} jeux reçus.`,
-          );
+          console.log('📦 [LOADDATA] ✅ Structure getUserGames:', newGames.length, 'jeux');
         } else if (Array.isArray(gamesResponse.data)) {
-          // Structure de secours
           newGames = gamesResponse.data;
+          console.log('📦 [LOADDATA] ✅ Structure tableau direct:', newGames.length, 'jeux');
         }
 
-        // Vérifier les données de tri disponibles
+        // Ajouter timestamps manquants
         if (newGames.length > 0) {
-          // Ajout d'un timestamp pour les jeux qui n'en ont pas
           newGames.forEach(game => {
             if (!game.lastUpdateTimestamp) {
               const fallbackTimestamp = getLastPlayedValue(game);
@@ -266,33 +292,18 @@ export const AppProvider = ({children, navigation = null}) => {
           });
         }
 
-        // Traiter et afficher les statistiques
-        if (Array.isArray(newGames) && newGames.length > 0) {
-          if (gamesResponse.data.apiGamesCount) {
-            console.log(
-              `Détails: ${
-                gamesResponse.data.apiGamesCount || 0
-              } jeux de l'API Steam, ${
-                gamesResponse.data.databaseOnlyCount || 0
-              } jeux uniquement en base de données`,
-            );
-          }
-        } else {
-          console.log('Aucun jeu récupéré ou format de réponse inattendu');
-        }
-
-        // Enfin, mettre à jour l'état des jeux et arrêter le chargement
+        // Mettre à jour l'état des jeux
         const normalizedGames = Array.isArray(newGames) ? newGames : [];
         setGames(normalizedGames);
         syncRecentActiveGames(normalizedGames, savedSteamId);
-        if (!isFullCheck) {
-          setLoading(false);
-        }
-
-        // Arrêter l'indicateur de refreshing si activé (cas de reconnexion)
+        
+        console.log('📦 [LOADDATA] ✅ setGames(' + normalizedGames.length + ' jeux)');
+        console.log('📦 [LOADDATA] ✅ Chargement terminé avec succès\n');
+        
+        setLoading(false);
         setRefreshing(false);
       } catch (apiError) {
-        console.error('Erreur API lors du chargement des données:', apiError);
+        console.error('📦 [LOADDATA] ❌ Erreur API:', apiError);
         setLoading(false);
         setRefreshing(false);
 
@@ -361,14 +372,24 @@ export const AppProvider = ({children, navigation = null}) => {
   // Vérifier la dernière date de vérification
   const checkLastVerificationDate = async () => {
     try {
+      // Vérifier d'abord si un steamId existe (évite race condition pendant login)
+      const savedSteamId = await AsyncStorage.getItem('steamId');
+      if (!savedSteamId) {
+        console.log('⏭️ [CHECK] Skip vérification (pas de steamId dans AsyncStorage)');
+        return;
+      }
+
       if (isOlderThanOneDay()) {
-        console.log("Plus d'un jour s'est écoulé, vérification complète...");
+        console.log("⏰ [CHECK] Plus d'un jour écoulé → vérification complète");
         loadData(true);
       } else if (Date.now() - lastRefreshTime > 300000) {
+        console.log("⏰ [CHECK] Vérification des nouveaux jeux (5 min écoulées)");
         checkForNewGames();
+      } else {
+        console.log('⏭️ [CHECK] Vérification récente, skip');
       }
     } catch (error) {
-      console.error('Erreur lors de la vérification de la date:', error);
+      console.error('❌ [CHECK] Erreur lors de la vérification de la date:', error);
     }
   };
 
@@ -387,31 +408,38 @@ export const AppProvider = ({children, navigation = null}) => {
   // Fonction pour se déconnecter
   const handleLogout = async () => {
     try {
-      // Supprimer l'ID Steam du stockage
+      console.log('\n🚪 [LOGOUT] Début de la déconnexion...');
+      console.log('🚪 [LOGOUT] steamId avant reset:', steamId);
+      console.log('🚪 [LOGOUT] games count avant reset:', games.length);
+      
+      // Supprimer toutes les données d'AsyncStorage
       await AsyncStorage.removeItem('steamId');
+      await AsyncStorage.removeItem('lastVerificationDate');
+      console.log('🚪 [LOGOUT] ✅ AsyncStorage vidé (steamId, lastVerificationDate)');
 
-      // Réinitialiser les états
+      // Réinitialiser TOUS les états du contexte
       setSteamId('');
       setUser(null);
       setGames([]);
       setFilteredGames([]);
+      setLastRefreshTime(0);
+      console.log('🚪 [LOGOUT] ✅ États réinitialisés (steamId="", user=null, games=[], lastRefreshTime=0)');
 
       // Navigation si disponible
       if (navigation) {
+        console.log('🚪 [LOGOUT] ✅ Navigation vers LoginScreen');
         navigation.replace('Login');
       } else {
-        // Forcer un "rafraîchissement" pour que les composants se mettent à jour
-        console.log(
-          'Navigation non disponible, réinitialisation des états uniquement',
-        );
-        // Vous pouvez ajouter ici une alerte ou un autre feedback utilisateur
+        console.log('🚪 [LOGOUT] ⚠️ Navigation non disponible');
         Alert.alert(
           'Déconnexion réussie',
           "Vous avez été déconnecté avec succès. Veuillez redémarrer l'application.",
         );
       }
+      
+      console.log('🚪 [LOGOUT] ✅ Déconnexion terminée\n');
     } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
+      console.error('🚪 [LOGOUT] ❌ Erreur lors de la déconnexion:', error);
       Alert.alert(
         'Erreur de déconnexion',
         'Une erreur est survenue lors de la déconnexion. Veuillez réessayer.',

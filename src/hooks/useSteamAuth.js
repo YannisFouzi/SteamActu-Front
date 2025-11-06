@@ -3,6 +3,7 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {Alert, Linking} from 'react-native';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
 import {COLORS} from '../constants/theme';
+import {useAppContext} from '../context/AppContext';
 import {steamAuthService, userService} from '../services/api';
 
 /**
@@ -10,6 +11,7 @@ import {steamAuthService, userService} from '../services/api';
  * Centralise toute la logique d'authentification et de gestion des URL
  */
 export const useSteamAuth = navigation => {
+  const {loadData} = useAppContext(); // Accès à loadData du contexte
   const [loading, setLoading] = useState(false);
   const [processingAuth, setProcessingAuth] = useState(false);
   const processedUrls = useRef(new Set());
@@ -36,12 +38,16 @@ export const useSteamAuth = navigation => {
   const handleSteamIdReceived = useCallback(
     async steamId => {
       try {
+        console.log('\n🔐 [LOGIN] Début authentification...');
+        console.log('🔐 [LOGIN] steamId:', steamId);
         setLoading(true);
 
         // Enregistrer l'utilisateur sur le serveur
         let response;
         try {
+          console.log('🔐 [LOGIN] 🔄 POST /users/register');
           response = await userService.register(steamId);
+          console.log('🔐 [LOGIN] ✅ Utilisateur créé/récupéré');
         } catch (registerError) {
           // Vérifier si l'erreur est due à un utilisateur déjà existant
           const message = registerError.response?.data?.message || '';
@@ -50,9 +56,11 @@ export const useSteamAuth = navigation => {
             registerError.response?.status === 400 &&
             String(message).toLowerCase().includes('utilisateur existe')
           ) {
+            console.log('🔐 [LOGIN] ℹ️ Utilisateur existe déjà → GET /users');
             // L'utilisateur existe déjà, récupérer ses informations
             try {
               response = await userService.getUser(steamId);
+              console.log('🔐 [LOGIN] ✅ Informations utilisateur récupérées');
             } catch (getUserError) {
               throw new Error(
                 "Impossible de récupérer les informations de l'utilisateur",
@@ -70,12 +78,23 @@ export const useSteamAuth = navigation => {
         }
 
         // Sauvegarder le SteamID localement
+        console.log('🔐 [LOGIN] 💾 AsyncStorage.setItem("steamId", ' + steamId + ')');
         await AsyncStorage.setItem('steamId', steamId);
 
         // Naviguer vers l'écran d'accueil
+        console.log('🔐 [LOGIN] 🚀 Navigation vers Home');
         navigation.replace('Home');
+        
+        // Forcer le rechargement des données immédiatement après navigation
+        // Cela résout la race condition où AppContext n'est pas démonté/remonté
+        console.log('🔐 [LOGIN] 🔄 Appel loadData() pour recharger le contexte');
+        // Attendre un petit délai pour que la navigation soit complète
+        setTimeout(() => {
+          loadData();
+          console.log('🔐 [LOGIN] ✅ Authentification et rechargement terminés\n');
+        }, 100);
       } catch (error) {
-        console.error("Erreur lors de l'authentification:", error);
+        console.error('🔐 [LOGIN] ❌ Erreur authentification:', error);
         Alert.alert(
           'Erreur',
           error.message ||
