@@ -1,17 +1,27 @@
 import {useNavigation} from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {useCallback, useState} from 'react';
-import {ScrollView, StyleSheet, Text, View} from 'react-native';
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import LogoutButton from '../components/common/LogoutButton';
 import SavingIndicator from '../components/common/SavingIndicator';
 import SettingSection from '../components/common/SettingSection';
 import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../constants/theme';
 import {useAppContext} from '../context/AppContext';
 import {useUserSettings} from '../hooks/useUserSettings';
+import {userService} from '../services/api';
 
 const SettingsScreen = () => {
   const navigation = useNavigation();
-  const {handleLogout} = useAppContext();
+  const {handleLogout, steamId} = useAppContext();
   const [loggingOut, setLoggingOut] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Hook personnalisé pour la gestion des paramètres
   const {
@@ -42,6 +52,64 @@ const SettingsScreen = () => {
     }
   }, [handleLogout, loggingOut, navigation]);
 
+  // Gestionnaire pour la suppression du compte
+  const handleDeleteAccount = useCallback(() => {
+    Alert.alert(
+      'Supprimer mon compte',
+      'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible. Toutes vos données seront définitivement supprimées.',
+      [
+        {
+          text: 'Annuler',
+          style: 'cancel',
+        },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDeleting(true);
+
+              // Supprimer le compte côté serveur
+              await userService.deleteAccount(steamId);
+
+              // Vider les données locales
+              await AsyncStorage.removeItem('steamId');
+
+              // Fermer la modale avec setDeleting
+              setDeleting(false);
+
+              // Alert de confirmation puis navigation
+              Alert.alert(
+                'Compte supprimé',
+                'Votre compte a été supprimé avec succès.',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      // Navigation vers LoginScreen
+                      navigation.reset({
+                        index: 0,
+                        routes: [{name: 'Login'}],
+                      });
+                    },
+                  },
+                ],
+                {cancelable: false}, // Empêcher de fermer sans cliquer sur OK
+              );
+            } catch (error) {
+              console.error('Erreur lors de la suppression du compte:', error);
+              setDeleting(false);
+              Alert.alert(
+                'Erreur',
+                'Une erreur est survenue lors de la suppression de votre compte. Veuillez réessayer.',
+              );
+            }
+          },
+        },
+      ],
+    );
+  }, [steamId, navigation]);
+
   return (
     <ScrollView style={styles.container}>
       <SettingSection
@@ -64,6 +132,20 @@ const SettingsScreen = () => {
 
       <View style={styles.section}>
         <LogoutButton onPress={handlePressLogout} loading={loggingOut} />
+      </View>
+
+      <View style={styles.section}>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={handleDeleteAccount}
+          disabled={deleting || loggingOut || saving}>
+          <Text style={styles.deleteButtonText}>
+            {deleting ? 'Suppression...' : 'Supprimer mon compte'}
+          </Text>
+        </TouchableOpacity>
+        <Text style={styles.deleteWarning}>
+          ⚠️ Cette action est irréversible
+        </Text>
       </View>
 
       <View style={styles.aboutSection}>
@@ -104,6 +186,26 @@ const styles = StyleSheet.create({
     color: COLORS.STEAM_TEXT_GRAY,
     lineHeight: 20,
     marginBottom: 8,
+  },
+  deleteButton: {
+    backgroundColor: '#d32f2f',
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteWarning: {
+    fontSize: 12,
+    color: '#ff6b6b',
+    textAlign: 'center',
+    fontStyle: 'italic',
   },
 });
 

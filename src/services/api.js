@@ -84,6 +84,11 @@ const userService = {
   getFollowedGamesDetails: steamId => {
     return api.get(`/users/${steamId}/followed-games-details`);
   },
+
+  // Supprimer le compte utilisateur
+  deleteAccount: steamId => {
+    return api.delete(`/users/${steamId}`);
+  },
 };
 
 // Service actualités
