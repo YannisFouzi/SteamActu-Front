@@ -4,19 +4,19 @@
       "description": "Logo Steam Notifications optimisé pour les écrans mobiles.",
       "variants": {
         "1x": {
-          "file": "steam-logo.png",
+          "file": "steam-logo.webp",
           "width": 192,
           "height": 192,
           "bytes": 10375
         },
         "2x": {
-          "file": "steam-logo@2x.png",
+          "file": "steam-logo@2x.webp",
           "width": 384,
           "height": 384,
           "bytes": 23152
         },
         "3x": {
-          "file": "steam-logo@3x.png",
+          "file": "steam-logo@3x.webp",
           "width": 576,
           "height": 576,
           "bytes": 38159

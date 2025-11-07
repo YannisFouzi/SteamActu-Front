@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "orientation": "portrait",
   "scheme": "steamnotif",
-  "icon": "./assets/steam-logo.png",
+  "icon": "./assets/steam-logo.webp",
   "splash": {
     "backgroundColor": "#1B2838"
   },

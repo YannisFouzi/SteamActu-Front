@@ -11,7 +11,7 @@ const LoginScreen = ({navigation}) => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../assets/steam-logo.png')}
+        source={require('../assets/steam-logo.webp')}
         style={styles.logo}
         resizeMode="contain"
       />
