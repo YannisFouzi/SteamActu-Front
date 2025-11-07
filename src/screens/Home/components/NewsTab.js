@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import LoadingContainer from '../../../components/common/LoadingContainer';
+import LoadingContainer from '../../../components/LoadingContainer';
 import {COLORS} from '../../../constants';
 import {formatRelativeDate} from '../../../utils';
 import styles from '../styles';

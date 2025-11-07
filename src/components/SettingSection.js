@@ -1,6 +1,6 @@
 import React from 'react';
 import {StyleSheet, Switch, Text, View} from 'react-native';
-import {COLORS, TEXT_STYLES} from '../../constants';
+import {COLORS, TEXT_STYLES} from '../constants';
 
 /**
  * Composant réutilisable pour une section de paramètres avec Switch

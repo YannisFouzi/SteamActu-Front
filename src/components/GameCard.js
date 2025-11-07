@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {Image, StyleSheet, Text, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {COLORS} from '../../constants';
+import {COLORS} from '../constants';
 import FollowToggle from './FollowToggle';
 
 const GameCard = ({

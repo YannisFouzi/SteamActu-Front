@@ -8,9 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import LogoutButton from '../components/common/LogoutButton';
-import SavingIndicator from '../components/common/SavingIndicator';
-import SettingSection from '../components/common/SettingSection';
+import LogoutButton from '../components/LogoutButton';
+import SavingIndicator from '../components/SavingIndicator';
+import SettingSection from '../components/SettingSection';
 import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../constants';
 import {useAppContext} from '../context/AppContext';
 import {useUserSettings} from '../hooks/useUserSettings';

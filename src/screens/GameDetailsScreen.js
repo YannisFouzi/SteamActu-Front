@@ -8,8 +8,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import LoadingContainer from '../components/common/LoadingContainer';
-import NewsItem from '../components/common/NewsItem';
+import LoadingContainer from '../components/LoadingContainer';
+import NewsItem from '../components/NewsItem';
 import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../constants';
 import {useGameNews} from '../hooks/useGameNews';
 import {getGameAppId} from '../utils';

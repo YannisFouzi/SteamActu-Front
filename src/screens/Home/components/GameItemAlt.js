@@ -1,5 +1,5 @@
 import React from 'react';
-import GameCard from '../../../components/common/GameCard';
+import GameCard from '../../../components/GameCard';
 import {getGameAppId, isValidGame} from '../../../utils';
 
 const GameItemAlt = ({game}) => {

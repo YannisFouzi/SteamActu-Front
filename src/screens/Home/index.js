@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
-import GameCard from '../../components/common/GameCard';
-import LoadingContainer from '../../components/common/LoadingContainer';
+import GameCard from '../../components/GameCard';
+import LoadingContainer from '../../components/LoadingContainer';
 import {COLORS} from '../../constants';
 import {useAppContext} from '../../context/AppContext';
 import {useNewsManager} from '../../hooks/useNewsManager';
@@ -117,12 +117,8 @@ const HomeScreen = () => {
   } = useWishlist(steamId);
 
   // Hook personnalisé pour la gestion des news
-  const {
-    newsState,
-    fetchNews,
-    isNewsInitialized,
-    isNewsLoading,
-  } = useNewsManager(steamId, showFollowedNewsOnly);
+  const {newsState, fetchNews, isNewsInitialized, isNewsLoading} =
+    useNewsManager(steamId, showFollowedNewsOnly);
 
   // Charger les news au premier accès à l'onglet
   useEffect(() => {
@@ -288,12 +284,12 @@ const HomeScreen = () => {
       {/* Contenu selon l'onglet actif */}
       {isNewsTab ? (
         isFeedTab ? (
-        <NewsTab
-          steamId={steamId}
-          showFollowedNewsOnly={true}
-          newsState={newsState}
-          fetchNews={fetchNews}
-        />
+          <NewsTab
+            steamId={steamId}
+            showFollowedNewsOnly={true}
+            newsState={newsState}
+            fetchNews={fetchNews}
+          />
         ) : (
           <FollowedGamesTab styles={styles} />
         )

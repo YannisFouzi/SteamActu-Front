@@ -1,7 +1,7 @@
 import React from 'react';
 import {StyleSheet, Text, TouchableOpacity} from 'react-native';
-import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../../constants';
-import {formatAbsoluteDate} from '../../utils';
+import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../constants';
+import {formatAbsoluteDate} from '../utils';
 
 /**
  * Composant réutilisable pour afficher un élément d'actualité
