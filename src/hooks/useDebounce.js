@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 
 /**
  * Hook personnalisé pour le debouncing
@@ -35,30 +35,34 @@ export const useDebounce = (value, delay = 300) => {
  * @returns {function} Fonction debouncée
  */
 export const useDebouncedCallback = (callback, delay = 300) => {
-  const [debounceTimer, setDebounceTimer] = useState(null);
+  const timerRef = useRef(null);
+  const latestCallbackRef = useRef(callback);
 
-  const debouncedCallback = (...args) => {
-    // Nettoyer le timer précédent
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-    }
+  useEffect(() => {
+    latestCallbackRef.current = callback;
+  }, [callback]);
 
-    // Créer un nouveau timer
-    const newTimer = setTimeout(() => {
-      callback(...args);
-    }, delay);
+  const debouncedCallback = useCallback(
+    (...args) => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
 
-    setDebounceTimer(newTimer);
-  };
+      timerRef.current = setTimeout(() => {
+        latestCallbackRef.current(...args);
+      }, delay);
+    },
+    [delay],
+  );
 
-  // Nettoyer le timer au démontage du composant
   useEffect(() => {
     return () => {
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
       }
     };
-  }, [debounceTimer]);
+  }, []);
 
   return debouncedCallback;
 };

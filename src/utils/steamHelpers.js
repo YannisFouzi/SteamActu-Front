@@ -1,0 +1,105 @@
+import {APP_CONFIG} from '../config/env';
+import {normalizeTimestamp, TIME_CONSTANTS} from './dateHelpers';
+import {isDefined, toNumber} from './numberHelpers';
+
+const STEAM_ICON_BASE_URL = `${APP_CONFIG.STEAM_MEDIA_CDN}/steamcommunity/public/images/apps`;
+
+/**
+ * Retourne le temps de jeu total (minutes) à partir de différents formats d’API.
+ * @param {Object} game
+ * @returns {number}
+ */
+export const getPlaytimeForeverValue = game => {
+  const nested = game?.playtime?.forever ?? game?.playtime?.total;
+  if (isDefined(nested)) {
+    return toNumber(nested);
+  }
+  return toNumber(game?.playtime_forever);
+};
+
+/**
+ * Retourne le temps de jeu récent (minutes).
+ * @param {Object} game
+ * @returns {number}
+ */
+export const getPlaytimeRecentValue = game => {
+  const nested = game?.playtime?.recent ?? game?.playtime?.lastTwoWeeks;
+  if (isDefined(nested)) {
+    return toNumber(nested);
+  }
+  return toNumber(game?.playtime_2weeks);
+};
+
+/**
+ * Récupère le timestamp de dernière session.
+ * @param {Object} game
+ * @returns {number}
+ */
+export const getLastPlayedValue = game => {
+  const raw =
+    game?.rtime_last_played ??
+    game?.lastPlayTime ??
+    game?.playtime?.lastPlayed ??
+    game?.lastUpdateTimestamp ??
+    0;
+  return toNumber(raw);
+};
+
+/**
+ * Récupère le timestamp de dernière mise à jour.
+ * @param {Object} game
+ * @returns {number}
+ */
+export const getLastUpdateValue = game => {
+  const raw =
+    game?.lastUpdateTimestamp ??
+    game?.rtime_last_played ??
+    game?.playtime?.lastPlayed ??
+    0;
+  return toNumber(raw);
+};
+
+/**
+ * Normalise un identifiant d’application en string.
+ * @param {Object} game
+ * @returns {string}
+ */
+export const getGameAppId = game => {
+  const id = game?.appid ?? game?.appId;
+  return isDefined(id) ? id.toString() : '';
+};
+
+/**
+ * Indique si l’objet jeu contient les informations minimales.
+ * @param {Object} game
+ * @returns {boolean}
+ */
+export const isValidGame = game => {
+  return Boolean(game && game.name && (game.appid || game.appId));
+};
+
+/**
+ * Génère une URL HTTPS pour l’icône d’un jeu Steam.
+ * @param {string|number} appId
+ * @param {string} iconHash
+ * @returns {string|null}
+ */
+export const getGameIconUrl = (appId, iconHash) => {
+  if (!appId || !iconHash) {
+    return null;
+  }
+  return `${STEAM_ICON_BASE_URL}/${appId}/${iconHash}.jpg`;
+};
+
+/**
+ * Indique si un jeu a été mis à jour récemment (24h).
+ * @param {number} timestamp
+ * @returns {boolean}
+ */
+export const isRecentlyUpdated = timestamp => {
+  if (!timestamp) {
+    return false;
+  }
+  const normalizedTimestamp = normalizeTimestamp(timestamp);
+  return Date.now() - normalizedTimestamp < TIME_CONSTANTS.DAY_MS;
+};

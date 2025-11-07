@@ -1,6 +1,6 @@
-import {useCallback, useState} from 'react';
-import {Alert} from 'react-native';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {steamService} from '../services/api';
+import {debugError, debugLog, showAlert} from './hooksLogger';
 
 /**
  * Hook personnalisé pour gérer la wishlist Steam
@@ -11,6 +11,20 @@ export const useWishlist = steamId => {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const isMountedRef = useRef(true);
+  const requestIdRef = useRef(0);
+
+  const safeSetState = useCallback((setter, value) => {
+    if (isMountedRef.current) {
+      setter(value);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   /**
    * Charge la wishlist depuis le backend
@@ -19,17 +33,21 @@ export const useWishlist = steamId => {
   const fetchWishlist = useCallback(
     async (silent = false) => {
       if (!steamId) {
-        console.log('⚠️ Pas de steamId fourni pour fetchWishlist');
-        return;
+        debugLog('[WISHLIST] Pas de steamId fourni, skip fetch');
+        return [];
       }
+
+      const requestId = ++requestIdRef.current;
+      const shouldProcess = () =>
+        isMountedRef.current && requestId === requestIdRef.current;
 
       try {
         if (!silent) {
-          setLoading(true);
+          safeSetState(setLoading, true);
         }
-        setError(null);
+        safeSetState(setError, null);
 
-        console.log(`📋 Chargement wishlist pour ${steamId}...`);
+        debugLog(`[WISHLIST] Chargement pour ${steamId}...`);
         const response = await steamService.getUserWishlist(steamId);
 
         // La réponse peut être un tableau ou un objet avec items
@@ -42,44 +60,56 @@ export const useWishlist = steamId => {
           wishlistItems = response.data.response.items;
         }
 
-        console.log(`✅ Wishlist chargée : ${wishlistItems.length} jeux`);
-        setWishlist(wishlistItems);
+        if (!shouldProcess()) {
+          return [];
+        }
+
+        debugLog(`[WISHLIST] Wishlist chargée (${wishlistItems.length} jeux)`);
+        safeSetState(setWishlist, wishlistItems);
 
         return wishlistItems;
       } catch (err) {
-        console.error('❌ Erreur lors du chargement de la wishlist:', err);
+        debugError('❌ Erreur lors du chargement de la wishlist:', err);
+
+        if (!shouldProcess()) {
+          return [];
+        }
 
         // Gérer les erreurs spécifiques
         if (err.response?.status === 404) {
-          setError('Wishlist non trouvée ou privée');
+          safeSetState(setError, 'Wishlist non trouvée ou privée');
         } else if (err.response?.status === 403) {
-          setError('Accès à la wishlist refusé (profil privé)');
+          safeSetState(setError, 'Accès à la wishlist refusé (profil privé)');
         } else {
-          setError('Erreur lors du chargement de la wishlist');
+          safeSetState(setError, 'Erreur lors du chargement de la wishlist');
         }
 
-        Alert.alert(
+        showAlert(
           'Erreur',
           'Impossible de charger votre wishlist. Assurez-vous que votre profil Steam est public.',
         );
 
-        setWishlist([]);
+        safeSetState(setWishlist, []);
         return [];
       } finally {
-        setLoading(false);
-        setRefreshing(false);
+        if (!shouldProcess()) {
+          return [];
+        }
+
+        safeSetState(setLoading, false);
+        safeSetState(setRefreshing, false);
       }
     },
-    [steamId],
+    [safeSetState, steamId],
   );
 
   /**
    * Rafraîchit la wishlist avec indicateur de refreshing
    */
   const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
+    safeSetState(setRefreshing, true);
     await fetchWishlist(false);
-  }, [fetchWishlist]);
+  }, [fetchWishlist, safeSetState]);
 
   /**
    * Trie la wishlist par date d'ajout (plus récents d'abord)
@@ -147,7 +177,3 @@ export const useWishlist = steamId => {
     wishlistStats,
   };
 };
-
-
-
-

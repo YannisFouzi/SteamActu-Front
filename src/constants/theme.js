@@ -1,39 +1,40 @@
 /**
- * Thème global de l'application Steam
- * Centralise toutes les couleurs et styles réutilisés
+ * Thème global de l'application Steam Notifications.
+ * Centralise les couleurs, styles et configurations de navigation.
  */
-
-// Palette de couleurs Steam officielle
 export const COLORS = {
   // Couleurs principales Steam
-  STEAM_DARK: '#171A21', // Fond principal Steam
-  STEAM_BLUE: '#66C0F4', // Bleu Steam clair (accent)
-  STEAM_NAVY: '#1B2838', // Bleu Steam foncé
-  STEAM_BORDER: '#2A475E', // Bordures Steam
+  STEAM_DARK: '#171A21',
+  STEAM_NAVY: '#1B2838',
+  STEAM_BLUE: '#66C0F4',
+  STEAM_BORDER: '#2A475E',
 
   // Couleurs secondaires
-  STEAM_GRAY: '#2A3F5A', // Gris Steam
-  STEAM_LIGHT_BLUE: '#316282', // Bleu clair Steam
-  STEAM_TEXT_GRAY: '#8F98A0', // Texte gris
-  STEAM_DARK_BLUE: '#0B1A2B', // Bleu très foncé
+  STEAM_GRAY: '#2A3F5A',
+  STEAM_LIGHT_BLUE: '#316282',
+  STEAM_TEXT_GRAY: '#8F98A0',
+  STEAM_DARK_BLUE: '#0B1A2B',
 
-  // Couleurs système
+  // Palette fonctionnelle
   WHITE: '#FFFFFF',
   BLACK: '#000000',
-  ERROR: '#C0392B', // Rouge pour erreurs/logout
+  ERROR: '#C0392B',
+  WARNING: '#FF6B6B',
+  DANGER: '#D32F2F',
+  SUCCESS: '#4CAF50',
+  PLACEHOLDER_GRAY: '#F0F0F0',
+  ERROR_BACKGROUND: '#8B0000',
 
-  // Couleurs spécifiques aux news et contenus
-  NEWS_TEXT_SECONDARY: '#4B5C6B', // Texte secondaire dans les news
-  NEWS_TEXT_PRIMARY: '#212121', // Texte principal dans les news
-  NEWS_GAME_TITLE: '#1B2838', // Titre du jeu dans les news
-  ERROR_BACKGROUND: '#8B0000', // Fond d'erreur
-  PLACEHOLDER_GRAY: '#f0f0f0', // Gris pour placeholders
+  // Couleurs spécifiques aux contenus
+  NEWS_TEXT_PRIMARY: '#212121',
+  NEWS_TEXT_SECONDARY: '#4B5C6B',
+  NEWS_GAME_TITLE: '#1B2838',
 
   // Couleurs avec transparence
   STEAM_BLUE_TRANSPARENT: 'rgba(102, 192, 244, 0.1)',
+  OVERLAY_DARK: 'rgba(0, 0, 0, 0.5)',
 };
 
-// Styles de texte réutilisables
 export const TEXT_STYLES = {
   title: {
     fontSize: 20,
@@ -53,7 +54,6 @@ export const TEXT_STYLES = {
     color: COLORS.STEAM_BLUE,
     fontWeight: '500',
   },
-  // Styles spécifiques aux onglets
   tabButton: {
     fontSize: 13,
     fontWeight: '600',
@@ -64,7 +64,6 @@ export const TEXT_STYLES = {
     fontWeight: '600',
     color: COLORS.STEAM_DARK_BLUE,
   },
-  // Styles spécifiques aux news
   newsGameName: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -84,7 +83,6 @@ export const TEXT_STYLES = {
     fontWeight: '600',
     color: COLORS.WHITE,
   },
-  // Styles pour les états de chargement
   loadingText: {
     fontSize: 16,
     color: COLORS.STEAM_TEXT_GRAY,
@@ -95,20 +93,17 @@ export const TEXT_STYLES = {
     textAlign: 'center',
     color: COLORS.WHITE,
   },
-  // Styles pour les états vides
   emptyText: {
     fontSize: 16,
     color: COLORS.STEAM_TEXT_GRAY,
     textAlign: 'center',
   },
-  // Styles d'erreur
   errorText: {
     color: COLORS.WHITE,
     textAlign: 'center',
   },
 };
 
-// Styles de conteneurs réutilisables
 export const CONTAINER_STYLES = {
   screen: {
     flex: 1,
@@ -128,7 +123,6 @@ export const CONTAINER_STYLES = {
     shadowOpacity: 0.3,
     shadowRadius: 2,
   },
-  // Conteneur de chargement flottant
   loadingMore: {
     backgroundColor: 'rgba(35, 60, 95, 0.8)',
     padding: 10,
@@ -138,21 +132,18 @@ export const CONTAINER_STYLES = {
     right: 0,
     zIndex: 1000,
   },
-  // Conteneur d'erreur
   errorContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: COLORS.ERROR_BACKGROUND,
   },
-  // Conteneur vide
   emptyContainer: {
     padding: 24,
     alignItems: 'center',
   },
-  // Conteneur modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: COLORS.OVERLAY_DARK,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -165,7 +156,6 @@ export const CONTAINER_STYLES = {
   },
 };
 
-// Configuration du thème React Navigation
 export const NAVIGATION_THEME = {
   colors: {
     background: COLORS.STEAM_DARK,
@@ -187,7 +177,6 @@ export const NAVIGATION_THEME = {
   },
 };
 
-// Options d'écran par défaut
 export const DEFAULT_SCREEN_OPTIONS = {
   headerStyle: {
     backgroundColor: COLORS.STEAM_NAVY,
@@ -198,7 +187,6 @@ export const DEFAULT_SCREEN_OPTIONS = {
   },
 };
 
-// Configurations spécifiques d'écrans
 export const SCREEN_CONFIGS = {
   Login: {
     headerShown: false,
@@ -211,9 +199,8 @@ export const SCREEN_CONFIGS = {
     title: 'Paramètres',
   },
   GameDetails: {
-    // Configuration dynamique dans le navigateur
-    getDynamicOptions: route => ({
-      title: route.params?.gameName || 'Détails du jeu',
+    getDynamicOptions: ({route}) => ({
+      title: route?.params?.game?.name || 'Détails du jeu',
     }),
   },
 };

@@ -1,47 +1,35 @@
 import React from 'react';
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-} from 'react-native';
-import {COLORS, TEXT_STYLES} from '../../constants/theme';
+import {StyleSheet} from 'react-native';
+import {COLORS} from '../../constants';
+import PrimaryButton from './PrimaryButton';
 
 /**
- * Composant réutilisable pour le bouton de connexion Steam
- * Centralise l'interface de connexion avec Steam
+ * CTA spécialisé pour la connexion Steam (s'appuie sur PrimaryButton)
  */
-const SteamLoginButton = ({onPress, loading = false, disabled = false}) => {
-  return (
-    <TouchableOpacity
-      style={[styles.button, disabled && styles.buttonDisabled]}
-      onPress={onPress}
-      disabled={loading || disabled}>
-      {loading ? (
-        <ActivityIndicator color={COLORS.WHITE} />
-      ) : (
-        <Text style={styles.buttonText}>Se connecter avec Steam</Text>
-      )}
-    </TouchableOpacity>
-  );
-};
+const SteamLoginButton = ({
+  onPress,
+  loading = false,
+  disabled = false,
+  testID,
+}) => (
+  <PrimaryButton
+    label="Se connecter avec Steam"
+    onPress={onPress}
+    loading={loading}
+    disabled={disabled}
+    backgroundColor={COLORS.STEAM_NAVY}
+    borderColor={COLORS.STEAM_BLUE}
+    textColor={COLORS.WHITE}
+    spinnerColor={COLORS.WHITE}
+    style={styles.button}
+    testID={testID}
+  />
+);
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: COLORS.STEAM_NAVY,
-    borderRadius: 4,
-    padding: 15,
     width: '100%',
-    alignItems: 'center',
     marginBottom: 20,
-    borderWidth: 1,
-    borderColor: COLORS.STEAM_BLUE,
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
-    ...TEXT_STYLES.button,
   },
 });
 

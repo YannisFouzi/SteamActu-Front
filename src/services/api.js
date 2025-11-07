@@ -1,19 +1,13 @@
-﻿import axios from 'axios';
+﻿import axios from "axios";
+import {APP_CONFIG} from "../config/env";
+import {debugError} from "../hooks/hooksLogger";
 
-// Configuration de l'environnement
-const CONFIG = {
-  // URL de base selon l'environnement
-  API_URL: __DEV__
-    ? 'http://10.0.2.2:5000/api' // Développement (émulateur Android)
-    : 'https://your-production-api.com/api', // Production
-
-  // Paramètres par défaut pour les actualités
+const DEFAULT_CONFIG = {
+  API_URL: APP_CONFIG.API_BASE_URL,
   DEFAULT_NEWS_PARAMS: {
-    language: 'fr',
-    steamOnly: 'true',
+    language: "fr",
+    steamOnly: "true",
   },
-
-  // Limites par défaut
   DEFAULT_LIMITS: {
     newsCount: 5,
     newsMaxLength: 300,
@@ -21,104 +15,90 @@ const CONFIG = {
   },
 };
 
-// Créer une instance axios avec la configuration de base
+const API_CONFIG = {
+  ...DEFAULT_CONFIG,
+  API_URL: APP_CONFIG.API_BASE_URL,
+};
+
 const api = axios.create({
-  baseURL: CONFIG.API_URL,
+  baseURL: API_CONFIG.API_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-  timeout: 10000, // Timeout de 10 secondes
+  timeout: 10000,
 });
 
-// Intercepteur pour la gestion globale des erreurs
+const normalizeError = error => {
+  const status = error?.response?.status ?? 0;
+  const data = error?.response?.data;
+  const message =
+    data?.message ||
+    error?.message ||
+    (status === 0
+      ? "Erreur réseau, veuillez vérifier votre connexion."
+      : "Une erreur est survenue, veuillez réessayer.");
+
+  return {
+    status,
+    message,
+    data,
+    original: error,
+  };
+};
+
 api.interceptors.response.use(
   response => response,
   error => {
-    // Log des erreurs pour le débogage
-    if (__DEV__) {
-      console.error('API Error:', {
-        url: error.config?.url,
-        method: error.config?.method,
-        status: error.response?.status,
-        data: error.response?.data,
-      });
-    }
+    debugError("API Error", {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
 
-    // Retourner l'erreur pour que les composants puissent la gérer
-    return Promise.reject(error);
+    return Promise.reject(normalizeError(error));
   },
 );
 
-// Service utilisateur
 const userService = {
-  // Enregistrer un nouvel utilisateur
-  register: steamId => {
-    return api.post('/users/register', {steamId});
-  },
-
-  // Récupérer les informations d'un utilisateur
-  getUser: steamId => {
-    return api.get(`/users/${steamId}`);
-  },
-
-  // Suivre un jeu
-  followGame: (steamId, appId, name, logoUrl) => {
-    return api.post(`/users/${steamId}/follow`, {appId, name, logoUrl});
-  },
-
-  // Ne plus suivre un jeu
-  unfollowGame: (steamId, appId) => {
-    return api.delete(`/users/${steamId}/follow/${appId}`);
-  },
-
-  // Mettre à jour les paramètres de notification
-  updateNotificationSettings: (steamId, settings) => {
-    return api.put(`/users/${steamId}/notifications`, settings);
-  },
-
-  // Mettre à jour les jeux actifs récents
-  updateRecentActiveGames: (steamId, games) => {
-    return api.put(`/users/${steamId}/active-games`, {games});
-  },
-
-  getFollowedGamesDetails: steamId => {
-    return api.get(`/users/${steamId}/followed-games-details`);
-  },
-
-  // Supprimer le compte utilisateur
-  deleteAccount: steamId => {
-    return api.delete(`/users/${steamId}`);
-  },
+  register: steamId => api.post("/users/register", {steamId}),
+  getUser: steamId => api.get(`/users/${steamId}`),
+  followGame: (steamId, appId, name, logoUrl) =>
+    api.post(`/users/${steamId}/follow`, {appId, name, logoUrl}),
+  unfollowGame: (steamId, appId) =>
+    api.delete(`/users/${steamId}/follow/${appId}`),
+  updateNotificationSettings: (steamId, settings) =>
+    api.put(`/users/${steamId}/notifications`, settings),
+  updateRecentActiveGames: (steamId, games) =>
+    api.put(`/users/${steamId}/active-games`, {games}),
+  getFollowedGamesDetails: steamId =>
+    api.get(`/users/${steamId}/followed-games-details`),
+  deleteAccount: steamId => api.delete(`/users/${steamId}`),
 };
 
-// Service actualités
 const newsService = {
-  // Récupérer les actualités d'un jeu spécifique
   getGameNews: (
     appId,
-    count = CONFIG.DEFAULT_LIMITS.newsCount,
-    maxLength = CONFIG.DEFAULT_LIMITS.newsMaxLength,
-  ) => {
-    return api.get(`/news/game/${appId}`, {
+    count = API_CONFIG.DEFAULT_LIMITS.newsCount,
+    maxLength = API_CONFIG.DEFAULT_LIMITS.newsMaxLength,
+  ) =>
+    api.get(`/news/game/${appId}`, {
       params: {
         count,
         maxLength,
-        ...CONFIG.DEFAULT_NEWS_PARAMS,
+        ...API_CONFIG.DEFAULT_NEWS_PARAMS,
       },
-    });
-  },
-
-  // Récupérer le fil d'actualités global
+    }),
   getNewsFeed: (
     steamId,
     {
       followedOnly = false,
-      perGameLimit = CONFIG.DEFAULT_LIMITS.perGameLimit,
-      language = CONFIG.DEFAULT_NEWS_PARAMS.language,
+      perGameLimit = API_CONFIG.DEFAULT_LIMITS.perGameLimit,
+      language = API_CONFIG.DEFAULT_NEWS_PARAMS.language,
     } = {},
   ) => {
     const params = {
-      followedOnly: followedOnly ? 'true' : 'false',
+      followedOnly: followedOnly ? "true" : "false",
       perGameLimit,
       language,
     };
@@ -127,54 +107,44 @@ const newsService = {
       params.steamId = steamId;
     }
 
-    return api.get('/news/feed', {params});
+    return api.get("/news/feed", {params});
   },
 };
 
-// Service Steam (communique directement avec l'API Steam via notre backend)
 const steamService = {
   getUserGames: (steamId, followedOnly = false) => {
-    const params = followedOnly ? {followedOnly: 'true'} : {};
+    const params = followedOnly ? {followedOnly: "true"} : {};
     return api.get(`/steam/games/${steamId}`, {params});
   },
-
-  getUserWishlist: steamId => {
-    return api.get(`/steam/wishlist/${steamId}`);
-  },
-
-  searchGames: (query, limit = 5) => {
-    return api.get('/steam/search', {params: {q: query, limit}});
-  },
+  getUserWishlist: steamId => api.get(`/steam/wishlist/${steamId}`),
+  searchGames: (query, limit = 5) =>
+    api.get("/steam/search", {params: {q: query, limit}}),
 };
 
-// Service Steam OpenID pour l'authentification
 const steamAuthService = {
-  // URLs et constantes de configuration
-  STEAM_OPENID_URL: 'https://steamcommunity.com/openid',
-  RETURN_URL: `${CONFIG.API_URL.replace('/api', '')}/auth/steam/return`,
-  APP_SCHEME_URL: 'steamnotif://auth',
-
-  // Paramètres OpenID constants
+  STEAM_OPENID_URL: "https://steamcommunity.com/openid",
+  RETURN_URL: APP_CONFIG.STEAM_RETURN_URL,
+  APP_SCHEME_URL: APP_CONFIG.APP_SCHEME,
   OPENID_PARAMS: {
-    'openid.ns': 'http://specs.openid.net/auth/2.0',
-    'openid.mode': 'checkid_setup',
-    'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
-    'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select',
+    "openid.ns": "http://specs.openid.net/auth/2.0",
+    "openid.mode": "checkid_setup",
+    "openid.identity": "http://specs.openid.net/auth/2.0/identifier_select",
+    "openid.claimed_id": "http://specs.openid.net/auth/2.0/identifier_select",
   },
-
-  // Générer l'URL d'authentification OpenID de Steam
   getAuthUrl: () => {
     const params = new URLSearchParams({
       ...steamAuthService.OPENID_PARAMS,
-      'openid.return_to': steamAuthService.RETURN_URL,
-      'openid.realm': steamAuthService.RETURN_URL,
+      "openid.return_to": steamAuthService.RETURN_URL,
+      "openid.realm": steamAuthService.RETURN_URL,
     });
 
     return `${steamAuthService.STEAM_OPENID_URL}/login?${params.toString()}`;
   },
 };
 
-// Export de la configuration pour les tests et le debugging
-export const apiConfig = CONFIG;
+export const apiConfig = {
+  ...API_CONFIG,
+  ENVIRONMENT: APP_CONFIG.ENVIRONMENT,
+};
 
 export {newsService, steamAuthService, steamService, userService};

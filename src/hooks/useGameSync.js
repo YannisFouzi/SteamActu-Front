@@ -1,4 +1,5 @@
 import {userService} from '../services/api';
+import {debugError, debugLog} from './hooksLogger';
 
 /**
  * Hook personnalisé pour la synchronisation des jeux actifs récents
@@ -73,11 +74,11 @@ export const useGameSync = () => {
       // Envoyer au backend
       await userService.updateRecentActiveGames(currentSteamId, payload);
 
-      console.log(
+      debugLog(
         `✅ Synchronisation réussie: ${payload.length} jeux actifs récents`,
       );
     } catch (error) {
-      console.error(
+      debugError(
         '❌ Erreur lors de la mise à jour des jeux actifs récents:',
         error,
       );

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useEffect, useState} from 'react';
+import {debugError} from './hooksLogger';
 
 /**
  * Hook personnalisé pour gérer la persistance avec AsyncStorage
@@ -13,11 +14,16 @@ export const useAsyncStorage = (key, defaultValue) => {
 
   // Charger la valeur au montage
   useEffect(() => {
+    let isActive = true;
+
     const loadValue = async () => {
       try {
         const storedValue = await AsyncStorage.getItem(key);
+        if (!isActive) {
+          return;
+        }
+
         if (storedValue !== null) {
-          // Essayer de parser comme JSON, sinon utiliser la valeur brute
           try {
             setValue(JSON.parse(storedValue));
           } catch {
@@ -25,13 +31,19 @@ export const useAsyncStorage = (key, defaultValue) => {
           }
         }
       } catch (error) {
-        console.error(`Erreur lors du chargement de ${key}:`, error);
+        debugError(`Erreur lors du chargement de ${key}:`, error);
       } finally {
-        setIsLoaded(true);
+        if (isActive) {
+          setIsLoaded(true);
+        }
       }
     };
 
     loadValue();
+
+    return () => {
+      isActive = false;
+    };
   }, [key]);
 
   // Fonction pour mettre à jour la valeur
@@ -46,7 +58,7 @@ export const useAsyncStorage = (key, defaultValue) => {
         await AsyncStorage.setItem(key, valueToStore);
       }
     } catch (error) {
-      console.error(`Erreur lors de la sauvegarde de ${key}:`, error);
+      debugError(`Erreur lors de la sauvegarde de ${key}:`, error);
     }
   };
 

@@ -1,44 +1,28 @@
 import React from 'react';
-import {
-  ActivityIndicator,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-} from 'react-native';
-import {COLORS, TEXT_STYLES} from '../../constants/theme';
+import {StyleSheet} from 'react-native';
+import {COLORS} from '../../constants';
+import PrimaryButton from './PrimaryButton';
 
 /**
- * Composant réutilisable pour le bouton de déconnexion
- * Centralise l'interface de déconnexion avec styles cohérents
+ * CTA spécialisé pour la déconnexion (utilise le bouton primaire partagé)
  */
-const LogoutButton = ({onPress, loading = false, disabled = false}) => {
-  return (
-    <TouchableOpacity
-      style={[styles.button, (loading || disabled) && styles.buttonDisabled]}
-      onPress={onPress}
-      disabled={loading || disabled}>
-      {loading ? (
-        <ActivityIndicator color={COLORS.WHITE} size="small" />
-      ) : (
-        <Text style={styles.buttonText}>Se déconnecter</Text>
-      )}
-    </TouchableOpacity>
-  );
-};
+const LogoutButton = ({onPress, loading = false, disabled = false}) => (
+  <PrimaryButton
+    label="Se déconnecter"
+    onPress={onPress}
+    loading={loading}
+    disabled={disabled}
+    backgroundColor={COLORS.ERROR}
+    borderColor={COLORS.ERROR}
+    spinnerColor={COLORS.WHITE}
+    textColor={COLORS.WHITE}
+    style={styles.spacing}
+  />
+);
 
 const styles = StyleSheet.create({
-  button: {
+  spacing: {
     marginTop: 8,
-    backgroundColor: COLORS.ERROR,
-    paddingVertical: 12,
-    borderRadius: 4,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    ...TEXT_STYLES.button,
   },
 });
 

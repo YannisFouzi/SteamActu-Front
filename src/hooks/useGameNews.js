@@ -1,7 +1,7 @@
-import {useCallback, useEffect, useState} from 'react';
-import {Alert} from 'react-native';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {newsService} from '../services/api';
-import {getGameAppId} from '../utils/gameHelpers';
+import {getGameAppId} from '../utils';
+import {debugError, debugLog, showAlert} from './hooksLogger';
 
 /**
  * Hook personnalisé pour la gestion des actualités d'un jeu
@@ -11,30 +11,57 @@ export const useGameNews = game => {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const isMountedRef = useRef(true);
+  const requestIdRef = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Fonction pour charger les actualités d'un jeu
   const loadNews = useCallback(async () => {
-    try {
-      setLoading(true);
+    const requestId = ++requestIdRef.current;
+    const shouldProcess = () =>
+      isMountedRef.current && requestId === requestIdRef.current;
 
-      // Utiliser la fonction utilitaire centralisée pour récupérer l'ID
+    if (shouldProcess()) {
+      setLoading(true);
+    }
+
+    try {
       const gameId = getGameAppId(game);
 
       if (!gameId) {
         throw new Error('ID du jeu non trouvé');
       }
 
-      // Récupérer les actualités
+      debugLog('[GAME NEWS] Chargement pour le jeu', gameId);
       const response = await newsService.getGameNews(gameId, 10, 500);
+      const nextNews = response.data || [];
 
-      setNews(response.data || []);
+      if (!shouldProcess()) {
+        return;
+      }
+
+      setNews(Array.isArray(nextNews) ? nextNews : []);
     } catch (error) {
-      console.error('Erreur lors du chargement des actualités:', error);
-      Alert.alert(
+      debugError('Erreur lors du chargement des actualités:', error);
+
+      if (!shouldProcess()) {
+        return;
+      }
+
+      showAlert(
         'Erreur',
         'Impossible de charger les actualités. Veuillez réessayer.',
       );
     } finally {
+      if (!shouldProcess()) {
+        return;
+      }
+
       setLoading(false);
       setRefreshing(false);
     }
@@ -42,7 +69,9 @@ export const useGameNews = game => {
 
   // Fonction pour rafraîchir les données
   const handleRefresh = useCallback(() => {
-    setRefreshing(true);
+    if (isMountedRef.current) {
+      setRefreshing(true);
+    }
     loadNews();
   }, [loadNews]);
 

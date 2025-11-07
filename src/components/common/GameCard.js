@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import {Image, StyleSheet, Text, View} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {COLORS} from '../../constants/theme';
+import {COLORS} from '../../constants';
 import FollowToggle from './FollowToggle';
 
 const GameCard = ({
@@ -18,7 +18,11 @@ const GameCard = ({
       <View style={styles.imageContainer}>
         {imageError ? (
           <View style={styles.imagePlaceholder}>
-            <Icon name="game-controller-outline" size={32} color="#999" />
+            <Icon
+              name="game-controller-outline"
+              size={32}
+              color={COLORS.STEAM_TEXT_GRAY}
+            />
           </View>
         ) : (
           <Image
@@ -82,7 +86,7 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    backgroundColor: COLORS.PLACEHOLDER_GRAY,
   },
   info: {
     flex: 1,
@@ -92,12 +96,12 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#212121',
+    color: COLORS.NEWS_TEXT_PRIMARY,
     marginBottom: 4,
   },
   date: {
     fontSize: 12,
-    color: '#757575',
+    color: COLORS.STEAM_TEXT_GRAY,
   },
   followButton: {
     justifyContent: 'center',

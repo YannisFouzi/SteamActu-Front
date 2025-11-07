@@ -9,8 +9,8 @@ import {
   View,
 } from 'react-native';
 import LoadingContainer from '../../../components/common/LoadingContainer';
-import {COLORS} from '../../../constants/theme';
-import {formatRelativeDate} from '../../../utils/gameHelpers';
+import {COLORS} from '../../../constants';
+import {formatRelativeDate} from '../../../utils';
 import styles from '../styles';
 
 /**
@@ -54,7 +54,7 @@ const NewsTab = ({
     }
 
     Linking.openURL(targetUrl).catch(err => {
-      console.error("Erreur lors de l'ouverture du lien:", err);
+      debugError("Erreur lors de l'ouverture du lien:", err);
       Alert.alert('Erreur', "Impossible d'ouvrir le lien sur Steam.");
     });
   }, []);

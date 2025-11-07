@@ -1,6 +1,6 @@
 import React from 'react';
 import {Modal, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-import {COLORS, CONTAINER_STYLES} from '../../constants/theme';
+import {COLORS, CONTAINER_STYLES} from '../../constants';
 
 /**
  * Composant modal générique pour les options (tri, filtre, etc.)
@@ -15,16 +15,24 @@ import {COLORS, CONTAINER_STYLES} from '../../constants/theme';
  */
 const OptionModal = ({
   visible,
-  onClose,
+  onClose = () => {},
   title,
-  options,
+  options = [],
   selectedValue,
   onSelect,
 }) => {
-  // Fonction pour gérer la sélection d'une option
+  const safeOptions = Array.isArray(options) ? options : [];
+  const handleClose = () => {
+    if (typeof onClose === 'function') {
+      onClose();
+    }
+  };
+
   const handleOptionSelect = value => {
-    onSelect(value);
-    onClose();
+    if (typeof onSelect === 'function') {
+      onSelect(value);
+    }
+    handleClose();
   };
 
   return (
@@ -32,25 +40,31 @@ const OptionModal = ({
       visible={visible}
       transparent={true}
       animationType="fade"
-      onRequestClose={onClose}>
+      onRequestClose={handleClose}>
       <TouchableOpacity
         style={styles.modalOverlay}
         activeOpacity={1}
-        onPress={onClose}>
+        onPress={handleClose}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>{title}</Text>
 
-          {options.map(option => (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.sortOption,
-                selectedValue === option.value && styles.selectedSortOption,
-              ]}
-              onPress={() => handleOptionSelect(option.value)}>
-              <Text style={styles.sortOptionText}>{option.label}</Text>
-            </TouchableOpacity>
-          ))}
+          {safeOptions.length === 0 ? (
+            <Text style={styles.emptyState}>
+              Aucune option disponible pour le moment.
+            </Text>
+          ) : (
+            safeOptions.map(option => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.sortOption,
+                  selectedValue === option.value && styles.selectedSortOption,
+                ]}
+                onPress={() => handleOptionSelect(option.value)}>
+                <Text style={styles.sortOptionText}>{option.label}</Text>
+              </TouchableOpacity>
+            ))
+          )}
         </View>
       </TouchableOpacity>
     </Modal>
@@ -83,6 +97,11 @@ const styles = StyleSheet.create({
   },
   selectedSortOption: {
     backgroundColor: COLORS.STEAM_LIGHT_BLUE,
+  },
+  emptyState: {
+    color: COLORS.STEAM_TEXT_GRAY,
+    fontSize: 14,
+    textAlign: 'center',
   },
 });
 

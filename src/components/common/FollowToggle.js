@@ -2,6 +2,7 @@ import React, {useCallback, useMemo} from 'react';
 import {StyleSheet, TouchableOpacity} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {useAppContext} from '../../context/AppContext';
+import {debugLog} from '../../hooks/hooksLogger';
 
 /**
  * Bouton générique de suivi/désuivi d'un jeu.
@@ -35,16 +36,19 @@ const FollowToggle = ({
     return isGameFollowed(appIdString);
   }, [appIdString, isFollowedProp, isGameFollowed]);
 
+  const safeName = useMemo(() => name || 'Jeu inconnu', [name]);
+  const safeImageUrl = useMemo(() => imageUrl || null, [imageUrl]);
+
   const handlePress = useCallback(async () => {
     if (!appIdString) {
-      console.warn('FollowToggle: appId manquant, action ignorée');
+      debugLog('FollowToggle: appId manquant, action ignorée');
       return;
     }
 
     const success = await handleFollowGame({
       appId: appIdString,
-      name,
-      imageUrl,
+      name: safeName,
+      imageUrl: safeImageUrl,
       isFollowed: derivedIsFollowed,
     });
 
@@ -55,7 +59,14 @@ const FollowToggle = ({
         nextIsFollowed: !derivedIsFollowed,
       });
     }
-  }, [appIdString, derivedIsFollowed, handleFollowGame, imageUrl, name, onToggle]);
+  }, [
+    appIdString,
+    derivedIsFollowed,
+    handleFollowGame,
+    onToggle,
+    safeImageUrl,
+    safeName,
+  ]);
 
   return (
     <TouchableOpacity

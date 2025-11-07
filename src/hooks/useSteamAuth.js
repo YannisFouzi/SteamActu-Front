@@ -1,10 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {Alert, Linking} from 'react-native';
+import {Linking} from 'react-native';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
-import {COLORS} from '../constants/theme';
+import {COLORS} from '../constants';
 import {useAppContext} from '../context/AppContext';
 import {steamAuthService, userService} from '../services/api';
+import {
+  debugError,
+  debugLog,
+  maskSteamId,
+  showAlert,
+} from './hooksLogger';
 
 /**
  * Hook personnalisé pour la gestion de l'authentification Steam
@@ -15,19 +21,38 @@ export const useSteamAuth = navigation => {
   const [loading, setLoading] = useState(false);
   const [processingAuth, setProcessingAuth] = useState(false);
   const processedUrls = useRef(new Set());
+  const loadDataTimeoutRef = useRef(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (loadDataTimeoutRef.current) {
+        clearTimeout(loadDataTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Vérifier si un utilisateur est déjà connecté
   const checkExistingUser = useCallback(async () => {
     try {
+      debugLog('[STEAM AUTH] Vérification utilisateur existant…');
+
       const savedSteamId = await AsyncStorage.getItem('steamId');
       if (savedSteamId) {
-        navigation.replace('Home');
+        debugLog(
+          '[STEAM AUTH] Session existante détectée:',
+          maskSteamId(savedSteamId),
+        );
+        if (isMountedRef.current) {
+          navigation.replace('Home');
+        }
         return true;
       }
       return false;
     } catch (error) {
-      console.error(
-        "Erreur lors de la vérification de l'utilisateur existant:",
+      debugError(
+        "[STEAM AUTH] Erreur lors de la vérification de l'utilisateur existant:",
         error,
       );
       return false;
@@ -38,16 +63,19 @@ export const useSteamAuth = navigation => {
   const handleSteamIdReceived = useCallback(
     async steamId => {
       try {
-        console.log('\n🔐 [LOGIN] Début authentification...');
-        console.log('🔐 [LOGIN] steamId:', steamId);
-        setLoading(true);
+        debugLog('\n🔐 [LOGIN] Début authentification...');
+        debugLog('🔐 [LOGIN] steamId:', maskSteamId(steamId));
+
+        if (isMountedRef.current) {
+          setLoading(true);
+        }
 
         // Enregistrer l'utilisateur sur le serveur
         let response;
         try {
-          console.log('🔐 [LOGIN] 🔄 POST /users/register');
+          debugLog('🔐 [LOGIN] 🔄 POST /users/register');
           response = await userService.register(steamId);
-          console.log('🔐 [LOGIN] ✅ Utilisateur créé/récupéré');
+          debugLog('🔐 [LOGIN] ✅ Utilisateur créé/récupéré');
         } catch (registerError) {
           // Vérifier si l'erreur est due à un utilisateur déjà existant
           const message = registerError.response?.data?.message || '';
@@ -56,11 +84,11 @@ export const useSteamAuth = navigation => {
             registerError.response?.status === 400 &&
             String(message).toLowerCase().includes('utilisateur existe')
           ) {
-            console.log('🔐 [LOGIN] ℹ️ Utilisateur existe déjà → GET /users');
+            debugLog('🔐 [LOGIN] ℹ️ Utilisateur existe déjà → GET /users');
             // L'utilisateur existe déjà, récupérer ses informations
             try {
               response = await userService.getUser(steamId);
-              console.log('🔐 [LOGIN] ✅ Informations utilisateur récupérées');
+              debugLog('🔐 [LOGIN] ✅ Informations utilisateur récupérées');
             } catch (getUserError) {
               throw new Error(
                 "Impossible de récupérer les informations de l'utilisateur",
@@ -78,33 +106,44 @@ export const useSteamAuth = navigation => {
         }
 
         // Sauvegarder le SteamID localement
-        console.log('🔐 [LOGIN] 💾 AsyncStorage.setItem("steamId", ' + steamId + ')');
+        debugLog(
+          '🔐 [LOGIN] 💾 AsyncStorage.setItem("steamId",',
+          maskSteamId(steamId),
+          ')',
+        );
         await AsyncStorage.setItem('steamId', steamId);
 
         // Naviguer vers l'écran d'accueil
-        console.log('🔐 [LOGIN] 🚀 Navigation vers Home');
-        navigation.replace('Home');
+        debugLog('🔐 [LOGIN] 🚀 Navigation vers Home');
+        if (isMountedRef.current) {
+          navigation.replace('Home');
+        }
         
         // Forcer le rechargement des données immédiatement après navigation
         // Cela résout la race condition où AppContext n'est pas démonté/remonté
-        console.log('🔐 [LOGIN] 🔄 Appel loadData() pour recharger le contexte');
+        debugLog('🔐 [LOGIN] 🔄 Appel loadData() pour recharger le contexte');
         // Attendre un petit délai pour que la navigation soit complète
-        setTimeout(() => {
+        loadDataTimeoutRef.current = setTimeout(() => {
+          if (!isMountedRef.current) {
+            return;
+          }
           loadData();
-          console.log('🔐 [LOGIN] ✅ Authentification et rechargement terminés\n');
+          debugLog('🔐 [LOGIN] ✅ Authentification et rechargement terminés\n');
         }, 100);
       } catch (error) {
-        console.error('🔐 [LOGIN] ❌ Erreur authentification:', error);
-        Alert.alert(
+        debugError('🔐 [LOGIN] ❌ Erreur authentification:', error);
+        showAlert(
           'Erreur',
           error.message ||
             'Impossible de se connecter. Vérifiez que le serveur est accessible.',
         );
       } finally {
-        setLoading(false);
+        if (isMountedRef.current) {
+          setLoading(false);
+        }
       }
     },
-    [navigation],
+    [loadData, navigation],
   );
 
   // Gérer les URL entrantes (redirection depuis Steam)
@@ -119,7 +158,10 @@ export const useSteamAuth = navigation => {
       if (url?.startsWith(steamAuthService.APP_SCHEME_URL)) {
         // Marquer l'URL comme traitée
         processedUrls.current.add(url);
-        setProcessingAuth(true);
+
+        if (isMountedRef.current) {
+          setProcessingAuth(true);
+        }
 
         try {
           // Extraire le SteamID de l'URL
@@ -128,15 +170,17 @@ export const useSteamAuth = navigation => {
           if (steamId) {
             await handleSteamIdReceived(steamId);
           } else {
-            Alert.alert(
+            showAlert(
               "Erreur d'authentification",
               'Impossible de récupérer votre identifiant Steam. Veuillez réessayer.',
             );
           }
         } catch (error) {
-          console.error("Erreur lors du traitement de l'URL:", error);
+          debugError("Erreur lors du traitement de l'URL:", error);
         } finally {
-          setProcessingAuth(false);
+          if (isMountedRef.current) {
+            setProcessingAuth(false);
+          }
         }
       }
     },
@@ -146,14 +190,17 @@ export const useSteamAuth = navigation => {
   // Lancer l'authentification Steam
   const handleSteamLogin = useCallback(async () => {
     try {
-      setLoading(true);
+      if (isMountedRef.current) {
+        setLoading(true);
+      }
 
       // Obtenir l'URL d'authentification Steam
       const steamAuthUrl = steamAuthService.getAuthUrl();
+      debugLog('[STEAM AUTH] Auth URL générée');
 
       // Ouvrir la page dans le navigateur intégré si disponible
       if (await InAppBrowser.isAvailable()) {
-        await InAppBrowser.open(steamAuthUrl, {
+        const result = await InAppBrowser.open(steamAuthUrl, {
           showTitle: true,
           toolbarColor: COLORS.STEAM_DARK,
           secondaryToolbarColor: COLORS.STEAM_BLUE,
@@ -161,17 +208,28 @@ export const useSteamAuth = navigation => {
           enableUrlBarHiding: true,
           enableDefaultShare: false,
         });
+
+        if (result?.type === 'cancel') {
+          debugLog('[STEAM AUTH] Authentification annulée par l’utilisateur');
+          showAlert(
+            'Connexion annulée',
+            'La fenêtre de connexion Steam a été fermée avant la fin du processus.',
+          );
+        }
       } else {
         // Fallback sur le navigateur externe
-        Linking.openURL(steamAuthUrl);
+        await Linking.openURL(steamAuthUrl);
       }
     } catch (error) {
-      console.error("Erreur lors du lancement de l'authentification:", error);
-      Alert.alert(
+      debugError("Erreur lors du lancement de l'authentification:", error);
+      showAlert(
         'Erreur',
         'Impossible de lancer la connexion Steam. Veuillez réessayer.',
       );
-      setLoading(false);
+    } finally {
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 

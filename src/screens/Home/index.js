@@ -13,7 +13,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import GameCard from '../../components/common/GameCard';
 import LoadingContainer from '../../components/common/LoadingContainer';
-import {COLORS} from '../../constants/theme';
+import {COLORS} from '../../constants';
 import {useAppContext} from '../../context/AppContext';
 import {useNewsManager} from '../../hooks/useNewsManager';
 import {useWishlist} from '../../hooks/useWishlist';
@@ -288,12 +288,12 @@ const HomeScreen = () => {
       {/* Contenu selon l'onglet actif */}
       {isNewsTab ? (
         isFeedTab ? (
-          <NewsTab
-            steamId={steamId}
-            showFollowedNewsOnly={true}
-            newsState={newsState}
-            fetchNews={fetchNews}
-          />
+        <NewsTab
+          steamId={steamId}
+          showFollowedNewsOnly={true}
+          newsState={newsState}
+          fetchNews={fetchNews}
+        />
         ) : (
           <FollowedGamesTab styles={styles} />
         )
@@ -357,25 +357,35 @@ const HomeScreen = () => {
               ) : (
                 <FlatList
                   data={getSortedWishlist()}
-                  renderItem={({item}) => {
-                    const appId = item.appid?.toString();
+                  renderItem={({item, index}) => {
+                    const appId = item.appid ? item.appid.toString() : null;
+                    const gameName =
+                      item.name || (appId ? `Jeu ${appId}` : 'Jeu Steam');
+                    const fallbackImage =
+                      appId &&
+                      `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
+                    const imageUrl =
+                      item.header_image || item.capsule || fallbackImage;
+
                     return (
                       <GameCard
-                        game={{name: item.name}}
-                        imageUrl={item.header_image || item.capsule}
+                        game={{name: gameName}}
+                        imageUrl={imageUrl}
                         followConfig={
                           appId
                             ? {
                                 appId,
-                                name: item.name,
-                                imageUrl: item.header_image || item.capsule,
+                                name: gameName,
+                                imageUrl,
                               }
                             : null
                         }
                       />
                     );
                   }}
-                  keyExtractor={item => item.appid.toString()}
+                  keyExtractor={(item, index) =>
+                    item.appid ? item.appid.toString() : `wishlist-${index}`
+                  }
                   contentContainerStyle={styles.wishlistList}
                   ListEmptyComponent={wishlistEmptyComponent}
                   refreshControl={

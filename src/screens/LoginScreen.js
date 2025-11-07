@@ -1,7 +1,7 @@
 ﻿import React from 'react';
 import {Image, StyleSheet, Text, View} from 'react-native';
 import SteamLoginButton from '../components/common/SteamLoginButton';
-import {COLORS, TEXT_STYLES} from '../constants/theme';
+import {COLORS, TEXT_STYLES} from '../constants';
 import {useSteamAuth} from '../hooks/useSteamAuth';
 
 const LoginScreen = ({navigation}) => {
@@ -18,7 +18,7 @@ const LoginScreen = ({navigation}) => {
 
       <Text style={styles.title}>Steam Actu & Notif</Text>
       <Text style={styles.subtitle}>
-        Restez informÃ© des derniÃ¨res actualitÃ©s de vos jeux Steam
+        Restez informé des dernières actualités de vos jeux Steam
       </Text>
 
       <SteamLoginButton onPress={handleSteamLogin} loading={loading} />

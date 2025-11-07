@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import GameCard from '../../../components/common/GameCard';
-import {COLORS} from '../../../constants/theme';
+import {COLORS} from '../../../constants';
 import {useAppContext} from '../../../context/AppContext';
 import {userService} from '../../../services/api';
 
@@ -17,14 +17,18 @@ const FollowedGamesTab = ({styles}) => {
   const [loading, setLoading] = useState(true);
 
   const fetchFollowedGames = useCallback(async () => {
-    if (!steamId) return;
+    if (!steamId) {
+      setFollowedGames([]);
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
       const response = await userService.getFollowedGamesDetails(steamId);
       setFollowedGames(response.data.followedGames || []);
     } catch (error) {
-      console.error('Erreur récupération jeux suivis:', error);
+      debugError('Erreur récupération jeux suivis:', error);
       setFollowedGames([]);
     } finally {
       setLoading(false);
@@ -39,7 +43,9 @@ const FollowedGamesTab = ({styles}) => {
     const appId = item.appId?.toString();
     const imageUrl =
       item.imageUrl ||
-      `https://cdn.cloudflare.steamstatic.com/steam/apps/${item.appId}/header.jpg`;
+      (item.appId
+        ? `https://cdn.cloudflare.steamstatic.com/steam/apps/${item.appId}/header.jpg`
+        : null);
 
     return (
       <GameCard

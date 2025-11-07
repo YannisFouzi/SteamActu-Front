@@ -1,5 +1,6 @@
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {newsService} from '../services/api';
+import {debugError, debugLog} from './hooksLogger';
 
 /**
  * Hook personnalisé pour la gestion des actualités
@@ -8,7 +9,7 @@ import {newsService} from '../services/api';
 export const useNewsManager = (steamId, showFollowedNewsOnly) => {
   // Factory pour créer l'état initial des news
   const createInitialNewsState = useCallback(() => {
-    console.log('🔄 useNewsManager: createInitialNewsState appelée');
+    debugLog('[NEWS] Initialisation de letat des actualites');
     return {
       items: [],
       loading: false,
@@ -21,20 +22,44 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
   const [newsState, setNewsState] = useState({
     news: createInitialNewsState(),
   });
+  const isMountedRef = useRef(true);
+  const requestIdRef = useRef(0);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  const safeSetNewsState = useCallback(updater => {
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    if (typeof updater === 'function') {
+      setNewsState(prev => updater(prev));
+      return;
+    }
+
+    setNewsState(updater);
+  }, []);
 
   // Fonction pour récupérer les actualités
   const fetchNews = useCallback(
     async (options = {}) => {
-      console.log('\n📰 [NEWS] fetchNews appelée');
-      console.log('📰 [NEWS] steamId:', steamId || '(vide)');
-      console.log('📰 [NEWS] showFollowedNewsOnly:', showFollowedNewsOnly);
-      console.log('📰 [NEWS] silent:', options.silent);
+      debugLog('\n📰 [NEWS] fetchNews appelée');
+      debugLog('📰 [NEWS] steamId:', steamId || '(vide)');
+      debugLog('📰 [NEWS] showFollowedNewsOnly:', showFollowedNewsOnly);
+      debugLog('📰 [NEWS] silent:', options.silent);
       
       const silent = options.silent === true;
+      const requestId = ++requestIdRef.current;
+      const shouldProcess = () =>
+        isMountedRef.current && requestId === requestIdRef.current;
 
       if (!steamId) {
-        console.log('📰 [NEWS] ❌ Pas de steamId → état vide');
-        setNewsState(prev => ({
+        debugLog('📰 [NEWS] ❌ Pas de steamId → état vide');
+        safeSetNewsState(prev => ({
           ...prev,
           news: {
             ...createInitialNewsState(),
@@ -44,9 +69,9 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
         return;
       }
       
-      console.log('📰 [NEWS] ⏳ Chargement des actualités...');
+      debugLog('📰 [NEWS] ⏳ Chargement des actualités...');
 
-      setNewsState(prev => {
+      safeSetNewsState(prev => {
         const previous = prev.news || createInitialNewsState();
         return {
           ...prev,
@@ -61,20 +86,24 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
       });
 
       try {
-        console.log('📰 [NEWS] 🔄 GET /news/feed (perGameLimit: 20)');
+        debugLog('📰 [NEWS] 🔄 GET /news/feed (perGameLimit: 20)');
         const response = await newsService.getNewsFeed(steamId, {
           followedOnly: showFollowedNewsOnly,
           perGameLimit: 20,
         });
 
+        if (!shouldProcess()) {
+          return;
+        }
+
         const items = Array.isArray(response.data?.items)
           ? response.data.items
           : [];
 
-        console.log('📰 [NEWS] ✅ News récupérées:', items.length, 'items');
-        console.log('📰 [NEWS] ✅ Chargement terminé\n');
+        debugLog('📰 [NEWS] ✅ News récupérées:', items.length, 'items');
+        debugLog('📰 [NEWS] ✅ Chargement terminé\n');
 
-        setNewsState(prev => {
+        safeSetNewsState(prev => {
           const previous = prev.news || createInitialNewsState();
           return {
             ...prev,
@@ -89,8 +118,12 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
           };
         });
       } catch (error) {
-        console.error('📰 [NEWS] ❌ Erreur lors du chargement du fil:', error);
-        setNewsState(prev => {
+        debugError('📰 [NEWS] ❌ Erreur lors du chargement du fil:', error);
+        if (!shouldProcess()) {
+          return;
+        }
+
+        safeSetNewsState(prev => {
           const previous = prev.news || createInitialNewsState();
           return {
             ...prev,
@@ -106,12 +139,12 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
         });
       }
     },
-    [showFollowedNewsOnly, steamId],
+    [createInitialNewsState, safeSetNewsState, showFollowedNewsOnly, steamId],
   );
 
   // Fonction pour mettre à jour le statut de suivi d'un jeu dans les news
   const updateNewsFollowStatus = useCallback((appId, isFollowed) => {
-    setNewsState(prev => {
+    safeSetNewsState(prev => {
       const previous = prev.news || createInitialNewsState();
       return {
         ...prev,
@@ -125,21 +158,21 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
         },
       };
     });
-  }, []);
+  }, [createInitialNewsState, safeSetNewsState]);
 
   // Réinitialiser les news quand le steamId change
   useEffect(() => {
-    console.log('\n📰 [NEWS useEffect[steamId]] Déclenché');
-    console.log('📰 [NEWS useEffect[steamId]] steamId:', steamId || '(vide)');
-    console.log('📰 [NEWS useEffect[steamId]] Reset newsState');
-    setNewsState({
+    debugLog('\n📰 [NEWS useEffect[steamId]] Déclenché');
+    debugLog('📰 [NEWS useEffect[steamId]] steamId:', steamId || '(vide)');
+    debugLog('📰 [NEWS useEffect[steamId]] Reset newsState');
+    safeSetNewsState({
       news: createInitialNewsState(),
     });
-  }, [steamId]);
+  }, [createInitialNewsState, safeSetNewsState, steamId]);
 
   // Charger les news quand le filtre change
   useEffect(() => {
-    console.log(
+    debugLog(
       '🔄 useNewsManager: useEffect filtre déclenché - showFollowedNewsOnly:',
       showFollowedNewsOnly,
       'initialized:',

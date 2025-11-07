@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useCallback, useEffect, useState} from 'react';
-import {Alert} from 'react-native';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {userService} from '../services/api';
+import {debugError, showAlert} from './hooksLogger';
 
 /**
  * Hook personnalisé pour la gestion des paramètres utilisateur
@@ -14,54 +14,81 @@ export const useUserSettings = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoFollowEnabled, setAutoFollowEnabled] = useState(false);
   const [autoFollowWishlistEnabled, setAutoFollowWishlistEnabled] = useState(false);
+  const isMountedRef = useRef(true);
+
+  const safeSetState = useCallback((setter, value) => {
+    if (isMountedRef.current) {
+      setter(value);
+    }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   // Charger les paramètres de l'utilisateur depuis AsyncStorage
   const loadUserSettings = useCallback(async () => {
+    safeSetState(setLoading, true);
+
     try {
-      // Récupérer le SteamID stocké
       const savedSteamId = await AsyncStorage.getItem('steamId');
 
       if (!savedSteamId) {
-        Alert.alert('Erreur', 'Utilisateur non connecté');
+        showAlert('Erreur', 'Utilisateur non connecté');
         return false;
       }
 
-      setSteamId(savedSteamId);
+      safeSetState(setSteamId, savedSteamId);
 
-      // Charger les paramètres depuis AsyncStorage (pas d'appel API)
       const savedNotifications = await AsyncStorage.getItem(
         'notificationsEnabled',
       );
       const savedAutoFollow = await AsyncStorage.getItem('autoFollowEnabled');
-      const savedAutoFollowWishlist = await AsyncStorage.getItem('autoFollowWishlistEnabled');
+      const savedAutoFollowWishlist = await AsyncStorage.getItem(
+        'autoFollowWishlistEnabled',
+      );
 
-      // Utiliser les valeurs sauvegardées ou les valeurs par défaut
-      setNotificationsEnabled(
+      safeSetState(
+        setNotificationsEnabled,
         savedNotifications !== null ? JSON.parse(savedNotifications) : true,
       );
-      setAutoFollowEnabled(
+      safeSetState(
+        setAutoFollowEnabled,
         savedAutoFollow !== null ? JSON.parse(savedAutoFollow) : false,
       );
-      setAutoFollowWishlistEnabled(
-        savedAutoFollowWishlist !== null ? JSON.parse(savedAutoFollowWishlist) : false,
+      safeSetState(
+        setAutoFollowWishlistEnabled,
+        savedAutoFollowWishlist !== null
+          ? JSON.parse(savedAutoFollowWishlist)
+          : false,
       );
 
       return true;
     } catch (error) {
-      console.error('Erreur lors du chargement des paramètres:', error);
-      Alert.alert(
+      debugError('Erreur lors du chargement des paramètres:', error);
+      showAlert(
         'Erreur',
         'Impossible de charger vos paramètres. Veuillez réessayer.',
       );
       return false;
+    } finally {
+      safeSetState(setLoading, false);
     }
-  }, []);
+  }, [safeSetState]);
 
   // Sauvegarder les paramètres
   const saveSettings = useCallback(
     async (newNotificationsEnabled, newAutoFollowEnabled, newAutoFollowWishlistEnabled) => {
+      if (!steamId) {
+        debugError('Impossible de sauvegarder les paramètres: steamId manquant');
+        showAlert('Erreur', 'Utilisateur non connecté.');
+        return false;
+      }
+
       try {
-        setSaving(true);
+        safeSetState(setSaving, true);
 
         // Sauvegarder localement dans AsyncStorage
         await AsyncStorage.setItem(
@@ -85,7 +112,7 @@ export const useUserSettings = () => {
             autoFollowWishlistGames: newAutoFollowWishlistEnabled,
           });
         } catch (apiError) {
-          console.warn(
+          debugError(
             'Erreur lors de la synchronisation avec le backend:',
             apiError,
           );
@@ -94,17 +121,17 @@ export const useUserSettings = () => {
 
         return true;
       } catch (error) {
-        console.error('Erreur lors de la sauvegarde des paramètres:', error);
-        Alert.alert(
+        debugError('Erreur lors de la sauvegarde des paramètres:', error);
+        showAlert(
           'Erreur',
           'Impossible de sauvegarder vos paramètres. Veuillez réessayer.',
         );
         return false;
       } finally {
-        setSaving(false);
+        safeSetState(setSaving, false);
       }
     },
-    [steamId],
+    [safeSetState, steamId],
   );
 
   // Gestionnaire pour les notifications

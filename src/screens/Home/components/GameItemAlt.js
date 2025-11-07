@@ -1,9 +1,6 @@
 import React from 'react';
 import GameCard from '../../../components/common/GameCard';
-import {
-  getGameAppId,
-  isValidGame,
-} from '../../../utils/gameHelpers';
+import {getGameAppId, isValidGame} from '../../../utils';
 
 const GameItemAlt = ({game}) => {
   // Validation et extraction des données du jeu

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import GameCard from '../../../components/common/GameCard';
-import {COLORS} from '../../../constants/theme';
+import {COLORS} from '../../../constants';
 import {steamService} from '../../../services/api';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
 
@@ -33,7 +33,7 @@ const SearchGameTab = ({styles}) => {
         setSearchResults(response.data || []);
         setHasSearched(true);
       } catch (error) {
-        console.error('Erreur recherche:', error);
+        debugError('Erreur recherche:', error);
         setSearchResults([]);
         setHasSearched(true);
       } finally {
@@ -87,7 +87,7 @@ const SearchGameTab = ({styles}) => {
           />
           <Text style={styles.emptyTitle}>Rechercher un jeu</Text>
           <Text style={styles.emptyText}>
-            Tapez au moins 2 caract��res pour commencer
+            Tapez au moins 2 caractères pour commencer
           </Text>
         </View>
       );

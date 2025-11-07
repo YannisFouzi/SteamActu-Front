@@ -1,5 +1,4 @@
 import {useNavigation} from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {useCallback, useState} from 'react';
 import {
   Alert,
@@ -12,7 +11,7 @@ import {
 import LogoutButton from '../components/common/LogoutButton';
 import SavingIndicator from '../components/common/SavingIndicator';
 import SettingSection from '../components/common/SettingSection';
-import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../constants/theme';
+import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../constants';
 import {useAppContext} from '../context/AppContext';
 import {useUserSettings} from '../hooks/useUserSettings';
 import {userService} from '../services/api';
@@ -48,7 +47,7 @@ const SettingsScreen = () => {
         routes: [{name: 'Login'}],
       });
     } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
+      debugError('Erreur lors de la déconnexion:', error);
     } finally {
       setLoggingOut(false);
     }
@@ -71,46 +70,31 @@ const SettingsScreen = () => {
             try {
               setDeleting(true);
 
-              // Supprimer le compte côté serveur
+              if (!steamId) {
+                throw new Error('SteamID introuvable');
+              }
+
               await userService.deleteAccount(steamId);
+              await handleLogout();
 
-              // Vider les données locales
-              await AsyncStorage.removeItem('steamId');
-
-              // Fermer la modale avec setDeleting
-              setDeleting(false);
-
-              // Alert de confirmation puis navigation
-              Alert.alert(
-                'Compte supprimé',
-                'Votre compte a été supprimé avec succès.',
-                [
-                  {
-                    text: 'OK',
-                    onPress: () => {
-                      // Navigation vers LoginScreen
-                      navigation.reset({
-                        index: 0,
-                        routes: [{name: 'Login'}],
-                      });
-                    },
-                  },
-                ],
-                {cancelable: false}, // Empêcher de fermer sans cliquer sur OK
-              );
+              navigation.reset({
+                index: 0,
+                routes: [{name: 'Login'}],
+              });
             } catch (error) {
-              console.error('Erreur lors de la suppression du compte:', error);
-              setDeleting(false);
+              debugError('Erreur lors de la suppression du compte:', error);
               Alert.alert(
                 'Erreur',
                 'Une erreur est survenue lors de la suppression de votre compte. Veuillez réessayer.',
               );
+            } finally {
+              setDeleting(false);
             }
           },
         },
       ],
     );
-  }, [steamId, navigation]);
+  }, [handleLogout, navigation, steamId]);
 
   return (
     <ScrollView style={styles.container}>
@@ -198,22 +182,24 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   deleteButton: {
-    backgroundColor: '#d32f2f',
+    backgroundColor: COLORS.ERROR,
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: COLORS.ERROR,
   },
   deleteButtonText: {
-    color: '#fff',
+    color: COLORS.WHITE,
     fontSize: 16,
     fontWeight: '600',
   },
   deleteWarning: {
     fontSize: 12,
-    color: '#ff6b6b',
+    color: COLORS.ERROR,
     textAlign: 'center',
     fontStyle: 'italic',
   },

@@ -21,7 +21,135 @@ import {
   getLastUpdateValue,
   getPlaytimeForeverValue,
   isRecentlyUpdated,
-} from '../utils/gameHelpers';
+} from '../utils';
+
+const DEBUG_MODE =
+  (typeof __DEV__ !== 'undefined' && __DEV__) ||
+  (typeof process !== 'undefined' &&
+    process.env &&
+    process.env.NODE_ENV !== 'production');
+
+const debugLog = (...args) => {
+  if (DEBUG_MODE) {
+    console.log(...args);
+  }
+};
+
+const debugError = (...args) => {
+  if (DEBUG_MODE) {
+    console.error(...args);
+  }
+};
+
+const showAlert = (title, message, buttons, options) =>
+  Alert.alert(title, message, buttons, options);
+
+class GamesFetchError extends Error {
+  constructor(originalError) {
+    super(
+      (originalError && originalError.message) ||
+        "Une erreur est survenue lors de la récupération des jeux.",
+    );
+    this.name = 'GamesFetchError';
+    this.original = originalError;
+  }
+}
+
+const extractGamesFromResponse = response => {
+  const data = response?.data;
+  if (Array.isArray(data)) {
+    return data;
+  }
+  if (data && Array.isArray(data.games)) {
+    return data.games;
+  }
+  return [];
+};
+
+const withFallbackTimestamps = games =>
+  (games || []).map(game => {
+    if (!game?.lastUpdateTimestamp) {
+      const fallbackTimestamp = getLastPlayedValue(game);
+      if (fallbackTimestamp > 0) {
+        return {...game, lastUpdateTimestamp: fallbackTimestamp};
+      }
+    }
+    return game;
+  });
+
+const loadUserProfile = async steamId => {
+  const response = await userService.getUser(steamId);
+  return response.data;
+};
+
+const loadGamesLibrary = async (steamId, followFilter) => {
+  try {
+    const shouldFetchFollowedOnly = followFilter === 'followed';
+    const response = await steamService.getUserGames(
+      steamId,
+      shouldFetchFollowedOnly,
+    );
+    const games = extractGamesFromResponse(response);
+    debugLog(
+      '[LOADDATA] Jeux récupérés:',
+      Array.isArray(games) ? games.length : 0,
+    );
+    return withFallbackTimestamps(Array.isArray(games) ? games : []);
+  } catch (error) {
+    throw new GamesFetchError(error);
+  }
+};
+
+const shouldReloadData = (forceReload, isReconnection, gamesLength) =>
+  forceReload || isReconnection || gamesLength === 0;
+
+const handleDataLoadError = ({error, onRetry, onLogout}) => {
+  debugError('[LOADDATA] Erreur', error);
+
+  if (error instanceof GamesFetchError) {
+    showAlert(
+      'Erreur de connexion',
+      'Impossible de récupérer vos jeux. Veuillez vérifier votre connexion et réessayer.',
+      [
+        {text: 'Réessayer', onPress: onRetry},
+        {text: 'Déconnexion', style: 'destructive', onPress: onLogout},
+      ],
+    );
+    return;
+  }
+
+  const status = error?.response?.status;
+
+  if (status === 404) {
+    showAlert(
+      'Session expirée',
+      'Votre session a expiré ou votre compte a été supprimé. Veuillez vous reconnecter.',
+      [{text: 'OK', onPress: onLogout}],
+    );
+    return;
+  }
+
+  if (error?.isAxiosError || status) {
+    showAlert(
+      'Erreur de connexion',
+      'Impossible de récupérer vos données. Veuillez vérifier votre connexion et réessayer.',
+      [
+        {text: 'Réessayer', onPress: onRetry},
+        {text: 'Déconnexion', style: 'destructive', onPress: onLogout},
+      ],
+    );
+    return;
+  }
+
+  showAlert(
+    'Erreur',
+    "Une erreur inattendue s'est produite. Voulez-vous vous déconnecter et réessayer?",
+    [
+      {text: 'Réessayer', onPress: onRetry},
+      {text: 'Déconnexion', style: 'destructive', onPress: onLogout},
+    ],
+  );
+};
 
 // Création du contexte
 const AppContext = createContext();
@@ -61,7 +189,7 @@ export const AppProvider = ({children, navigation = null}) => {
 
   // Chargement initial des données
   useEffect(() => {
-    console.log('\n🎬 [INIT] useEffect initial (mount) déclenché');
+    debugLog('\n🎬 [INIT] useEffect initial (mount) déclenché');
     loadData();
 
     // Configurer la détection du changement d'état de l'application
@@ -70,7 +198,7 @@ export const AppProvider = ({children, navigation = null}) => {
         appState.current.match(/inactive|background/) &&
         nextAppState === 'active'
       ) {
-        console.log('📱 [APPSTATE] App revenue au premier plan!');
+        debugLog('📱 [APPSTATE] App revenue au premier plan!');
         checkLastVerificationDate();
       }
 
@@ -84,25 +212,25 @@ export const AppProvider = ({children, navigation = null}) => {
 
   // Surveiller les changements de steamId pour recharger les données après reconnexion
   useEffect(() => {
-    console.log('\n🔄 [useEffect[steamId]] Déclenché');
-    console.log('🔄 [useEffect[steamId]] steamId:', steamId || '(vide)');
-    console.log('🔄 [useEffect[steamId]] games.length:', games.length);
-    console.log('🔄 [useEffect[steamId]] loading:', loading);
-    console.log('🔄 [useEffect[steamId]] refreshing:', refreshing);
+    debugLog('\n🔄 [useEffect[steamId]] Déclenché');
+    debugLog('🔄 [useEffect[steamId]] steamId:', steamId || '(vide)');
+    debugLog('🔄 [useEffect[steamId]] games.length:', games.length);
+    debugLog('🔄 [useEffect[steamId]] loading:', loading);
+    debugLog('🔄 [useEffect[steamId]] refreshing:', refreshing);
     
     // Charger les données uniquement si :
     // - steamId existe
     // - Aucune donnée chargée (games.length === 0)
     // - Aucun chargement en cours (évite double appel)
     if (steamId && games.length === 0 && !loading && !refreshing) {
-      console.log('🔄 [useEffect[steamId]] ✅ Condition remplie → appel loadData()');
+      debugLog('🔄 [useEffect[steamId]] ✅ Condition remplie → appel loadData()');
       loadData();
     } else if (loading || refreshing) {
-      console.log('🔄 [useEffect[steamId]] ⏭️ Skip (chargement en cours)');
+      debugLog('🔄 [useEffect[steamId]] ⏭️ Skip (chargement en cours)');
     } else if (steamId && games.length > 0) {
-      console.log('🔄 [useEffect[steamId]] ⏭️ Skip (jeux déjà chargés)');
+      debugLog('🔄 [useEffect[steamId]] ⏭️ Skip (jeux déjà chargés)');
     } else {
-      console.log('🔄 [useEffect[steamId]] ⏭️ Skip (pas de steamId)');
+      debugLog('🔄 [useEffect[steamId]] ⏭️ Skip (pas de steamId)');
     }
   }, [steamId]);
 
@@ -119,14 +247,14 @@ export const AppProvider = ({children, navigation = null}) => {
 
   // Filtrer et trier les jeux
   const filterAndSortGames = useCallback(() => {
-    console.log(
+    debugLog(
       '🔍 filterAndSortGames appelée (mémorisée) - searchQuery:',
       searchQuery,
       'games count:',
       games?.length,
     );
     if (!games || !Array.isArray(games)) {
-      console.log('Aucun jeu à filtrer ou format incorrect');
+      debugLog('Aucun jeu à filtrer ou format incorrect');
       setFilteredGames([]);
       return;
     }
@@ -177,245 +305,129 @@ export const AppProvider = ({children, navigation = null}) => {
     setFilteredGames(filtered);
   }, [games, searchQuery, followFilter, sortOption, isGameFollowed]);
 
+  const beginLoadingState = forceReload => {
+    if (forceReload) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+  };
+
+  const finalizeLoadingState = () => {
+    setLoading(false);
+    setRefreshing(false);
+  };
+
   // Fonction pour charger les données
   const loadData = async (forceReload = false) => {
+    debugLog('\n[LOADDATA] Début loadData...');
+    debugLog('[LOADDATA] forceReload:', forceReload);
+    debugLog('[LOADDATA] steamId actuel (state):', steamId || '(vide)');
+    debugLog('[LOADDATA] games.length:', games.length);
+
+    const savedSteamId = await AsyncStorage.getItem('steamId');
+    debugLog(
+      '[LOADDATA] savedSteamId (AsyncStorage):',
+      savedSteamId || '(vide)',
+    );
+
+    if (!savedSteamId) {
+      finalizeLoadingState();
+      if (navigation) {
+        navigation.navigate('Login');
+      }
+      return;
+    }
+
+    const isReconnection = steamId === '' && savedSteamId !== '';
+    if (steamId !== savedSteamId) {
+      debugLog('[LOADDATA] steamId différent → setSteamId()');
+      setSteamId(savedSteamId);
+    }
+
+    const mustReload = shouldReloadData(
+      forceReload,
+      isReconnection,
+      games.length,
+    );
+    debugLog('[LOADDATA] shouldReload:', mustReload);
+
+    if (!mustReload) {
+      return;
+    }
+
+    beginLoadingState(forceReload);
+
     try {
-      console.log('\n📦 [LOADDATA] Début loadData...');
-      console.log('📦 [LOADDATA] forceReload:', forceReload);
-      console.log('📦 [LOADDATA] steamId actuel (state):', steamId || '(vide)');
-      console.log('📦 [LOADDATA] games.length:', games.length);
+      const userData = await loadUserProfile(savedSteamId);
+      setUser(userData);
+      debugLog(
+        '[LOADDATA] Utilisateur récupéré:',
+        userData?.username || '(inconnu)',
+      );
 
-      // Vérifier s'il y a un identifiant Steam enregistré
-      const savedSteamId = await AsyncStorage.getItem('steamId');
-      console.log('📦 [LOADDATA] savedSteamId (AsyncStorage):', savedSteamId || '(vide)');
-
-      // Si pas d'identifiant, retourner à l'écran de connexion
-      if (!savedSteamId) {
-        console.log('📦 [LOADDATA] ❌ Pas de steamId dans AsyncStorage → Navigation Login');
-        setLoading(false);
-        if (navigation) {
-          navigation.navigate('Login');
-        }
-        return;
-      }
-
-      // Si steamId change, le mettre à jour dans le state
-      const isReconnection = steamId === '' && savedSteamId !== '';
-      if (steamId !== savedSteamId) {
-        console.log('📦 [LOADDATA] 🔄 steamId différent → setSteamId()');
-        console.log('📦 [LOADDATA] isReconnection:', isReconnection);
-        setSteamId(savedSteamId);
-      }
-
-      // Déterminer si on doit recharger
-      const shouldReload = forceReload || isReconnection || games.length === 0;
-      console.log('📦 [LOADDATA] shouldReload:', shouldReload);
-      console.log('📦 [LOADDATA]   - forceReload:', forceReload);
-      console.log('📦 [LOADDATA]   - isReconnection:', isReconnection);
-      console.log('📦 [LOADDATA]   - games.length === 0:', games.length === 0);
-
-      if (!shouldReload) {
-        console.log('📦 [LOADDATA] ⏭️ Skip reload (déjà chargé)\n');
-        return;
-      }
-
-      console.log('📦 [LOADDATA] ⏳ Chargement des données depuis MongoDB...');
-      
-      // Afficher les indicateurs de chargement
-      setLoading(forceReload);
-      setRefreshing(!forceReload);
-
-      try {
-        // Récupérer les informations de l'utilisateur depuis MongoDB
-        console.log('📦 [LOADDATA] 🔄 GET /users/' + savedSteamId);
-        const userResponse = await userService.getUser(savedSteamId);
-        setUser(userResponse.data);
-        console.log('📦 [LOADDATA] ✅ User récupéré:', userResponse.data.username);
-
-        // Récupérer les jeux depuis MongoDB
-        const shouldFetchFollowedOnly = followFilter === 'followed';
-        console.log('📦 [LOADDATA] 🔄 GET /steam/games/' + savedSteamId + ' (followedOnly:', shouldFetchFollowedOnly + ')');
-        
-        let gamesResponse;
-        try {
-          gamesResponse = await steamService.getUserGames(
-            savedSteamId,
-            shouldFetchFollowedOnly,
-          );
-        } catch (error) {
-          console.log('📦 [LOADDATA] ❌ Erreur lors de la récupération des jeux');
-          setLoading(false);
-          setRefreshing(false);
-          Alert.alert(
-            'Erreur de connexion',
-            'Impossible de récupérer vos jeux. Veuillez vérifier votre connexion et réessayer.',
-            [
-              {
-                text: 'Réessayer',
-                onPress: () => loadData(forceReload),
-              },
-              {
-                text: 'Déconnexion',
-                style: 'destructive',
-                onPress: () => handleLogout(),
-              },
-            ],
-          );
-          return;
-        }
-
-        // Adapter la structure selon la réponse reçue
-        let newGames = [];
-        if (gamesResponse.data && gamesResponse.data.games) {
-          newGames = gamesResponse.data.games;
-          console.log('📦 [LOADDATA] ✅ Structure getAllUserGames:', newGames.length, 'jeux');
-        } else if (
-          gamesResponse.data &&
-          Array.isArray(gamesResponse.data.games)
-        ) {
-          newGames = gamesResponse.data.games;
-          console.log('📦 [LOADDATA] ✅ Structure getUserGames:', newGames.length, 'jeux');
-        } else if (Array.isArray(gamesResponse.data)) {
-          newGames = gamesResponse.data;
-          console.log('📦 [LOADDATA] ✅ Structure tableau direct:', newGames.length, 'jeux');
-        }
-
-        // Ajouter timestamps manquants
-        if (newGames.length > 0) {
-          newGames.forEach(game => {
-            if (!game.lastUpdateTimestamp) {
-              const fallbackTimestamp = getLastPlayedValue(game);
-              if (fallbackTimestamp > 0) {
-                game.lastUpdateTimestamp = fallbackTimestamp;
-              }
-            }
-          });
-        }
-
-        // Mettre à jour l'état des jeux
-        const normalizedGames = Array.isArray(newGames) ? newGames : [];
-        setGames(normalizedGames);
-        syncRecentActiveGames(normalizedGames, savedSteamId);
-        
-        console.log('📦 [LOADDATA] ✅ setGames(' + normalizedGames.length + ' jeux)');
-        console.log('📦 [LOADDATA] ✅ Chargement terminé avec succès\n');
-        
-        setLoading(false);
-        setRefreshing(false);
-      } catch (apiError) {
-        console.error('📦 [LOADDATA] ❌ Erreur API:', apiError);
-        setLoading(false);
-        setRefreshing(false);
-
-        // Vérifier si l'erreur est due à un utilisateur non trouvé (404)
-        if (apiError.response && apiError.response.status === 404) {
-          console.log(
-            'Utilisateur non trouvé dans la base de données, déconnexion forcée',
-          );
-          Alert.alert(
-            'Session expirée',
-            'Votre session a expiré ou votre compte a été supprimé. Veuillez vous reconnecter.',
-            [
-              {
-                text: 'OK',
-                onPress: () => handleLogout(),
-              },
-            ],
-          );
-          return;
-        }
-
-        // Autres erreurs
-        Alert.alert(
-          'Erreur de connexion',
-          'Impossible de récupérer vos données. Veuillez vérifier votre connexion et réessayer.',
-          [
-            {
-              text: 'Réessayer',
-              onPress: () => loadData(isFullCheck),
-            },
-            {
-              text: 'Déconnexion',
-              style: 'destructive',
-              onPress: () => handleLogout(),
-            },
-          ],
-        );
-      }
+      const normalizedGames = await loadGamesLibrary(savedSteamId, followFilter);
+      setGames(normalizedGames);
+      syncRecentActiveGames(normalizedGames, savedSteamId);
+      debugLog(
+        '[LOADDATA] setGames ->',
+        Array.isArray(normalizedGames) ? normalizedGames.length : 0,
+        'jeux',
+      );
 
       updateVerificationDate();
       setLastRefreshTime(Date.now());
     } catch (error) {
-      console.error('🔴 LOAD ERROR -', error.message);
-      setLoading(false);
-      setRefreshing(false);
-
-      // Proposer à l'utilisateur de se déconnecter en cas d'erreur grave
-      Alert.alert(
-        'Erreur',
-        "Une erreur inattendue s'est produite. Voulez-vous vous déconnecter et réessayer?",
-        [
-          {
-            text: 'Réessayer',
-            onPress: () => loadData(isFullCheck),
-          },
-          {
-            text: 'Déconnexion',
-            style: 'destructive',
-            onPress: () => handleLogout(),
-          },
-        ],
-      );
+      handleDataLoadError({
+        error,
+        onRetry: () => loadData(true),
+        onLogout: handleLogout,
+      });
+    } finally {
+      finalizeLoadingState();
     }
   };
 
-  // Vérifier la dernière date de vérification
+// Vérifier la dernière date de vérification
   const checkLastVerificationDate = async () => {
     try {
       // Vérifier d'abord si un steamId existe (évite race condition pendant login)
       const savedSteamId = await AsyncStorage.getItem('steamId');
       if (!savedSteamId) {
-        console.log('⏭️ [CHECK] Skip vérification (pas de steamId dans AsyncStorage)');
+        debugLog('⏭️ [CHECK] Skip vérification (pas de steamId dans AsyncStorage)');
         return;
       }
 
       if (isOlderThanOneDay()) {
-        console.log("⏰ [CHECK] Plus d'un jour écoulé → vérification complète");
+        debugLog("⏰ [CHECK] Plus d'un jour écoulé → vérification complète");
         loadData(true);
       } else if (Date.now() - lastRefreshTime > 300000) {
-        console.log("⏰ [CHECK] Vérification des nouveaux jeux (5 min écoulées)");
+        debugLog("⏰ [CHECK] Vérification des nouveaux jeux (5 min écoulées)");
         checkForNewGames();
       } else {
-        console.log('⏭️ [CHECK] Vérification récente, skip');
+        debugLog('⏭️ [CHECK] Vérification récente, skip');
       }
     } catch (error) {
-      console.error('❌ [CHECK] Erreur lors de la vérification de la date:', error);
+      debugError('❌ [CHECK] Erreur lors de la vérification de la date:', error);
     }
   };
 
   // Fonction pour rafraîchir les données
   const handleRefresh = () => {
-    setRefreshing(true);
-    loadData()
-      .then(() => {
-        setRefreshing(false);
-      })
-      .catch(error => {
-        setRefreshing(false);
-      });
+    loadData(true);
   };
 
   // Fonction pour se déconnecter
   const handleLogout = async () => {
     try {
-      console.log('\n🚪 [LOGOUT] Début de la déconnexion...');
-      console.log('🚪 [LOGOUT] steamId avant reset:', steamId);
-      console.log('🚪 [LOGOUT] games count avant reset:', games.length);
+      debugLog('\n🚪 [LOGOUT] Début de la déconnexion...');
+      debugLog('🚪 [LOGOUT] steamId avant reset:', steamId);
+      debugLog('🚪 [LOGOUT] games count avant reset:', games.length);
       
       // Supprimer toutes les données d'AsyncStorage
       await AsyncStorage.removeItem('steamId');
       await AsyncStorage.removeItem('lastVerificationDate');
-      console.log('🚪 [LOGOUT] ✅ AsyncStorage vidé (steamId, lastVerificationDate)');
+      debugLog('🚪 [LOGOUT] ✅ AsyncStorage vidé (steamId, lastVerificationDate)');
 
       // Réinitialiser TOUS les états du contexte
       setSteamId('');
@@ -423,24 +435,24 @@ export const AppProvider = ({children, navigation = null}) => {
       setGames([]);
       setFilteredGames([]);
       setLastRefreshTime(0);
-      console.log('🚪 [LOGOUT] ✅ États réinitialisés (steamId="", user=null, games=[], lastRefreshTime=0)');
+      debugLog('🚪 [LOGOUT] ✅ États réinitialisés (steamId="", user=null, games=[], lastRefreshTime=0)');
 
       // Navigation si disponible
       if (navigation) {
-        console.log('🚪 [LOGOUT] ✅ Navigation vers LoginScreen');
+        debugLog('🚪 [LOGOUT] ✅ Navigation vers LoginScreen');
         navigation.replace('Login');
       } else {
-        console.log('🚪 [LOGOUT] ⚠️ Navigation non disponible');
-        Alert.alert(
+        debugLog('🚪 [LOGOUT] ⚠️ Navigation non disponible');
+        showAlert(
           'Déconnexion réussie',
           "Vous avez été déconnecté avec succès. Veuillez redémarrer l'application.",
         );
       }
       
-      console.log('🚪 [LOGOUT] ✅ Déconnexion terminée\n');
+      debugLog('🚪 [LOGOUT] ✅ Déconnexion terminée\n');
     } catch (error) {
-      console.error('🚪 [LOGOUT] ❌ Erreur lors de la déconnexion:', error);
-      Alert.alert(
+      debugError('🚪 [LOGOUT] ❌ Erreur lors de la déconnexion:', error);
+      showAlert(
         'Erreur de déconnexion',
         'Une erreur est survenue lors de la déconnexion. Veuillez réessayer.',
       );
@@ -451,25 +463,25 @@ export const AppProvider = ({children, navigation = null}) => {
   const handleFollowGame = async (gameMeta = {}) => {
     try {
       if (!steamId) {
-        console.error('SteamID non trouvé');
+        debugError('SteamID non trouvé');
         return false;
       }
 
       const rawAppId = gameMeta?.appId ?? gameMeta?.appid;
       if (!rawAppId) {
-        console.error('AppID non trouvé');
+        debugError('AppID non trouvé');
         return false;
       }
 
       const appIdString = rawAppId.toString();
 
-      console.log('=== Début handleFollowGame ===');
-      console.log('AppID reçu:', appIdString);
-      console.log(
+      debugLog('=== Début handleFollowGame ===');
+      debugLog('AppID reçu:', appIdString);
+      debugLog(
         'État isFollowed (fourni):',
         typeof gameMeta.isFollowed === 'boolean' ? gameMeta.isFollowed : 'non fourni',
       );
-      console.log('Nombre total de jeux:', games.length);
+      debugLog('Nombre total de jeux:', games.length);
 
       const isFollowed =
         typeof gameMeta.isFollowed === 'boolean'
@@ -488,7 +500,7 @@ export const AppProvider = ({children, navigation = null}) => {
         (game ? getGameIconUrl(appIdString, game.img_icon_url) : '') ||
         '';
 
-      console.log('Jeu cible:', gameName);
+      debugLog('Jeu cible:', gameName);
 
       const previousGames = games;
       let localToggleApplied = false;
@@ -515,7 +527,7 @@ export const AppProvider = ({children, navigation = null}) => {
             gameName,
             gameIcon,
           );
-          console.log('Jeu suivi avec succès:', gameName);
+          debugLog('Jeu suivi avec succès:', gameName);
 
           setUser(prevUser => {
             if (!prevUser) return prevUser;
@@ -541,7 +553,7 @@ export const AppProvider = ({children, navigation = null}) => {
           });
         } else {
           await userService.unfollowGame(steamId, appIdString);
-          console.log('Jeu retiré des suivis:', gameName);
+          debugLog('Jeu retiré des suivis:', gameName);
 
           setUser(prevUser => {
             if (!prevUser) return prevUser;
@@ -565,24 +577,24 @@ export const AppProvider = ({children, navigation = null}) => {
 
         filterAndSortGames();
 
-        console.log('=== Fin handleFollowGame (succès) ===');
+        debugLog('=== Fin handleFollowGame (succès) ===');
         return true;
       } catch (apiError) {
-        console.error('Erreur API lors de la modification du suivi:', apiError);
+        debugError('Erreur API lors de la modification du suivi:', apiError);
 
         if (localToggleApplied) {
           setGames(previousGames);
         }
 
-        Alert.alert(
+        showAlert(
           'Erreur',
           'Impossible de modifier le suivi du jeu. Veuillez réessayer.',
         );
         return false;
       }
     } catch (error) {
-      console.error('Erreur lors de la modification du suivi:', error);
-      Alert.alert(
+      debugError('Erreur lors de la modification du suivi:', error);
+      showAlert(
         'Erreur',
         'Une erreur inattendue est survenue. Veuillez réessayer.',
       );
@@ -595,7 +607,7 @@ export const AppProvider = ({children, navigation = null}) => {
     try {
       if (!steamId) return;
 
-      console.log('Vérification des nouveaux jeux pour', steamId);
+      debugLog('Vérification des nouveaux jeux pour', steamId);
       // Pour vérifier les nouveaux jeux, on récupère toujours tous les jeux
       const gamesResponse = await steamService.getUserGames(steamId, false);
       const newGames = Array.isArray(gamesResponse.data)
@@ -603,14 +615,14 @@ export const AppProvider = ({children, navigation = null}) => {
         : gamesResponse.data.games || [];
 
       if (!Array.isArray(newGames)) {
-        console.log('Format de réponse inattendu:', gamesResponse.data);
+        debugLog('Format de réponse inattendu:', gamesResponse.data);
         return;
       }
 
-      console.log(`Jeux récupérés: ${newGames.length} jeux au total`);
+      debugLog(`Jeux récupérés: ${newGames.length} jeux au total`);
 
       if (newGames.length > games.length) {
-        console.log(
+        debugLog(
           `${newGames.length - games.length} nouveaux jeux détectés!`,
         );
 
@@ -623,7 +635,7 @@ export const AppProvider = ({children, navigation = null}) => {
         );
 
         if (addedGames.length > 0) {
-          Alert.alert(
+          showAlert(
             'Nouveaux jeux détectés',
             `${addedGames.length} nouveau(x) jeu(x) ont été ajoutés à votre bibliothèque.`,
             [{text: 'OK'}],
@@ -635,7 +647,7 @@ export const AppProvider = ({children, navigation = null}) => {
         }
       }
     } catch (error) {
-      console.error('Erreur lors de la vérification des nouveaux jeux:', error);
+      debugError('Erreur lors de la vérification des nouveaux jeux:', error);
     }
   };
 

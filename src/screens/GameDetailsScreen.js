@@ -10,35 +10,46 @@ import {
 } from 'react-native';
 import LoadingContainer from '../components/common/LoadingContainer';
 import NewsItem from '../components/common/NewsItem';
-import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../constants/theme';
+import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../constants';
 import {useGameNews} from '../hooks/useGameNews';
-import {getGameAppId} from '../utils/gameHelpers';
+import {getGameAppId} from '../utils';
 
 const GameDetailsScreen = ({route, navigation}) => {
-  // Récupération des données du jeu
-  const game = route.params.game;
+  const game = route?.params?.game ?? null;
 
-  // Hook personnalisé pour la gestion des actualités
-  const {news, loading, refreshing, hasNews, handleRefresh} = useGameNews(game);
-
-  // Définir le titre de la page au démarrage
   useEffect(() => {
-    if (game && game.name) {
-      navigation.setOptions({
-        title: game.name,
-      });
-    }
-  }, [game, navigation]);
+    navigation.setOptions({
+      title: game?.name || 'Détails du jeu',
+    });
+  }, [game?.name, navigation]);
+
+  if (!game) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>
+            Impossible d’afficher ce jeu. Revenez à l’écran précédent.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  const {news, loading, refreshing, hasNews, handleRefresh} = useGameNews(game);
 
   // Fonction pour ouvrir un lien d'actualité
   const openNewsLink = useCallback(() => {
     // Utiliser la fonction utilitaire pour récupérer l'ID du jeu
     const gameId = getGameAppId(game);
+    if (!gameId) {
+      Alert.alert('Information', 'Identifiant de jeu introuvable.');
+      return;
+    }
     const steamCommunityUrl = `https://steamcommunity.com/games/${gameId}/announcements`;
 
     // Ouvrir directement le lien Steam
     Linking.openURL(steamCommunityUrl).catch(err => {
-      console.error("Erreur lors de l'ouverture du lien Steam:", err);
+      debugError("Erreur lors de l'ouverture du lien Steam:", err);
       Alert.alert(
         'Erreur',
         "Impossible d'ouvrir Steam. Veuillez vérifier que l'application Steam est installée.",
