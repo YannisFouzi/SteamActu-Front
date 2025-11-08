@@ -55,6 +55,7 @@ const FollowedGamesTab = ({styles}) => {
           appId,
           name: item.name,
           imageUrl,
+          isFollowed: true,
           onToggle: ({nextIsFollowed}) => {
             if (!nextIsFollowed && appId) {
               setFollowedGames(prev =>
