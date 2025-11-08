@@ -1,8 +1,8 @@
-import React, {useCallback, useMemo} from 'react';
-import {StyleSheet, TouchableOpacity} from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {useAppContext} from '../context/AppContext';
-import {debugLog} from '../hooks/hooksLogger';
+import { useAppContext } from '../context/AppContext';
+import { debugLog } from '../hooks/hooksLogger';
 
 /**
  * Bouton générique de suivi/désuivi d'un jeu.

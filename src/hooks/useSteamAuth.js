@@ -1,10 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {Linking} from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Linking } from 'react-native';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
-import {COLORS} from '../constants';
-import {useAppContext} from '../context/AppContext';
-import {steamAuthService, userService} from '../services/api';
+import { COLORS } from '../constants';
+import { useAppContext } from '../context/AppContext';
+import { steamAuthService, userService } from '../services/api';
 import {
   debugError,
   debugLog,

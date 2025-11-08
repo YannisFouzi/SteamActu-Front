@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -9,8 +9,8 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import GameCard from '../../../components/GameCard';
-import {COLORS} from '../../../constants';
-import {steamService} from '../../../services/api';
+import { COLORS } from '../../../constants';
+import { steamService } from '../../../services/api';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
 
 const SearchGameTab = ({styles}) => {

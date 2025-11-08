@@ -7,20 +7,18 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import {Alert, AppState} from 'react-native';
+import { Alert, AppState } from 'react-native';
 import {
   useAsyncStorage,
   useLastVerificationDate,
 } from '../hooks/useAsyncStorage';
-import {useGameSync} from '../hooks/useGameSync';
-import {steamService, userService} from '../services/api';
+import { useGameSync } from '../hooks/useGameSync';
+import { steamService, userService } from '../services/api';
 import {
   getGameAppId,
   getGameIconUrl,
   getLastPlayedValue,
-  getLastUpdateValue,
-  getPlaytimeForeverValue,
-  isRecentlyUpdated,
+  isRecentlyUpdated
 } from '../utils';
 
 const DEBUG_MODE =

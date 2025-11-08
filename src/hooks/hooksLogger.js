@@ -1,4 +1,4 @@
-import {Alert} from 'react-native';
+import { Alert } from 'react-native';
 
 const DEBUG_MODE =
   (typeof __DEV__ !== 'undefined' && __DEV__) ||
@@ -35,4 +35,5 @@ export const maskSteamId = steamId => {
   return `${stringified.slice(0, 3)}***${stringified.slice(-2)}`;
 };
 
-export {DEBUG_MODE};
+export { DEBUG_MODE };
+

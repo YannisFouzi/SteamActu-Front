@@ -1,6 +1,6 @@
 import React from 'react';
-import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
-import {COLORS, TEXT_STYLES} from '../constants';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { COLORS, TEXT_STYLES } from '../constants';
 
 /**
  * Composant réutilisable pour afficher un état de chargement

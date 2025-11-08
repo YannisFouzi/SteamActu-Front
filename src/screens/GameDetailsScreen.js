@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect} from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
   Alert,
   FlatList,
@@ -10,9 +10,9 @@ import {
 } from 'react-native';
 import LoadingContainer from '../components/LoadingContainer';
 import NewsItem from '../components/NewsItem';
-import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../constants';
-import {useGameNews} from '../hooks/useGameNews';
-import {getGameAppId} from '../utils';
+import { COLORS, CONTAINER_STYLES, TEXT_STYLES } from '../constants';
+import { useGameNews } from '../hooks/useGameNews';
+import { getGameAppId } from '../utils';
 
 const GameDetailsScreen = ({route, navigation}) => {
   const game = route?.params?.game ?? null;

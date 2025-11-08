@@ -1,8 +1,8 @@
 import React from 'react';
-import {FlatList, RefreshControl, Text, View} from 'react-native';
-import {COLORS} from '../../../constants';
-import {useAppContext} from '../../../context/AppContext';
-import {getGameAppId} from '../../../utils';
+import { FlatList, RefreshControl, Text, View } from 'react-native';
+import { COLORS } from '../../../constants';
+import { useAppContext } from '../../../context/AppContext';
+import { getGameAppId } from '../../../utils';
 import styles from '../styles';
 import GameItemAlt from './GameItemAlt';
 import NoResultsPlaceholder from './NoResultsPlaceholder';

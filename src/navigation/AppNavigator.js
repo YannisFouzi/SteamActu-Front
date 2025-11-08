@@ -1,17 +1,17 @@
-﻿import {NavigationContainer} from '@react-navigation/native';
-import {createStackNavigator} from '@react-navigation/stack';
+﻿import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
-import {useAppContext} from '../context/AppContext';
-import {APP_CONFIG} from '../config/env';
-import GameDetailsScreen from '../screens/GameDetailsScreen';
-import HomeScreen from '../screens/Home';
-import LoginScreen from '../screens/LoginScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import { APP_CONFIG } from '../config/env';
 import {
   DEFAULT_SCREEN_OPTIONS,
   NAVIGATION_THEME,
   SCREEN_CONFIGS,
 } from '../constants';
+import { useAppContext } from '../context/AppContext';
+import GameDetailsScreen from '../screens/GameDetailsScreen';
+import HomeScreen from '../screens/Home';
+import LoginScreen from '../screens/LoginScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 const Stack = createStackNavigator();
 

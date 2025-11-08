@@ -5,7 +5,7 @@ import {
   Text,
   TouchableOpacity,
 } from 'react-native';
-import {COLORS, TEXT_STYLES} from '../constants';
+import { COLORS, TEXT_STYLES } from '../constants';
 
 const PrimaryButton = ({
   label,

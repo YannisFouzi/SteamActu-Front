@@ -1,4 +1,4 @@
-﻿import React, {useCallback, useMemo} from 'react';
+﻿import React, { useCallback, useMemo } from 'react';
 import {
   Alert,
   FlatList,
@@ -9,8 +9,8 @@ import {
   View,
 } from 'react-native';
 import LoadingContainer from '../../../components/LoadingContainer';
-import {COLORS} from '../../../constants';
-import {formatRelativeDate} from '../../../utils';
+import { COLORS } from '../../../constants';
+import { formatRelativeDate } from '../../../utils';
 import styles from '../styles';
 
 /**

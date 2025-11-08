@@ -1,6 +1,6 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {steamService} from '../services/api';
-import {debugError, debugLog, showAlert} from './hooksLogger';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { steamService } from '../services/api';
+import { debugError, debugLog, showAlert } from './hooksLogger';
 
 /**
  * Hook personnalisé pour gérer la wishlist Steam

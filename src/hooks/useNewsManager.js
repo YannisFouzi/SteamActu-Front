@@ -1,6 +1,6 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {newsService} from '../services/api';
-import {debugError, debugLog} from './hooksLogger';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { newsService } from '../services/api';
+import { debugError, debugLog } from './hooksLogger';
 
 /**
  * Hook personnalisé pour la gestion des actualités

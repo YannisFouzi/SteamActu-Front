@@ -1,5 +1,5 @@
-import {useNavigation} from '@react-navigation/native';
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import { useNavigation } from '@react-navigation/native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -9,14 +9,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import GameCard from '../../components/GameCard';
 import LoadingContainer from '../../components/LoadingContainer';
-import {COLORS} from '../../constants';
-import {useAppContext} from '../../context/AppContext';
-import {useNewsManager} from '../../hooks/useNewsManager';
-import {useWishlist} from '../../hooks/useWishlist';
+import { COLORS } from '../../constants';
+import { useAppContext } from '../../context/AppContext';
+import { useNewsManager } from '../../hooks/useNewsManager';
+import { useWishlist } from '../../hooks/useWishlist';
 import FilterModal from './components/FilterModal';
 import FollowedGamesTab from './components/FollowedGamesTab';
 import GamesList from './components/GamesList';
@@ -75,10 +75,7 @@ const HomeScreen = () => {
   const {
     loading: gamesLoading,
     refreshing,
-    handleRefresh,
     steamId,
-    user,
-    games,
     sortOption,
     setSortOption,
     filterAndSortGames,
@@ -102,7 +99,6 @@ const HomeScreen = () => {
   const isNewsTab = activeTab === TABS.NEWS;
   const isFollowGamesTab = activeTab === TABS.FOLLOW_GAMES;
   const isFeedTab = activeNewsTab === NEWS_TABS.FEED;
-  const isFollowedGamesTab = activeNewsTab === NEWS_TABS.FOLLOWED_GAMES;
   const showFollowedNewsOnly = true;
   const previousTabState = useRef({isNewsTab, isFeedTab});
 
@@ -353,7 +349,7 @@ const HomeScreen = () => {
               ) : (
                 <FlatList
                   data={getSortedWishlist()}
-                  renderItem={({item, index}) => {
+                  renderItem={({item}) => {
                     const appId = item.appid ? item.appid.toString() : null;
                     const gameName =
                       item.name || (appId ? `Jeu ${appId}` : 'Jeu Steam');

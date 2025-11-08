@@ -1,5 +1,5 @@
-import {userService} from '../services/api';
-import {debugError, debugLog} from './hooksLogger';
+import { userService } from '../services/api';
+import { debugError, debugLog } from './hooksLogger';
 
 /**
  * Hook personnalisé pour la synchronisation des jeux actifs récents

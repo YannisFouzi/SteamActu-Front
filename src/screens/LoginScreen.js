@@ -1,8 +1,8 @@
 ﻿import React from 'react';
-import {Image, StyleSheet, Text, View} from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import SteamLoginButton from '../components/SteamLoginButton';
-import {COLORS, TEXT_STYLES} from '../constants';
-import {useSteamAuth} from '../hooks/useSteamAuth';
+import { COLORS, TEXT_STYLES } from '../constants';
+import { useSteamAuth } from '../hooks/useSteamAuth';
 
 const LoginScreen = ({navigation}) => {
   // Hook personnalisé pour l'authentification Steam

@@ -1,4 +1,4 @@
-import {isDefined} from './numberHelpers';
+import { isDefined } from './numberHelpers';
 
 export const TIME_CONSTANTS = {
   MINUTE_MS: 1000 * 60,

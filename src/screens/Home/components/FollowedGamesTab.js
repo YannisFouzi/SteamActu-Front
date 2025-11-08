@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -7,9 +7,9 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import GameCard from '../../../components/GameCard';
-import {COLORS} from '../../../constants';
-import {useAppContext} from '../../../context/AppContext';
-import {userService} from '../../../services/api';
+import { COLORS } from '../../../constants';
+import { useAppContext } from '../../../context/AppContext';
+import { userService } from '../../../services/api';
 
 const FollowedGamesTab = ({styles}) => {
   const {steamId} = useAppContext();

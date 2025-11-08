@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useEffect, useState} from 'react';
-import {debugError} from './hooksLogger';
+import { useEffect, useState } from 'react';
+import { debugError } from './hooksLogger';
 
 /**
  * Hook personnalisé pour gérer la persistance avec AsyncStorage

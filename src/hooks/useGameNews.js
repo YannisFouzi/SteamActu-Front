@@ -1,7 +1,7 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {newsService} from '../services/api';
-import {getGameAppId} from '../utils';
-import {debugError, debugLog, showAlert} from './hooksLogger';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { newsService } from '../services/api';
+import { getGameAppId } from '../utils';
+import { debugError, debugLog, showAlert } from './hooksLogger';
 
 /**
  * Hook personnalisé pour la gestion des actualités d'un jeu

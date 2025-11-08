@@ -1,6 +1,6 @@
 ﻿import axios from "axios";
-import {APP_CONFIG} from "../config/env";
-import {debugError} from "../hooks/hooksLogger";
+import { APP_CONFIG } from "../config/env";
+import { debugError } from "../hooks/hooksLogger";
 
 const DEFAULT_CONFIG = {
   API_URL: APP_CONFIG.API_BASE_URL,
@@ -147,4 +147,5 @@ export const apiConfig = {
   ENVIRONMENT: APP_CONFIG.ENVIRONMENT,
 };
 
-export {newsService, steamAuthService, steamService, userService};
+export { newsService, steamAuthService, steamService, userService };
+

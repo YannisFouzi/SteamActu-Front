@@ -1,9 +1,9 @@
-import React, {useEffect} from 'react';
-import {TextInput, TouchableOpacity, View} from 'react-native';
+import React, { useEffect } from 'react';
+import { TextInput, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {COLORS} from '../../../constants';
-import {useAppContext} from '../../../context/AppContext';
-import {useDebounce} from '../../../hooks/useDebounce';
+import { COLORS } from '../../../constants';
+import { useAppContext } from '../../../context/AppContext';
+import { useDebounce } from '../../../hooks/useDebounce';
 import styles from '../styles';
 
 const SearchBar = () => {

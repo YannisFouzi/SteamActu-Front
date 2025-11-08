@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {userService} from '../services/api';
-import {debugError, showAlert} from './hooksLogger';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { userService } from '../services/api';
+import { debugError, showAlert } from './hooksLogger';
 
 /**
  * Hook personnalisé pour la gestion des paramètres utilisateur

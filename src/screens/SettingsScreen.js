@@ -1,5 +1,5 @@
-import {useNavigation} from '@react-navigation/native';
-import React, {useCallback, useState} from 'react';
+import { useNavigation } from '@react-navigation/native';
+import React, { useCallback, useState } from 'react';
 import {
   Alert,
   ScrollView,
@@ -11,10 +11,10 @@ import {
 import LogoutButton from '../components/LogoutButton';
 import SavingIndicator from '../components/SavingIndicator';
 import SettingSection from '../components/SettingSection';
-import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../constants';
-import {useAppContext} from '../context/AppContext';
-import {useUserSettings} from '../hooks/useUserSettings';
-import {userService} from '../services/api';
+import { COLORS, CONTAINER_STYLES, TEXT_STYLES } from '../constants';
+import { useAppContext } from '../context/AppContext';
+import { useUserSettings } from '../hooks/useUserSettings';
+import { userService } from '../services/api';
 
 const SettingsScreen = () => {
   const navigation = useNavigation();

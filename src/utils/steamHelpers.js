@@ -1,6 +1,6 @@
-import {APP_CONFIG} from '../config/env';
-import {normalizeTimestamp, TIME_CONSTANTS} from './dateHelpers';
-import {isDefined, toNumber} from './numberHelpers';
+import { APP_CONFIG } from '../config/env';
+import { normalizeTimestamp, TIME_CONSTANTS } from './dateHelpers';
+import { isDefined, toNumber } from './numberHelpers';
 
 const STEAM_ICON_BASE_URL = `${APP_CONFIG.STEAM_MEDIA_CDN}/steamcommunity/public/images/apps`;
 

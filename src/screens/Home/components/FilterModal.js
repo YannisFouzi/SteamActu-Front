@@ -1,6 +1,6 @@
 import React from 'react';
 import OptionModal from '../../../components/OptionModal';
-import {useAppContext} from '../../../context/AppContext';
+import { useAppContext } from '../../../context/AppContext';
 
 // Configuration des options de filtre
 const FILTER_OPTIONS = [

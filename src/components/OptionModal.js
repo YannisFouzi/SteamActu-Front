@@ -1,6 +1,6 @@
 import React from 'react';
-import {Modal, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-import {COLORS, CONTAINER_STYLES} from '../constants';
+import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { COLORS, CONTAINER_STYLES } from '../constants';
 
 /**
  * Composant modal générique pour les options (tri, filtre, etc.)
