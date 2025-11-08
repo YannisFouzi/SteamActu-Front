@@ -61,15 +61,17 @@ const FOLLOW_GAME_TAB_ITEMS = [
 ];
 
 const MY_GAMES_SORT_OPTIONS = [
-  {value: 'default', label: 'Alphabetique'},
-  {value: 'recent', label: 'Joue recent'},
+  {value: 'default', label: 'A-Z'},
+  {value: 'recent', label: 'Joué récemment'},
   {value: 'mostPlayed', label: 'Plus joues'},
 ];
 
 const WISHLIST_SORT_OPTIONS = [
-  {value: 'recent', label: 'Recemment ajoutes'},
-  {value: 'alphabetical', label: 'Alphabetique'},
+  {value: 'recent', label: 'Récemment ajouté'},
+  {value: 'alphabetical', label: 'A-Z'},
 ];
+
+
 
 const HomeScreen = () => {
   const {
