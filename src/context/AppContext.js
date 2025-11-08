@@ -18,7 +18,8 @@ import {
   getGameAppId,
   getGameIconUrl,
   getLastPlayedValue,
-  isRecentlyUpdated
+  getPlaytimeForeverValue,
+  isRecentlyUpdated,
 } from '../utils';
 
 const DEBUG_MODE =
@@ -422,10 +423,19 @@ export const AppProvider = ({children, navigation = null}) => {
       debugLog('🚪 [LOGOUT] steamId avant reset:', steamId);
       debugLog('🚪 [LOGOUT] games count avant reset:', games.length);
       
-      // Supprimer toutes les données d'AsyncStorage
-      await AsyncStorage.removeItem('steamId');
-      await AsyncStorage.removeItem('lastVerificationDate');
-      debugLog('🚪 [LOGOUT] ✅ AsyncStorage vidé (steamId, lastVerificationDate)');
+      // Supprimer les données persistées liées au compte
+      await AsyncStorage.multiRemove([
+        'steamId',
+        'lastVerificationDate',
+        'notificationsEnabled',
+        'autoFollowEnabled',
+        'autoFollowWishlistEnabled',
+        'sortOption',
+        'followFilter',
+      ]);
+      debugLog(
+        '🚪 [LOGOUT] ✅ AsyncStorage vidé (steamId, lastVerificationDate, notificationsEnabled, autoFollowEnabled, autoFollowWishlistEnabled)',
+      );
 
       // Réinitialiser TOUS les états du contexte
       setSteamId('');
@@ -433,6 +443,8 @@ export const AppProvider = ({children, navigation = null}) => {
       setGames([]);
       setFilteredGames([]);
       setLastRefreshTime(0);
+      setSortOption('default');
+      setFollowFilter('all');
       debugLog('🚪 [LOGOUT] ✅ États réinitialisés (steamId="", user=null, games=[], lastRefreshTime=0)');
 
       // Navigation si disponible

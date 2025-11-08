@@ -42,28 +42,63 @@ export const useUserSettings = () => {
 
       safeSetState(setSteamId, savedSteamId);
 
-      const savedNotifications = await AsyncStorage.getItem(
-        'notificationsEnabled',
-      );
-      const savedAutoFollow = await AsyncStorage.getItem('autoFollowEnabled');
-      const savedAutoFollowWishlist = await AsyncStorage.getItem(
-        'autoFollowWishlistEnabled',
-      );
+      let serverSettings = null;
+      try {
+        const response = await userService.getUser(savedSteamId);
+        serverSettings = response?.data?.notificationSettings || null;
+      } catch (apiError) {
+        debugError(
+          'Erreur lors de la récupération des paramètres utilisateur:',
+          apiError,
+        );
+      }
 
-      safeSetState(
-        setNotificationsEnabled,
-        savedNotifications !== null ? JSON.parse(savedNotifications) : true,
-      );
-      safeSetState(
-        setAutoFollowEnabled,
-        savedAutoFollow !== null ? JSON.parse(savedAutoFollow) : false,
-      );
-      safeSetState(
-        setAutoFollowWishlistEnabled,
-        savedAutoFollowWishlist !== null
-          ? JSON.parse(savedAutoFollowWishlist)
-          : false,
-      );
+      if (serverSettings) {
+        const {
+          enabled = true,
+          autoFollowNewGames = false,
+          autoFollowWishlistGames = false,
+        } = serverSettings;
+
+        safeSetState(setNotificationsEnabled, Boolean(enabled));
+        safeSetState(setAutoFollowEnabled, Boolean(autoFollowNewGames));
+        safeSetState(
+          setAutoFollowWishlistEnabled,
+          Boolean(autoFollowWishlistGames),
+        );
+
+        await AsyncStorage.multiSet([
+          ['notificationsEnabled', JSON.stringify(Boolean(enabled))],
+          ['autoFollowEnabled', JSON.stringify(Boolean(autoFollowNewGames))],
+          [
+            'autoFollowWishlistEnabled',
+            JSON.stringify(Boolean(autoFollowWishlistGames)),
+          ],
+        ]);
+      } else {
+        const savedNotifications = await AsyncStorage.getItem(
+          'notificationsEnabled',
+        );
+        const savedAutoFollow = await AsyncStorage.getItem('autoFollowEnabled');
+        const savedAutoFollowWishlist = await AsyncStorage.getItem(
+          'autoFollowWishlistEnabled',
+        );
+
+        safeSetState(
+          setNotificationsEnabled,
+          savedNotifications !== null ? JSON.parse(savedNotifications) : true,
+        );
+        safeSetState(
+          setAutoFollowEnabled,
+          savedAutoFollow !== null ? JSON.parse(savedAutoFollow) : false,
+        );
+        safeSetState(
+          setAutoFollowWishlistEnabled,
+          savedAutoFollowWishlist !== null
+            ? JSON.parse(savedAutoFollowWishlist)
+            : false,
+        );
+      }
 
       return true;
     } catch (error) {
@@ -165,6 +200,15 @@ export const useUserSettings = () => {
   useEffect(() => {
     loadUserSettings();
   }, [loadUserSettings]);
+
+  // Réinitialiser les switches lorsque l'utilisateur est déconnecté
+  useEffect(() => {
+    if (!steamId) {
+      setNotificationsEnabled(true);
+      setAutoFollowEnabled(false);
+      setAutoFollowWishlistEnabled(false);
+    }
+  }, [steamId]);
 
   return {
     loading,

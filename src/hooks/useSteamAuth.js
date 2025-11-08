@@ -105,6 +105,31 @@ export const useSteamAuth = navigation => {
           throw new Error('Réponse du serveur invalide');
         }
 
+        // Synchroniser les paramètres de notifications/auto-follow avec la réponse serveur
+        const notificationSettings = response?.data?.notificationSettings;
+        if (notificationSettings) {
+          const {
+            enabled = true,
+            autoFollowNewGames = false,
+            autoFollowWishlistGames = false,
+          } = notificationSettings;
+
+          await AsyncStorage.multiSet([
+            ['notificationsEnabled', JSON.stringify(Boolean(enabled))],
+            ['autoFollowEnabled', JSON.stringify(Boolean(autoFollowNewGames))],
+            [
+              'autoFollowWishlistEnabled',
+              JSON.stringify(Boolean(autoFollowWishlistGames)),
+            ],
+          ]);
+        } else {
+          await AsyncStorage.multiRemove([
+            'notificationsEnabled',
+            'autoFollowEnabled',
+            'autoFollowWishlistEnabled',
+          ]);
+        }
+
         // Sauvegarder le SteamID localement
         debugLog(
           '🔐 [LOGIN] 💾 AsyncStorage.setItem("steamId",',
