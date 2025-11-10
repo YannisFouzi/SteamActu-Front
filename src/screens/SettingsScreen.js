@@ -9,7 +9,6 @@ import {
   View,
 } from 'react-native';
 import LogoutButton from '../components/LogoutButton';
-import SavingIndicator from '../components/SavingIndicator';
 import SettingSection from '../components/SettingSection';
 import { COLORS, CONTAINER_STYLES, TEXT_STYLES } from '../constants';
 import { useAppContext } from '../context/AppContext';
@@ -121,8 +120,6 @@ const SettingsScreen = () => {
         onValueChange={handleToggleAutoFollowWishlist}
         disabled={saving || loggingOut}
       />
-
-      <SavingIndicator visible={saving} />
 
       <View style={styles.section}>
         <LogoutButton onPress={handlePressLogout} loading={loggingOut} />
