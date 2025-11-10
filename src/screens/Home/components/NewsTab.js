@@ -12,6 +12,7 @@ import LoadingContainer from '../../../components/LoadingContainer';
 import { COLORS } from '../../../constants';
 import { formatRelativeDate } from '../../../utils';
 import styles from '../styles';
+import EmptyStateMessage from './EmptyStateMessage';
 
 /**
  * Composant pour l'onglet News
@@ -55,14 +56,30 @@ const NewsTab = ({steamId, newsState, fetchNews}) => {
   }, []);
 
   const renderEmptyNewsList = useMemo(() => {
-    const message = !steamId
-      ? 'Connectez-vous pour afficher vos actualitÃ©s.'
-      : 'Aucune actualitÃ© rÃ©cente pour vos jeux suivis.';
+    const commonProps = {
+      styles,
+      align: 'top',
+    };
+
+    if (!steamId) {
+      return () => (
+        <EmptyStateMessage
+          {...commonProps}
+          iconName="log-in-outline"
+          title="Connectez-vous pour vos actus"
+          text="Identifiez-vous pour retrouver les actualités de vos jeux suivis."
+          subtext="Allez dans les paramètres pour vous connecter à votre compte Steam."
+        />
+      );
+    }
 
     return () => (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>{message}</Text>
-      </View>
+      <EmptyStateMessage
+        {...commonProps}
+        iconName="newspaper-outline"
+        title="Aucune actualité récente"
+        text="Vos jeux suivis n'ont pas publié de nouvelles actualités. Revenez plus tard ou suivez d'autres jeux pour élargir le flux."
+      />
     );
   }, [steamId]);
 

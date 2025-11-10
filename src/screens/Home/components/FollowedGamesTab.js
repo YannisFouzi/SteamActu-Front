@@ -2,14 +2,13 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Text,
   View,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
 import GameCard from '../../../components/GameCard';
 import { COLORS } from '../../../constants';
 import { useAppContext } from '../../../context/AppContext';
 import { userService } from '../../../services/api';
+import EmptyStateMessage from './EmptyStateMessage';
 
 const FollowedGamesTab = ({styles}) => {
   const {steamId} = useAppContext();
@@ -72,25 +71,20 @@ const FollowedGamesTab = ({styles}) => {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={COLORS.STEAM_BLUE} />
-        <Text style={styles.loadingText}>Chargement...</Text>
       </View>
     );
   }
 
   if (followedGames.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <Icon
-          name="notifications-off-outline"
-          size={64}
-          color={COLORS.STEAM_TEXT_GRAY}
-          style={styles.emptyIcon}
-        />
-        <Text style={styles.emptyTitle}>Aucun jeu suivi</Text>
-        <Text style={styles.emptyText}>
-          Activez la cloche sur vos jeux pour recevoir des notifications
-        </Text>
-      </View>
+      <EmptyStateMessage
+        styles={styles}
+        iconName="notifications-off-outline"
+        title="Aucun jeu suivi"
+        text="Activez la cloche sur vos jeux pour recevoir les notifications ici."
+        subtext="Vous pouvez ajouter un suivi depuis une fiche jeu ou les actus."
+        align="top"
+      />
     );
   }
 

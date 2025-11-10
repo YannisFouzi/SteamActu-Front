@@ -8,7 +8,6 @@ import {
   SCREEN_CONFIGS,
 } from '../constants';
 import { useAppContext } from '../context/AppContext';
-import GameDetailsScreen from '../screens/GameDetailsScreen';
 import HomeScreen from '../screens/Home';
 import LoginScreen from '../screens/LoginScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -21,7 +20,6 @@ const linking = {
     screens: {
       Login: 'auth',
       Home: 'home',
-      GameDetails: 'game/:gameId?',
       Settings: 'settings',
     },
   },
@@ -48,11 +46,6 @@ const AppNavigator = () => {
           name="Home"
           component={HomeScreen}
           options={SCREEN_CONFIGS.Home}
-        />
-        <Stack.Screen
-          name="GameDetails"
-          component={GameDetailsScreen}
-          options={SCREEN_CONFIGS.GameDetails.getDynamicOptions}
         />
         <Stack.Screen
           name="Settings"

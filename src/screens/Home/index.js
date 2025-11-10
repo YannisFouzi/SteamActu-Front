@@ -1,13 +1,12 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   RefreshControl,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -17,6 +16,7 @@ import { COLORS } from '../../constants';
 import { useAppContext } from '../../context/AppContext';
 import { useNewsManager } from '../../hooks/useNewsManager';
 import { useWishlist } from '../../hooks/useWishlist';
+import EmptyStateMessage from './components/EmptyStateMessage';
 import FilterModal from './components/FilterModal';
 import FollowedGamesTab from './components/FollowedGamesTab';
 import GamesList from './components/GamesList';
@@ -76,7 +76,6 @@ const WISHLIST_SORT_OPTIONS = [
 const HomeScreen = () => {
   const {
     loading: gamesLoading,
-    refreshing,
     steamId,
     sortOption,
     setSortOption,
@@ -104,6 +103,7 @@ const HomeScreen = () => {
   const isFeedTab = activeNewsTab === NEWS_TABS.FEED;
   const previousTabState = useRef({isNewsTab, isFeedTab});
   const isFirstRender = useRef(true);
+  const hasFetchedWishlistRef = useRef(false);
 
   // Hook wishlist
   const {
@@ -149,19 +149,16 @@ const HomeScreen = () => {
       isFollowGamesTab &&
       activeFollowTab === FOLLOW_GAME_TABS.WISHLIST &&
       steamId &&
-      wishlist.length === 0 &&
-      !wishlistLoading
+      !hasFetchedWishlistRef.current
     ) {
+      hasFetchedWishlistRef.current = true;
       fetchWishlist();
     }
-  }, [
-    isFollowGamesTab,
-    activeFollowTab,
-    steamId,
-    wishlist.length,
-    wishlistLoading,
-    fetchWishlist,
-  ]);
+  }, [isFollowGamesTab, activeFollowTab, steamId, fetchWishlist]);
+
+  useEffect(() => {
+    hasFetchedWishlistRef.current = false;
+  }, [steamId]);
 
   // ✨ Focus listener ÉCRAN (quand on revient sur Home depuis un autre écran)
   useEffect(() => {
@@ -234,10 +231,20 @@ const HomeScreen = () => {
     wishlistSearchQuery !== '' ? (
       <NoResultsPlaceholder styles={styles} />
     ) : (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Votre wishlist est vide</Text>
-      </View>
+      <EmptyStateMessage
+        styles={styles}
+        iconName="sad-outline"
+        title="Wishlist vide"
+        text="Ajoutez les jeux qui vous intéressent pour les suivre ici."
+
+        align="top"
+      />
     );
+
+  const handleWishlistPullToRefresh = useCallback(async () => {
+    hasFetchedWishlistRef.current = false;
+    await handleWishlistRefresh();
+  }, [handleWishlistRefresh]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -425,12 +432,12 @@ const HomeScreen = () => {
                   contentContainerStyle={styles.wishlistList}
                   ListEmptyComponent={wishlistEmptyComponent}
                   refreshControl={
-                    <RefreshControl
-                      refreshing={wishlistRefreshing}
-                      onRefresh={handleWishlistRefresh}
-                      tintColor={COLORS.STEAM_BLUE}
-                      colors={[COLORS.STEAM_BLUE]}
-                    />
+                  <RefreshControl
+                    refreshing={wishlistRefreshing}
+                    onRefresh={handleWishlistPullToRefresh}
+                    tintColor={COLORS.STEAM_BLUE}
+                    colors={[COLORS.STEAM_BLUE]}
+                  />
                   }
                 />
               )}

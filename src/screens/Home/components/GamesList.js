@@ -1,9 +1,10 @@
 import React from 'react';
-import { FlatList, RefreshControl, Text, View } from 'react-native';
+import { FlatList, RefreshControl } from 'react-native';
 import { COLORS } from '../../../constants';
 import { useAppContext } from '../../../context/AppContext';
 import { getGameAppId } from '../../../utils';
 import styles from '../styles';
+import EmptyStateMessage from './EmptyStateMessage';
 import GameItemAlt from './GameItemAlt';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
 
@@ -13,13 +14,15 @@ const GamesList = () => {
 
   const renderEmptyList = () =>
     searchQuery && searchQuery.trim() !== '' ? (
-      <NoResultsPlaceholder styles={styles} />
+      <NoResultsPlaceholder styles={styles} align="top" />
     ) : (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>
-          Aucun jeu disponible pour le moment.
-        </Text>
-      </View>
+      <EmptyStateMessage
+        styles={styles}
+        iconName="sad-outline"
+        title="Aucun jeu disponible"
+        text="Aucun jeu de votre bibliothèque n'a été importé pour le moment."
+        align="top"
+      />
     );
 
   return (

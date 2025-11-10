@@ -12,6 +12,7 @@ import GameCard from '../../../components/GameCard';
 import { COLORS } from '../../../constants';
 import { steamService } from '../../../services/api';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
+import EmptyStateMessage from './EmptyStateMessage';
 
 const SearchGameTab = ({styles}) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -78,23 +79,20 @@ const SearchGameTab = ({styles}) => {
 
     if (!hasSearched) {
       return (
-        <View style={styles.centerContainer}>
-          <Icon
-            name="search"
-            size={64}
-            color={COLORS.STEAM_TEXT_GRAY}
-            style={styles.emptyIcon}
-          />
-          <Text style={styles.emptyTitle}>Rechercher un jeu</Text>
-          <Text style={styles.emptyText}>
-            Tapez au moins 2 caractères pour commencer
-          </Text>
-        </View>
+        <EmptyStateMessage
+          styles={styles}
+          iconName="search"
+          title="Rechercher un jeu"
+          text="Tapez au moins 2 caractères pour commencer"
+          titleStyle={styles.emptyTitle}
+          textStyle={styles.emptyText}
+          align="top"
+        />
       );
     }
 
     if (searchResults.length === 0) {
-      return <NoResultsPlaceholder styles={styles} />;
+      return <NoResultsPlaceholder styles={styles} align="top" />;
     }
 
     return (
