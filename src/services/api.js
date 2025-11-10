@@ -110,10 +110,7 @@ const newsService = {
 };
 
 const steamService = {
-  getUserGames: (steamId, followedOnly = false) => {
-    const params = followedOnly ? {followedOnly: "true"} : {};
-    return api.get(`/steam/games/${steamId}`, {params});
-  },
+  getUserGames: steamId => api.get(`/steam/games/${steamId}`),
   getUserWishlist: steamId => api.get(`/steam/wishlist/${steamId}`),
   searchGames: (query, limit = 5) =>
     api.get("/steam/search", {params: {q: query, limit}}),

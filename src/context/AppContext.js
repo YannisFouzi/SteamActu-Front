@@ -81,13 +81,9 @@ const loadUserProfile = async steamId => {
   return response.data;
 };
 
-const loadGamesLibrary = async (steamId, followFilter) => {
+const loadGamesLibrary = async steamId => {
   try {
-    const shouldFetchFollowedOnly = followFilter === 'followed';
-    const response = await steamService.getUserGames(
-      steamId,
-      shouldFetchFollowedOnly,
-    );
+    const response = await steamService.getUserGames(steamId);
     const games = extractGamesFromResponse(response);
     debugLog(
       '[LOADDATA] Jeux récupérés:',
@@ -365,7 +361,7 @@ export const AppProvider = ({children, navigation = null}) => {
         userData?.username || '(inconnu)',
       );
 
-      const normalizedGames = await loadGamesLibrary(savedSteamId, followFilter);
+      const normalizedGames = await loadGamesLibrary(savedSteamId);
       setGames(normalizedGames);
       syncRecentActiveGames(normalizedGames, savedSteamId);
       debugLog(
@@ -619,7 +615,7 @@ export const AppProvider = ({children, navigation = null}) => {
 
       debugLog('Vérification des nouveaux jeux pour', steamId);
       // Pour vérifier les nouveaux jeux, on récupère toujours tous les jeux
-      const gamesResponse = await steamService.getUserGames(steamId, false);
+      const gamesResponse = await steamService.getUserGames(steamId);
       const newGames = Array.isArray(gamesResponse.data)
         ? gamesResponse.data
         : gamesResponse.data.games || [];
