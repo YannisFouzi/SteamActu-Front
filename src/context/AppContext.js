@@ -1,25 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
 } from 'react';
 import { Alert, AppState } from 'react-native';
 import {
-  useAsyncStorage,
-  useLastVerificationDate,
+    useAsyncStorage,
+    useLastVerificationDate,
 } from '../hooks/useAsyncStorage';
 import { useGameSync } from '../hooks/useGameSync';
 import { steamService, userService } from '../services/api';
 import {
-  getGameAppId,
-  getGameIconUrl,
-  getLastPlayedValue,
-  getPlaytimeForeverValue,
-  isRecentlyUpdated,
+    getGameAppId,
+    getGameIconUrl,
+    getLastPlayedValue,
+    getPlaytimeForeverValue,
+    isRecentlyUpdated,
 } from '../utils';
 
 const DEBUG_MODE =
@@ -558,16 +558,12 @@ export const AppProvider = ({children, navigation = null}) => {
           debugLog('Jeu suivi avec succès:', gameName);
 
           setUser(prevUser => {
-            if (!prevUser) return prevUser;
+            if (!prevUser) {
+              return prevUser;
+            }
 
             const current = Array.isArray(prevUser.followedGames)
-              ? prevUser.followedGames
-                  .map(item =>
-                    typeof item === 'string'
-                      ? item
-                      : item?.appId?.toString(),
-                  )
-                  .filter(Boolean)
+              ? prevUser.followedGames.slice()
               : [];
 
             if (current.includes(appIdString)) {
@@ -584,16 +580,12 @@ export const AppProvider = ({children, navigation = null}) => {
           debugLog('Jeu retiré des suivis:', gameName);
 
           setUser(prevUser => {
-            if (!prevUser) return prevUser;
+            if (!prevUser) {
+              return prevUser;
+            }
 
             const current = Array.isArray(prevUser.followedGames)
-              ? prevUser.followedGames
-                  .map(item =>
-                    typeof item === 'string'
-                      ? item
-                      : item?.appId?.toString(),
-                  )
-                  .filter(Boolean)
+              ? prevUser.followedGames.slice()
               : [];
 
             return {
@@ -682,17 +674,8 @@ export const AppProvider = ({children, navigation = null}) => {
   // La fonction isRecentlyUpdated est maintenant importée des utilitaires
 
   // Vérifier si un jeu est suivi
-  const isGameFollowed = appId => {
-    if (!user || !user.followedGames) return false;
-
-    // Nouvelle structure : array simple d'IDs
-    if (typeof user.followedGames[0] === 'string') {
-      return user.followedGames.includes(appId);
-    }
-
-    // Ancienne structure : array d'objets (compatibilité)
-    return user.followedGames.some(game => game.appId === appId);
-  };
+  const isGameFollowed = appId =>
+    !!user?.followedGames && user.followedGames.includes(appId);
 
   /**
    * ✨ Refresh conditionnel basé sur la version games
