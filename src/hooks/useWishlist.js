@@ -165,6 +165,18 @@ export const useWishlist = steamId => {
     };
   }, [wishlist]);
 
+  const updateWishlistFollowState = useCallback((appId, nextIsFollowed) => {
+    safeSetState(setWishlist, current =>
+      Array.isArray(current)
+        ? current.map(item =>
+            item?.appid?.toString() === appId?.toString()
+              ? {...item, isFollowed: nextIsFollowed}
+              : item,
+          )
+        : current,
+    );
+  }, [safeSetState]);
+
   return {
     wishlist,
     loading,
@@ -175,5 +187,6 @@ export const useWishlist = steamId => {
     sortedWishlist,
     filterWishlist,
     wishlistStats,
+    updateWishlistFollowState,
   };
 };

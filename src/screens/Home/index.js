@@ -112,6 +112,7 @@ const HomeScreen = () => {
     fetchWishlist,
     handleRefresh: handleWishlistRefresh,
     filterWishlist,
+    updateWishlistFollowState,
   } = useWishlist(steamId);
 
   // Hook personnalisé pour la gestion des news
@@ -371,6 +372,12 @@ const HomeScreen = () => {
                                 appId,
                                 name: gameName,
                                 imageUrl,
+                                isFollowed: item.isFollowed,
+                                onToggle: ({nextIsFollowed}) =>
+                                  updateWishlistFollowState(
+                                    appId,
+                                    nextIsFollowed,
+                                  ),
                               }
                             : null
                         }
