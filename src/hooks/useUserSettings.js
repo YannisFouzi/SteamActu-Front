@@ -8,7 +8,7 @@ import { debugError, showAlert } from './hooksLogger';
  * Centralise toute la logique de chargement et sauvegarde des paramètres
  */
 export const useUserSettings = () => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [steamId, setSteamId] = useState('');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
