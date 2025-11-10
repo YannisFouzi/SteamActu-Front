@@ -114,6 +114,11 @@ const steamService = {
   getUserWishlist: steamId => api.get(`/steam/wishlist/${steamId}`),
   searchGames: (query, limit = 5) =>
     api.get("/steam/search", {params: {q: query, limit}}),
+  /**
+   * Endpoint léger pour récupérer les versions de données
+   * Permet de savoir si les données ont changé sans télécharger tout
+   */
+  fetchStatus: steamId => api.get(`/steam/status/${steamId}`),
 };
 
 const steamAuthService = {

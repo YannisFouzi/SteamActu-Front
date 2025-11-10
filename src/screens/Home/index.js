@@ -81,6 +81,7 @@ const HomeScreen = () => {
     sortOption,
     setSortOption,
     filterAndSortGames,
+    maybeRefreshGames,
   } = useAppContext();
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState(TABS.NEWS);
@@ -102,6 +103,7 @@ const HomeScreen = () => {
   const isFollowGamesTab = activeTab === TABS.FOLLOW_GAMES;
   const isFeedTab = activeNewsTab === NEWS_TABS.FEED;
   const previousTabState = useRef({isNewsTab, isFeedTab});
+  const isFirstRender = useRef(true);
 
   // Hook wishlist
   const {
@@ -112,6 +114,7 @@ const HomeScreen = () => {
     handleRefresh: handleWishlistRefresh,
     filterWishlist,
     updateWishlistFollowState,
+    maybeRefreshWishlist,
   } = useWishlist(steamId);
 
   // Hook personnalisé pour la gestion des news
@@ -140,7 +143,7 @@ const HomeScreen = () => {
     previousTabState.current = {isNewsTab, isFeedTab};
   }, [isNewsTab, isFeedTab, isNewsInitialized, fetchNews]);
 
-  // Charger la wishlist au premier accès
+  // Charger la wishlist au premier accès (garde le guard pour éviter les boucles)
   useEffect(() => {
     if (
       isFollowGamesTab &&
@@ -160,10 +163,17 @@ const HomeScreen = () => {
     fetchWishlist,
   ]);
 
+  // ✨ Focus listener ÉCRAN (quand on revient sur Home depuis un autre écran)
   useEffect(() => {
     const onFocus = () => {
       if (isNewsTab) {
         fetchNews({silent: true});
+      }
+
+      // Check version quand on revient sur l'écran
+      if (steamId) {
+        maybeRefreshGames();
+        maybeRefreshWishlist();
       }
     };
 
@@ -172,7 +182,34 @@ const HomeScreen = () => {
     return () => {
       focusUnsubscribe();
     };
-  }, [navigation, isNewsTab, fetchNews]);
+  }, [navigation, isNewsTab, fetchNews, steamId, maybeRefreshGames, maybeRefreshWishlist]);
+
+  // ✨ Focus listener ONGLET (quand on change d'onglet dans Home)
+  useEffect(() => {
+    // Skip le premier render (au mount de la page)
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    // Si on est sur l'onglet "Mes jeux", check version
+    if (
+      activeTab === TABS.FOLLOW_GAMES &&
+      activeFollowTab === FOLLOW_GAME_TABS.MY_GAMES &&
+      steamId
+    ) {
+      maybeRefreshGames();
+    }
+
+    // Si on est sur l'onglet "Wishlist", check version
+    if (
+      activeTab === TABS.FOLLOW_GAMES &&
+      activeFollowTab === FOLLOW_GAME_TABS.WISHLIST &&
+      steamId
+    ) {
+      maybeRefreshWishlist();
+    }
+  }, [activeTab, activeFollowTab, steamId, maybeRefreshGames, maybeRefreshWishlist]);
 
   // Gestionnaire pour le suivi/désuivi des jeux depuis les news
   // Tri de la wishlist
@@ -402,18 +439,6 @@ const HomeScreen = () => {
             <SearchGameTab styles={styles} />
           )}
         </>
-      ) : null}
-
-      {activeTab === TABS.FOLLOW_GAMES &&
-      activeFollowTab === FOLLOW_GAME_TABS.MY_GAMES &&
-      refreshing ? (
-        <View style={styles.loadingMoreContainer}>
-          <ActivityIndicator size="small" color={COLORS.STEAM_BLUE} />
-          <Text style={styles.loadingMoreText}>
-            Analyse des jeux en cours... Les résultats seront mis à jour
-            automatiquement.
-          </Text>
-        </View>
       ) : null}
 
       <SortModal />

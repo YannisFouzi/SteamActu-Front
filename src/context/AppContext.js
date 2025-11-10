@@ -167,6 +167,10 @@ export const AppProvider = ({children, navigation = null}) => {
   const [user, setUser] = useState(null);
   const [lastRefreshTime, setLastRefreshTime] = useState(Date.now());
 
+  // États pour le versioning (invalidation cache)
+  const [gamesVersion, setGamesVersion] = useAsyncStorage('gamesVersion', null);
+  const [wishlistVersion, setWishlistVersion] = useAsyncStorage('wishlistVersion', null);
+
   // État de l'application
   const appState = useRef(AppState.currentState);
 
@@ -370,6 +374,20 @@ export const AppProvider = ({children, navigation = null}) => {
         'jeux',
       );
 
+      // ✨ Fetch et sauvegarder la version games
+      try {
+        const statusResponse = await steamService.fetchStatus(savedSteamId);
+        const newGamesVersion = statusResponse?.data?.gamesVersion;
+
+        if (newGamesVersion) {
+          debugLog('[VERSION] Sauvegarde version:', newGamesVersion);
+          setGamesVersion(newGamesVersion);
+        }
+      } catch (versionError) {
+        debugError('[VERSION] Erreur fetch version:', versionError);
+        // Non bloquant, on continue
+      }
+
       updateVerificationDate();
       setLastRefreshTime(Date.now());
     } catch (error) {
@@ -428,9 +446,11 @@ export const AppProvider = ({children, navigation = null}) => {
         'autoFollowWishlistEnabled',
         'sortOption',
         'followFilter',
+        'gamesVersion',
+        'wishlistVersion',
       ]);
       debugLog(
-        '🚪 [LOGOUT] ✅ AsyncStorage vidé (steamId, lastVerificationDate, notificationsEnabled, autoFollowEnabled, autoFollowWishlistEnabled)',
+        '🚪 [LOGOUT] ✅ AsyncStorage vidé (steamId, versions, settings)',
       );
 
       // Réinitialiser TOUS les états du contexte
@@ -441,7 +461,9 @@ export const AppProvider = ({children, navigation = null}) => {
       setLastRefreshTime(0);
       setSortOption('default');
       setFollowFilter('all');
-      debugLog('🚪 [LOGOUT] ✅ États réinitialisés (steamId="", user=null, games=[], lastRefreshTime=0)');
+      setGamesVersion(null);
+      setWishlistVersion(null);
+      debugLog('🚪 [LOGOUT] ✅ États réinitialisés (steamId="", user=null, games=[], versions=null)');
 
       // Navigation si disponible
       if (navigation) {
@@ -672,6 +694,35 @@ export const AppProvider = ({children, navigation = null}) => {
     return user.followedGames.some(game => game.appId === appId);
   };
 
+  /**
+   * ✨ Refresh conditionnel basé sur la version games
+   * Appelé au focus pour vérifier si les données ont changé
+   */
+  const maybeRefreshGames = useCallback(async () => {
+    if (!steamId) return;
+
+    try {
+      const statusResponse = await steamService.fetchStatus(steamId);
+      const serverGamesVersion = statusResponse?.data?.gamesVersion;
+
+      if (!serverGamesVersion) {
+        debugLog('[VERSION] Pas de version serveur, skip refresh');
+        return;
+      }
+
+      if (serverGamesVersion !== gamesVersion) {
+        debugLog('[VERSION] Version différente détectée, refresh');
+        debugLog('  Serveur:', serverGamesVersion);
+        debugLog('  Locale:', gamesVersion);
+        await loadData(true);
+      } else {
+        debugLog('[VERSION] Versions identiques, skip');
+      }
+    } catch (error) {
+      debugError('[VERSION] Erreur check version:', error);
+    }
+  }, [steamId, gamesVersion, loadData]);
+
   // Valeur du contexte
   const contextValue = {
     // États
@@ -686,6 +737,8 @@ export const AppProvider = ({children, navigation = null}) => {
     sortOption,
     filterModalVisible,
     followFilter,
+    gamesVersion,
+    wishlistVersion,
 
     // Setters
     setSearchQuery,
@@ -693,6 +746,8 @@ export const AppProvider = ({children, navigation = null}) => {
     setSortOption,
     setFilterModalVisible,
     setFollowFilter,
+    setGamesVersion,
+    setWishlistVersion,
 
     // Fonctions
     loadData,
@@ -703,6 +758,7 @@ export const AppProvider = ({children, navigation = null}) => {
     isRecentlyUpdated,
     filterAndSortGames,
     isGameFollowed,
+    maybeRefreshGames,
   };
 
   return (
