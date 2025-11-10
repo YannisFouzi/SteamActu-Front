@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS } from '../constants';
+import { COLORS, CONTAINER_STYLES } from '../constants';
 import FollowToggle from './FollowToggle';
 
 const GameCard = ({
@@ -61,16 +61,10 @@ const GameCard = ({
 
 const styles = StyleSheet.create({
   card: {
+    ...CONTAINER_STYLES.card,
     flexDirection: 'row',
-    backgroundColor: COLORS.WHITE,
-    borderRadius: 8,
     marginBottom: 8,
     overflow: 'hidden',
-    elevation: 2,
-    shadowColor: COLORS.BLACK,
-    shadowOffset: {width: 0, height: 1},
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
   },
   imageContainer: {
     width: 120,
