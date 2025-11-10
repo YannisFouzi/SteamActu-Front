@@ -92,13 +92,11 @@ const newsService = {
   getNewsFeed: (
     steamId,
     {
-      followedOnly = false,
       perGameLimit = API_CONFIG.DEFAULT_LIMITS.perGameLimit,
       language = API_CONFIG.DEFAULT_NEWS_PARAMS.language,
     } = {},
   ) => {
     const params = {
-      followedOnly: followedOnly ? "true" : "false",
       perGameLimit,
       language,
     };

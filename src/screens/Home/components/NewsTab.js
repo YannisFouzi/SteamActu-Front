@@ -17,12 +17,7 @@ import styles from '../styles';
  * Composant pour l'onglet News
  * Extrait du HomeScreen pour rÃ©duire la complexitÃ©
  */
-const NewsTab = ({
-  steamId,
-  showFollowedNewsOnly,
-  newsState,
-  fetchNews,
-}) => {
+const NewsTab = ({steamId, newsState, fetchNews}) => {
   const activeNewsState = newsState?.news || null;
 
   // Formater une date relative avec les minutes (spÃ©cifique aux news)
@@ -62,16 +57,14 @@ const NewsTab = ({
   const renderEmptyNewsList = useMemo(() => {
     const message = !steamId
       ? 'Connectez-vous pour afficher vos actualitÃ©s.'
-      : showFollowedNewsOnly
-      ? 'Aucune actualitÃ© rÃ©cente pour vos jeux suivis.'
-      : 'Aucune actualitÃ© disponible pour le moment.';
+      : 'Aucune actualitÃ© rÃ©cente pour vos jeux suivis.';
 
     return () => (
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyText}>{message}</Text>
       </View>
     );
-  }, [showFollowedNewsOnly, steamId]);
+  }, [steamId]);
 
   const renderNewsItem = useCallback(
     ({item}) => {

@@ -6,7 +6,7 @@ import { debugError, debugLog } from './hooksLogger';
  * Hook personnalisé pour la gestion des actualités
  * Extrait la logique complexe de gestion des news du HomeScreen
  */
-export const useNewsManager = (steamId, showFollowedNewsOnly) => {
+export const useNewsManager = steamId => {
   // Factory pour créer l'état initial des news
   const createInitialNewsState = useCallback(() => {
     debugLog('[NEWS] Initialisation de letat des actualites');
@@ -49,7 +49,6 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
     async (options = {}) => {
       debugLog('\n📰 [NEWS] fetchNews appelée');
       debugLog('📰 [NEWS] steamId:', steamId || '(vide)');
-      debugLog('📰 [NEWS] showFollowedNewsOnly:', showFollowedNewsOnly);
       debugLog('📰 [NEWS] silent:', options.silent);
       
       const silent = options.silent === true;
@@ -88,7 +87,6 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
       try {
         debugLog('📰 [NEWS] 🔄 GET /news/feed (perGameLimit: 20)');
         const response = await newsService.getNewsFeed(steamId, {
-          followedOnly: showFollowedNewsOnly,
           perGameLimit: 20,
         });
 
@@ -139,7 +137,7 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
         });
       }
     },
-    [createInitialNewsState, safeSetNewsState, showFollowedNewsOnly, steamId],
+    [createInitialNewsState, safeSetNewsState, steamId],
   );
 
   // Fonction pour mettre à jour le statut de suivi d'un jeu dans les news
@@ -172,18 +170,11 @@ export const useNewsManager = (steamId, showFollowedNewsOnly) => {
 
   // Charger les news quand le filtre change
   useEffect(() => {
-    debugLog(
-      '🔄 useNewsManager: useEffect filtre déclenché - showFollowedNewsOnly:',
-      showFollowedNewsOnly,
-      'initialized:',
-      newsState.news?.initialized,
-    );
-    const activeNewsState = newsState.news;
-    if (!activeNewsState?.initialized) {
+    if (!newsState.news?.initialized) {
       return;
     }
     fetchNews();
-  }, [showFollowedNewsOnly, fetchNews]);
+  }, [fetchNews, newsState.news?.initialized]);
 
   return {
     newsState,

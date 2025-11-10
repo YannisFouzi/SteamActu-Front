@@ -101,7 +101,6 @@ const HomeScreen = () => {
   const isNewsTab = activeTab === TABS.NEWS;
   const isFollowGamesTab = activeTab === TABS.FOLLOW_GAMES;
   const isFeedTab = activeNewsTab === NEWS_TABS.FEED;
-  const showFollowedNewsOnly = true;
   const previousTabState = useRef({isNewsTab, isFeedTab});
 
   // Hook wishlist
@@ -117,7 +116,7 @@ const HomeScreen = () => {
 
   // Hook personnalisé pour la gestion des news
   const {newsState, fetchNews, isNewsInitialized, isNewsLoading} =
-    useNewsManager(steamId, showFollowedNewsOnly);
+    useNewsManager(steamId);
 
   // Charger les news au premier accès à l'onglet
   useEffect(() => {
@@ -285,7 +284,6 @@ const HomeScreen = () => {
         isFeedTab ? (
           <NewsTab
             steamId={steamId}
-            showFollowedNewsOnly={true}
             newsState={newsState}
             fetchNews={fetchNews}
           />
