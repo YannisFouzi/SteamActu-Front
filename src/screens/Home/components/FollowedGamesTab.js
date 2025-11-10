@@ -10,7 +10,7 @@ import { useAppContext } from '../../../context/AppContext';
 import { userService } from '../../../services/api';
 import EmptyStateMessage from './EmptyStateMessage';
 
-const FollowedGamesTab = ({styles}) => {
+const FollowedGamesTab = ({styles, onToggleFollowState}) => {
   const {steamId} = useAppContext();
   const [followedGames, setFollowedGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +60,9 @@ const FollowedGamesTab = ({styles}) => {
               setFollowedGames(prev =>
                 prev.filter(game => game.appId?.toString() !== appId),
               );
+            }
+            if (typeof onToggleFollowState === 'function' && appId) {
+              onToggleFollowState(appId, nextIsFollowed);
             }
           },
         }}

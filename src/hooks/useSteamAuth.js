@@ -146,13 +146,13 @@ export const useSteamAuth = navigation => {
         
         // Forcer le rechargement des données immédiatement après navigation
         // Cela résout la race condition où AppContext n'est pas démonté/remonté
-        debugLog('🔐 [LOGIN] 🔄 Appel loadData() pour recharger le contexte');
+        debugLog('🔐 [LOGIN] 🔄 Appel loadData(origine=steamAuthDelayed) pour recharger le contexte');
         // Attendre un petit délai pour que la navigation soit complète
         loadDataTimeoutRef.current = setTimeout(() => {
           if (!isMountedRef.current) {
             return;
           }
-          loadData();
+          loadData(false, 'steamAuthDelayed');
           debugLog('🔐 [LOGIN] ✅ Authentification et rechargement terminés\n');
         }, 100);
       } catch (error) {

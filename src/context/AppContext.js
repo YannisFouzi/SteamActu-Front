@@ -1,25 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useRef,
-    useState,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
 } from 'react';
 import { Alert, AppState } from 'react-native';
 import {
-    useAsyncStorage,
-    useLastVerificationDate,
+  useAsyncStorage,
+  useLastVerificationDate,
 } from '../hooks/useAsyncStorage';
 import { useGameSync } from '../hooks/useGameSync';
 import { steamService, userService } from '../services/api';
 import {
-    getGameAppId,
-    getGameIconUrl,
-    getLastPlayedValue,
-    getPlaytimeForeverValue,
-    isRecentlyUpdated,
+  getGameAppId,
+  getGameIconUrl,
+  getLastPlayedValue,
+  getPlaytimeForeverValue,
+  isRecentlyUpdated,
 } from '../utils';
 
 const DEBUG_MODE =
@@ -156,6 +156,7 @@ export const useAppContext = () => useContext(AppContext);
 export const AppProvider = ({children, navigation = null}) => {
   // Hooks personnalisés
   const {syncRecentActiveGames} = useGameSync();
+  const skipNextGamesRefreshRef = useRef(false);
   const {updateVerificationDate, isOlderThanOneDay} = useLastVerificationDate();
 
   // États principaux
@@ -189,7 +190,7 @@ export const AppProvider = ({children, navigation = null}) => {
   // Chargement initial des données
   useEffect(() => {
     debugLog('\n🎬 [INIT] useEffect initial (mount) déclenché');
-    loadData();
+    loadData(false, 'init');
 
     // Configurer la détection du changement d'état de l'application
     const subscription = AppState.addEventListener('change', nextAppState => {
@@ -223,7 +224,7 @@ export const AppProvider = ({children, navigation = null}) => {
     // - Aucun chargement en cours (évite double appel)
     if (steamId && games.length === 0 && !loading && !refreshing) {
       debugLog('🔄 [useEffect[steamId]] ✅ Condition remplie → appel loadData()');
-      loadData();
+      loadData(false, 'steamIdEffect');
     } else if (loading || refreshing) {
       debugLog('🔄 [useEffect[steamId]] ⏭️ Skip (chargement en cours)');
     } else if (steamId && games.length > 0) {
@@ -318,8 +319,8 @@ export const AppProvider = ({children, navigation = null}) => {
   };
 
   // Fonction pour charger les données
-  const loadData = async (forceReload = false) => {
-    debugLog('\n[LOADDATA] Début loadData...');
+  const loadData = async (forceReload = false, origin = 'unknown') => {
+    debugLog('\n[LOADDATA] Début loadData...', `origine=${origin}`);
     debugLog('[LOADDATA] forceReload:', forceReload);
     debugLog('[LOADDATA] steamId actuel (state):', steamId || '(vide)');
     debugLog('[LOADDATA] games.length:', games.length);
@@ -376,6 +377,10 @@ export const AppProvider = ({children, navigation = null}) => {
 
       // ✨ Fetch et sauvegarder la version games
       try {
+        debugLog('[LOADDATA] fetchStatus (origine=loadData)', {
+          forceReload,
+          origin,
+        });
         const statusResponse = await steamService.fetchStatus(savedSteamId);
         const newGamesVersion = statusResponse?.data?.gamesVersion;
 
@@ -393,7 +398,7 @@ export const AppProvider = ({children, navigation = null}) => {
     } catch (error) {
       handleDataLoadError({
         error,
-        onRetry: () => loadData(true),
+        onRetry: () => loadData(true, 'loadDataRetry'),
         onLogout: handleLogout,
       });
     } finally {
@@ -413,7 +418,7 @@ export const AppProvider = ({children, navigation = null}) => {
 
       if (isOlderThanOneDay()) {
         debugLog("⏰ [CHECK] Plus d'un jour écoulé → vérification complète");
-        loadData(true);
+        loadData(true, 'checkLastVerificationDate');
       } else if (Date.now() - lastRefreshTime > 300000) {
         debugLog("⏰ [CHECK] Vérification des nouveaux jeux (5 min écoulées)");
         checkForNewGames();
@@ -427,7 +432,7 @@ export const AppProvider = ({children, navigation = null}) => {
 
   // Fonction pour rafraîchir les données
   const handleRefresh = () => {
-    loadData(true);
+    loadData(true, 'handleRefresh');
   };
 
   // Fonction pour se déconnecter
@@ -549,50 +554,71 @@ export const AppProvider = ({children, navigation = null}) => {
 
       try {
         if (!isFollowed) {
-          await userService.followGame(
+          const followResponse = await userService.followGame(
             steamId,
             appIdString,
             gameName,
             gameIcon,
           );
+          const updatedUser = followResponse?.data;
+          if (updatedUser?.gamesVersion) {
+            setGamesVersion(updatedUser.gamesVersion);
+          }
           debugLog('Jeu suivi avec succès:', gameName);
 
-          setUser(prevUser => {
-            if (!prevUser) {
-              return prevUser;
-            }
+          if (updatedUser) {
+            setUser(updatedUser);
+          } else {
+            setUser(prevUser => {
+              if (!prevUser) {
+                return prevUser;
+              }
 
-            const current = Array.isArray(prevUser.followedGames)
-              ? prevUser.followedGames.slice()
-              : [];
+              const current = Array.isArray(prevUser.followedGames)
+                ? prevUser.followedGames.slice()
+                : [];
 
-            if (current.includes(appIdString)) {
-              return {...prevUser, followedGames: current};
-            }
+              if (current.includes(appIdString)) {
+                return {...prevUser, followedGames: current};
+              }
 
-            return {
-              ...prevUser,
-              followedGames: [...current, appIdString],
-            };
-          });
+              return {
+                ...prevUser,
+                followedGames: [...current, appIdString],
+              };
+            });
+          }
+          skipNextGamesRefreshRef.current = true;
         } else {
-          await userService.unfollowGame(steamId, appIdString);
+          const unfollowResponse = await userService.unfollowGame(
+            steamId,
+            appIdString,
+          );
+          const updatedUser = unfollowResponse?.data;
+          if (updatedUser?.gamesVersion) {
+            setGamesVersion(updatedUser.gamesVersion);
+          }
           debugLog('Jeu retiré des suivis:', gameName);
 
-          setUser(prevUser => {
-            if (!prevUser) {
-              return prevUser;
-            }
+          if (updatedUser) {
+            setUser(updatedUser);
+          } else {
+            setUser(prevUser => {
+              if (!prevUser) {
+                return prevUser;
+              }
 
-            const current = Array.isArray(prevUser.followedGames)
-              ? prevUser.followedGames.slice()
-              : [];
+              const current = Array.isArray(prevUser.followedGames)
+                ? prevUser.followedGames.slice()
+                : [];
 
-            return {
-              ...prevUser,
-              followedGames: current.filter(id => id !== appIdString),
-            };
-          });
+              return {
+                ...prevUser,
+                followedGames: current.filter(id => id !== appIdString),
+              };
+            });
+          }
+          skipNextGamesRefreshRef.current = true;
         }
 
         filterAndSortGames();
@@ -684,7 +710,14 @@ export const AppProvider = ({children, navigation = null}) => {
   const maybeRefreshGames = useCallback(async () => {
     if (!steamId) return;
 
+    if (skipNextGamesRefreshRef.current) {
+      debugLog('[VERSION] Skip maybeRefreshGames (flag skipNextGamesRefreshRef)');
+      skipNextGamesRefreshRef.current = false;
+      return;
+    }
+
     try {
+      debugLog('[VERSION] fetchStatus (origine=maybeRefreshGames)');
       const statusResponse = await steamService.fetchStatus(steamId);
       const serverGamesVersion = statusResponse?.data?.gamesVersion;
 
@@ -697,7 +730,8 @@ export const AppProvider = ({children, navigation = null}) => {
         debugLog('[VERSION] Version différente détectée, refresh');
         debugLog('  Serveur:', serverGamesVersion);
         debugLog('  Locale:', gamesVersion);
-        await loadData(true);
+        debugLog('[VERSION] → appel loadData(forceReload=true, origine=maybeRefreshGames)');
+        await loadData(true, 'maybeRefreshGames');
       } else {
         debugLog('[VERSION] Versions identiques, skip');
       }

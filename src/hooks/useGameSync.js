@@ -72,6 +72,10 @@ export const useGameSync = () => {
         }));
 
       // Envoyer au backend
+      debugLog(
+        '[GAME-SYNC] updateRecentActiveGames -> requête envoyée',
+        {steamId: currentSteamId, payloadLength: payload.length},
+      );
       await userService.updateRecentActiveGames(currentSteamId, payload);
 
       debugLog(

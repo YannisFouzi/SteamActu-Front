@@ -80,7 +80,7 @@ export const useWishlist = steamId => {
         }
         safeSetState(setError, null);
 
-        debugLog(`[WISHLIST] Chargement pour ${steamId}...`);
+        debugLog(`[WISHLIST] Chargement pour ${steamId}... (silent=${silent})`);
         const response = await steamService.getUserWishlist(steamId);
 
         // La réponse peut être un tableau ou un objet avec items
@@ -102,6 +102,7 @@ export const useWishlist = steamId => {
 
         // ✨ Fetch et sauvegarder la version wishlist
         try {
+          debugLog('[WISHLIST] fetchStatus (origine=fetchWishlist)');
           const statusResponse = await steamService.fetchStatus(steamId);
           const newWishlistVersion = statusResponse?.data?.wishlistVersion;
 
@@ -232,6 +233,7 @@ export const useWishlist = steamId => {
     if (!steamId) return;
 
     try {
+      debugLog('[WISHLIST-VERSION] fetchStatus (origine=maybeRefreshWishlist)');
       const statusResponse = await steamService.fetchStatus(steamId);
       const serverWishlistVersion = statusResponse?.data?.wishlistVersion;
 
