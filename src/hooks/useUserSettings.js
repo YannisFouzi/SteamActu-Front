@@ -1,6 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Linking, Platform } from 'react-native';
+import notifee from '@notifee/react-native';
 import { userService } from '../services/api';
+import {
+  registerFCMToken,
+  unregisterFCMToken,
+} from '../services/notificationService';
 import { debugError, showAlert } from './hooksLogger';
 
 /**
@@ -11,7 +17,7 @@ export const useUserSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [steamId, setSteamId] = useState('');
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [autoFollowEnabled, setAutoFollowEnabled] = useState(false);
   const [autoFollowWishlistEnabled, setAutoFollowWishlistEnabled] = useState(false);
   const isMountedRef = useRef(true);
@@ -55,7 +61,7 @@ export const useUserSettings = () => {
 
       if (serverSettings) {
         const {
-          enabled = true,
+          enabled = false,
           autoFollowNewGames = false,
           autoFollowWishlistGames = false,
         } = serverSettings;
@@ -86,7 +92,7 @@ export const useUserSettings = () => {
 
         safeSetState(
           setNotificationsEnabled,
-          savedNotifications !== null ? JSON.parse(savedNotifications) : true,
+          savedNotifications !== null ? JSON.parse(savedNotifications) : false,
         );
         safeSetState(
           setAutoFollowEnabled,
@@ -172,10 +178,61 @@ export const useUserSettings = () => {
   // Gestionnaire pour les notifications
   const handleToggleNotifications = useCallback(
     async value => {
-      setNotificationsEnabled(value);
-      await saveSettings(value, autoFollowEnabled, autoFollowWishlistEnabled);
+      if (!steamId) {
+        showAlert('Erreur', 'Utilisateur non connecté.');
+        return;
+      }
+
+      if (value) {
+        const result = await registerFCMToken(steamId);
+
+        if (result?.success) {
+          setNotificationsEnabled(true);
+          await saveSettings(true, autoFollowEnabled, autoFollowWishlistEnabled);
+          return;
+        }
+
+        setNotificationsEnabled(false);
+        await saveSettings(false, autoFollowEnabled, autoFollowWishlistEnabled);
+
+        if (result?.status === 'blocked') {
+          showAlert(
+            'Notifications bloquées',
+            "Android bloque les notifications pour Steam Actu. Activez-les dans les paramètres.",
+            [
+              {text: 'Annuler', style: 'cancel'},
+              {
+                text: 'Ouvrir les paramètres',
+                onPress: async () => {
+                  try {
+                    if (Platform.OS === 'android') {
+                      await notifee.openNotificationSettings();
+                    } else {
+                      await Linking.openSettings();
+                    }
+                  } catch (settingsError) {
+                    debugError(
+                      '[FCM] Impossible d’ouvrir les paramètres:',
+                      settingsError,
+                    );
+                  }
+                },
+              },
+            ],
+          );
+        } else {
+          showAlert(
+            'Notification non activée',
+            "Impossible d'activer les notifications pour le moment. Veuillez réessayer plus tard.",
+          );
+        }
+      } else {
+        setNotificationsEnabled(false);
+        await unregisterFCMToken(steamId);
+        await saveSettings(false, autoFollowEnabled, autoFollowWishlistEnabled);
+      }
     },
-    [autoFollowEnabled, autoFollowWishlistEnabled, saveSettings],
+    [autoFollowEnabled, autoFollowWishlistEnabled, saveSettings, steamId],
   );
 
   // Gestionnaire pour le suivi automatique (bibliothèque)
@@ -204,7 +261,7 @@ export const useUserSettings = () => {
   // Réinitialiser les switches lorsque l'utilisateur est déconnecté
   useEffect(() => {
     if (!steamId) {
-      setNotificationsEnabled(true);
+      setNotificationsEnabled(false);
       setAutoFollowEnabled(false);
       setAutoFollowWishlistEnabled(false);
     }

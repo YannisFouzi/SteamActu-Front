@@ -18,6 +18,11 @@ import {
 import { useGameSync } from '../hooks/useGameSync';
 import { steamService, userService } from '../services/api';
 import {
+    registerFCMToken,
+    setupNotificationHandlers,
+    unregisterFCMToken,
+} from '../services/notificationService';
+import {
     getGameAppId,
     getGameIconUrl,
     getLastPlayedValue,
@@ -247,6 +252,57 @@ export const AppProvider = ({children, navigation = null}) => {
     }
   }, [steamId, games.length, loading, refreshing, loadData]);
 
+  // Configuration des notifications FCM
+  useEffect(() => {
+    let cleanupNotifications;
+    let canceled = false;
+
+    async function initializeNotifications() {
+      try {
+        const storedValue = await AsyncStorage.getItem('notificationsEnabled');
+        const isEnabled =
+          storedValue !== null ? JSON.parse(storedValue) : false;
+
+        if (canceled || !steamId) {
+          return;
+        }
+
+        if (isEnabled) {
+          debugLog(
+            '[FCM] 📥 notificationsEnabled=TRUE -> tentative enregistrement token',
+          );
+          const result = await registerFCMToken(steamId);
+
+          if (!result?.success) {
+            debugLog(
+              `[FCM] ⚠️ Impossible de ré-enregistrer le token (status=${result?.status})`,
+            );
+          }
+        } else {
+          debugLog(
+            '[FCM] notificationsEnabled=FALSE -> enregistrement token ignoré',
+          );
+        }
+      } catch (error) {
+        debugError('[FCM] Erreur lors de la lecture des préférences FCM:', error);
+      }
+    }
+
+    if (steamId) {
+      debugLog('[FCM] 🔔 Configuration des notifications pour:', steamId);
+      cleanupNotifications = setupNotificationHandlers(steamId);
+      initializeNotifications();
+    }
+
+    return () => {
+      canceled = true;
+      if (cleanupNotifications) {
+        debugLog('[FCM] 🔕 Nettoyage des handlers de notifications');
+        cleanupNotifications();
+      }
+    };
+  }, [steamId]);
+
   // La persistance des options est maintenant gérée automatiquement par useAsyncStorage
 
   // Filtrer et trier les jeux quand les critères changent
@@ -373,6 +429,17 @@ export const AppProvider = ({children, navigation = null}) => {
       debugLog('\n🚪 [LOGOUT] Début de la déconnexion...');
       debugLog('🚪 [LOGOUT] steamId avant reset:', steamId || '(vide)');
       debugLog('🚪 [LOGOUT] games count avant reset:', games.length);
+
+      // Supprimer le token FCM du backend avant de déconnecter
+      if (steamId) {
+        try {
+          await unregisterFCMToken(steamId);
+          debugLog('🚪 [LOGOUT] Token FCM supprimé du backend');
+        } catch (fcmError) {
+          debugError('🚪 [LOGOUT] Erreur suppression token FCM:', fcmError);
+          // Ne pas bloquer le logout si ça échoue
+        }
+      }
 
       if (statusDebounceTimeoutRef.current) {
         clearTimeout(statusDebounceTimeoutRef.current);

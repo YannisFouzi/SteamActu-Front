@@ -109,7 +109,7 @@ export const useSteamAuth = navigation => {
         const notificationSettings = response?.data?.notificationSettings;
         if (notificationSettings) {
           const {
-            enabled = true,
+            enabled = false,
             autoFollowNewGames = false,
             autoFollowWishlistGames = false,
           } = notificationSettings;

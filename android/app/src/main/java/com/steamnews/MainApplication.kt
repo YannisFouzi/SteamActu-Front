@@ -1,6 +1,10 @@
 package com.steamnews
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.os.Build
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
@@ -39,6 +43,23 @@ class MainApplication : Application(), ReactApplication {
     if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
       // If you opted-in for the New Architecture, we load the native entry point for this app.
       load()
+    }
+
+    // Créer le canal de notification pour Steam News (Android 8.0+)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val channel = NotificationChannel(
+        "steam_news",
+        "Steam News",
+        NotificationManager.IMPORTANCE_HIGH
+      ).apply {
+        description = "Notifications des actualités Steam"
+        enableLights(true)
+        enableVibration(true)
+      }
+
+      val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+      notificationManager.createNotificationChannel(channel)
+      android.util.Log.d("SteamNews", "Canal de notification 'steam_news' créé")
     }
   }
 }

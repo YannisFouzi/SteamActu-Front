@@ -74,6 +74,10 @@ const userService = {
   getFollowedGamesDetails: steamId =>
     api.get(`/users/${steamId}/followed-games-details`),
   deleteAccount: steamId => api.delete(`/users/${steamId}`),
+  registerFCMToken: (steamId, token, platform) =>
+    api.post(`/users/${steamId}/fcm-token`, {token, platform}),
+  unregisterFCMToken: (steamId, token) =>
+    api.delete(`/users/${steamId}/fcm-token`, {data: {token}}),
 };
 
 const newsService = {
