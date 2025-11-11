@@ -6,6 +6,26 @@ export default StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.STEAM_NAVY,
   },
+  gestureContainer: {
+    flex: 1,
+  },
+  gestureRoot: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  contentHost: {
+    flex: 1,
+    position: 'relative',
+  },
+  contentInner: {
+    flex: 1,
+  },
+  pageContainer: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
