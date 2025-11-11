@@ -177,15 +177,7 @@ export const AppProvider = ({children, navigation = null}) => {
 
   // Recherche et tri
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortModalVisible, setSortModalVisible] = useState(false);
   const [sortOption, setSortOption] = useAsyncStorage('sortOption', 'default');
-
-  // Filtre pour les jeux suivis
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
-  const [followFilter, setFollowFilter] = useAsyncStorage(
-    'followFilter',
-    'all',
-  );
 
   // Chargement initial des données
   useEffect(() => {
@@ -243,7 +235,7 @@ export const AppProvider = ({children, navigation = null}) => {
     } else {
       setFilteredGames([]);
     }
-  }, [games, searchQuery, sortOption, followFilter]);
+  }, [games, searchQuery, sortOption]);
 
   // Filtrer et trier les jeux
   const filterAndSortGames = useCallback(() => {
@@ -267,15 +259,6 @@ export const AppProvider = ({children, navigation = null}) => {
       filtered = filtered.filter(game =>
         game.name?.toLowerCase().includes(query),
       );
-    }
-
-    // Appliquer le filtre de suivi
-    if (followFilter !== 'all') {
-      filtered = filtered.filter(game => {
-        const appId = getGameAppId(game);
-        const isFollowed = isGameFollowed(appId);
-        return followFilter === 'followed' ? isFollowed : !isFollowed;
-      });
     }
 
     // Appliquer le tri
@@ -303,7 +286,7 @@ export const AppProvider = ({children, navigation = null}) => {
     }
 
     setFilteredGames(filtered);
-  }, [games, searchQuery, followFilter, sortOption, isGameFollowed]);
+  }, [games, searchQuery, sortOption]);
 
   const beginLoadingState = forceReload => {
     if (forceReload) {
@@ -450,7 +433,6 @@ export const AppProvider = ({children, navigation = null}) => {
         'autoFollowEnabled',
         'autoFollowWishlistEnabled',
         'sortOption',
-        'followFilter',
         'gamesVersion',
         'wishlistVersion',
       ]);
@@ -465,7 +447,6 @@ export const AppProvider = ({children, navigation = null}) => {
       setFilteredGames([]);
       setLastRefreshTime(0);
       setSortOption('default');
-      setFollowFilter('all');
       setGamesVersion(null);
       setWishlistVersion(null);
       debugLog('🚪 [LOGOUT] ✅ États réinitialisés (steamId="", user=null, games=[], versions=null)');
@@ -750,19 +731,13 @@ export const AppProvider = ({children, navigation = null}) => {
     steamId,
     user,
     searchQuery,
-    sortModalVisible,
     sortOption,
-    filterModalVisible,
-    followFilter,
     gamesVersion,
     wishlistVersion,
 
     // Setters
     setSearchQuery,
-    setSortModalVisible,
     setSortOption,
-    setFilterModalVisible,
-    setFollowFilter,
     setGamesVersion,
     setWishlistVersion,
 

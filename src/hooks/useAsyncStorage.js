@@ -73,13 +73,6 @@ export const useSortOption = () => {
 };
 
 /**
- * Hook spécialisé pour les options de filtre
- */
-export const useFollowFilter = () => {
-  return useAsyncStorage('followFilter', 'all');
-};
-
-/**
  * Hook spécialisé pour la date de dernière vérification
  */
 export const useLastVerificationDate = () => {

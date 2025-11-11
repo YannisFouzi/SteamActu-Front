@@ -18,14 +18,12 @@ import { debugLog } from '../../hooks/hooksLogger';
 import { useNewsManager } from '../../hooks/useNewsManager';
 import { useWishlist } from '../../hooks/useWishlist';
 import EmptyStateMessage from './components/EmptyStateMessage';
-import FilterModal from './components/FilterModal';
 import FollowedGamesTab from './components/FollowedGamesTab';
 import GamesList from './components/GamesList';
 import NewsTab from './components/NewsTab';
 import NoResultsPlaceholder from './components/NoResultsPlaceholder';
 import SearchBar from './components/SearchBar';
 import SearchGameTab from './components/SearchGameTab';
-import SortModal from './components/SortModal';
 import SortOptions from './components/SortOptions';
 import styles from './styles';
 
@@ -45,7 +43,7 @@ const NEWS_TABS = {
 };
 
 const NEWS_TAB_ITEMS = [
-  {key: NEWS_TABS.FEED, label: 'Feed'},
+  {key: NEWS_TABS.FEED, label: 'Fil'},
   {key: NEWS_TABS.FOLLOWED_GAMES, label: 'Jeux suivis'},
 ];
 
@@ -94,7 +92,7 @@ const HomeScreen = () => {
   const handleMyGamesSortChange = useCallback(
     option => {
       setSortOption(option);
-      filterAndSortGames(option);
+      filterAndSortGames();
     },
     [filterAndSortGames, setSortOption],
   );
@@ -479,8 +477,6 @@ const HomeScreen = () => {
         </>
       ) : null}
 
-      <SortModal />
-      <FilterModal />
     </SafeAreaView>
   );
 };
