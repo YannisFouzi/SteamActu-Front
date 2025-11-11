@@ -13,6 +13,7 @@ import { COLORS } from '../../../constants';
 import { steamService } from '../../../services/api';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
 import EmptyStateMessage from './EmptyStateMessage';
+import { debugError } from '../../../hooks/hooksLogger';
 
 const SearchGameTab = ({styles}) => {
   const [searchQuery, setSearchQuery] = useState('');

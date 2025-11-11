@@ -13,6 +13,7 @@ import { COLORS } from '../../../constants';
 import { formatRelativeDate } from '../../../utils';
 import styles from '../styles';
 import EmptyStateMessage from './EmptyStateMessage';
+import { debugError } from '../../../hooks/hooksLogger';
 
 /**
  * Composant pour l'onglet News

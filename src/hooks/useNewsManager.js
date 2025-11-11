@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { newsService } from '../services/api';
-import { debugError, debugLog } from './hooksLogger';
+import { debugError, debugLog, maskSteamId } from './hooksLogger';
 
 /**
  * Hook personnalisé pour la gestion des actualités
@@ -48,7 +48,7 @@ export const useNewsManager = steamId => {
   const fetchNews = useCallback(
     async (options = {}) => {
       debugLog('\n📰 [NEWS] fetchNews appelée');
-      debugLog('📰 [NEWS] steamId:', steamId || '(vide)');
+      debugLog('📰 [NEWS] steamId:', maskSteamId(steamId) || '(vide)');
       debugLog('📰 [NEWS] silent:', options.silent);
       
       const silent = options.silent === true;

@@ -17,6 +17,19 @@ import { useAppContext } from '../context/AppContext';
 import { useUserSettings } from '../hooks/useUserSettings';
 import { userService } from '../services/api';
 
+const LEGAL_LINKS = [
+  {
+    label: "Conditions d'utilisation",
+    icon: 'document-text-outline',
+    route: 'TermsOfService',
+  },
+  {
+    label: 'Politique de confidentialité',
+    icon: 'shield-checkmark-outline',
+    route: 'PrivacyPolicy',
+  },
+];
+
 const SettingsScreen = () => {
   const navigation = useNavigation();
   const {handleLogout, steamId} = useAppContext();
@@ -166,6 +179,30 @@ const SettingsScreen = () => {
         <Icon name="chevron-forward" size={18} color={COLORS.STEAM_TEXT_GRAY} />
       </TouchableOpacity>
 
+      <View style={styles.legalSection}>
+        <Text style={[styles.sectionTitle, styles.legalSectionTitle]}>Légal</Text>
+        {LEGAL_LINKS.map((link, index) => (
+          <TouchableOpacity
+            key={link.route}
+            style={[
+              styles.legalItem,
+              index !== LEGAL_LINKS.length - 1 && styles.legalItemDivider,
+            ]}
+            onPress={() => navigation.navigate(link.route)}
+            activeOpacity={0.85}>
+            <View style={styles.legalIcon}>
+              <Icon name={link.icon} size={18} color={COLORS.STEAM_BLUE} />
+            </View>
+            <Text style={styles.legalLabel}>{link.label}</Text>
+            <Icon
+              name="chevron-forward"
+              size={18}
+              color={COLORS.STEAM_TEXT_GRAY}
+            />
+          </TouchableOpacity>
+        ))}
+      </View>
+
       <View style={styles.aboutSection}>
         <Text style={styles.sectionTitle}>À propos</Text>
         <Text style={styles.aboutText}>Steam Notifications v1.0.0</Text>
@@ -238,7 +275,7 @@ const styles = StyleSheet.create({
   contactShortcut: {
     marginHorizontal: 16,
     marginTop: 24,
-    marginBottom: 16,
+    marginBottom: 12,
     paddingVertical: 18,
     paddingHorizontal: 16,
     borderRadius: 16,
@@ -264,6 +301,44 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.WHITE,
     fontWeight: '700',
+  },
+  legalSection: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+    backgroundColor: COLORS.STEAM_NAVY,
+    borderWidth: 1,
+    borderColor: COLORS.STEAM_BORDER,
+    overflow: 'hidden',
+    paddingTop: 16,
+  },
+  legalSectionTitle: {
+    paddingHorizontal: 16,
+  },
+  legalItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+  },
+  legalItemDivider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.STEAM_BORDER,
+  },
+  legalIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.STEAM_BLUE_TRANSPARENT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  legalLabel: {
+    flex: 1,
+    fontSize: 15,
+    color: COLORS.WHITE,
+    fontWeight: '600',
   },
 });
 

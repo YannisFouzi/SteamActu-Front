@@ -7,7 +7,7 @@ import {
   getJSONItem,
   setJSONItem,
 } from './useAsyncStorage';
-import { debugError, debugLog, showAlert } from './hooksLogger';
+import { debugError, debugLog, maskSteamId, showAlert } from './hooksLogger';
 
 const STATUS_DEBOUNCE_DELAY = 250;
 
@@ -202,7 +202,11 @@ export const useWishlist = steamId => {
         }
         safeSetState(setError, null);
 
-        debugLog('[WISHLIST] Chargement...', {steamId, origin, silent});
+        debugLog('[WISHLIST] Chargement...', {
+          steamId: maskSteamId(steamId),
+          origin,
+          silent,
+        });
         const response = await steamService.getUserWishlist(
           steamId,
           requestConfig,

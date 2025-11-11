@@ -201,6 +201,12 @@ export const SCREEN_CONFIGS = {
   Contact: {
     title: 'Contact',
   },
+  TermsOfService: {
+    title: "Conditions d'utilisation",
+  },
+  PrivacyPolicy: {
+    title: 'Politique de confidentialité',
+  },
   GameDetails: {
     getDynamicOptions: ({route}) => ({
       title: route?.params?.game?.name || 'Détails du jeu',

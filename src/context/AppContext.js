@@ -1,28 +1,28 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
 } from 'react';
 import { Alert, AppState } from 'react-native';
 import {
-  buildStorageKey,
-  getJSONItem,
-  setJSONItem,
-  useAsyncStorage,
-  useLastVerificationDate,
+    buildStorageKey,
+    getJSONItem,
+    setJSONItem,
+    useAsyncStorage,
+    useLastVerificationDate,
 } from '../hooks/useAsyncStorage';
 import { useGameSync } from '../hooks/useGameSync';
 import { steamService, userService } from '../services/api';
 import {
-  getGameAppId,
-  getGameIconUrl,
-  getLastPlayedValue,
-  getPlaytimeForeverValue,
-  isRecentlyUpdated,
+    getGameAppId,
+    getGameIconUrl,
+    getLastPlayedValue,
+    getPlaytimeForeverValue,
+    isRecentlyUpdated,
 } from '../utils';
 
 const DEBUG_MODE =
@@ -541,10 +541,7 @@ export const AppProvider = ({children, navigation = null}) => {
           return;
         }
         setUser(userData);
-        debugLog(
-          '[LOADDATA] Utilisateur récupéré:',
-          userData?.username || '(inconnu)',
-        );
+        debugLog('[LOADDATA] Utilisateur récupéré');
 
         const normalizedGames = await loadGamesLibrary(
           savedSteamId,

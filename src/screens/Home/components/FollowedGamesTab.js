@@ -9,6 +9,7 @@ import { COLORS } from '../../../constants';
 import { useAppContext } from '../../../context/AppContext';
 import { userService } from '../../../services/api';
 import EmptyStateMessage from './EmptyStateMessage';
+import { debugError } from '../../../hooks/hooksLogger';
 
 const FollowedGamesTab = ({styles, onToggleFollowState}) => {
   const {steamId} = useAppContext();

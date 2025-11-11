@@ -11,7 +11,9 @@ import { useAppContext } from '../context/AppContext';
 import ContactScreen from '../screens/ContactScreen';
 import HomeScreen from '../screens/Home';
 import LoginScreen from '../screens/LoginScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
 
 const Stack = createStackNavigator();
 
@@ -23,6 +25,8 @@ const linking = {
       Home: 'home',
       Settings: 'settings',
       Contact: 'contact',
+      TermsOfService: 'terms',
+      PrivacyPolicy: 'privacy',
     },
   },
 };
@@ -58,6 +62,16 @@ const AppNavigator = () => {
           name="Contact"
           component={ContactScreen}
           options={SCREEN_CONFIGS.Contact}
+        />
+        <Stack.Screen
+          name="TermsOfService"
+          component={TermsOfServiceScreen}
+          options={SCREEN_CONFIGS.TermsOfService}
+        />
+        <Stack.Screen
+          name="PrivacyPolicy"
+          component={PrivacyPolicyScreen}
+          options={SCREEN_CONFIGS.PrivacyPolicy}
         />
       </Stack.Navigator>
     </NavigationContainer>
