@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppContext } from '../context/AppContext';
 import { steamService } from '../services/api';
+import {
+  buildStorageKey,
+  getJSONItem,
+  setJSONItem,
+} from './useAsyncStorage';
 import { debugError, debugLog, showAlert } from './hooksLogger';
+
+const STATUS_DEBOUNCE_DELAY = 250;
 
 /**
  * Hook personnalisé pour gérer la wishlist Steam
- * Centralise la logique de chargement et de gestion de la wishlist
+ * Centralise la logique de chargement, le cache et le versioning.
  */
 export const useWishlist = steamId => {
   const [wishlist, setWishlist] = useState([]);
@@ -13,8 +21,15 @@ export const useWishlist = steamId => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [wishlistVersion, setWishlistVersion] = useState(null);
+
+  const { setWishlistVersion: setContextWishlistVersion } = useAppContext();
+
   const isMountedRef = useRef(true);
-  const requestIdRef = useRef(0);
+  const wishlistFetchInFlightRef = useRef(false);
+  const wishlistLastRequestIdRef = useRef(null);
+  const wishlistFetchAbortControllerRef = useRef(null);
+  const statusDebounceTimeoutRef = useRef(null);
+  const wishlistHydratedFromCacheRef = useRef(false);
 
   const safeSetState = useCallback((setter, value) => {
     if (isMountedRef.current) {
@@ -25,54 +40,161 @@ export const useWishlist = steamId => {
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
+      if (statusDebounceTimeoutRef.current) {
+        clearTimeout(statusDebounceTimeoutRef.current);
+        statusDebounceTimeoutRef.current = null;
+      }
+      if (wishlistFetchAbortControllerRef.current) {
+        try {
+          wishlistFetchAbortControllerRef.current.abort();
+        } catch (abortError) {
+          debugError('[WISHLIST] Erreur lors de l’annulation du fetch:', abortError);
+        }
+        wishlistFetchAbortControllerRef.current = null;
+      }
     };
   }, []);
 
-  // Charger wishlistVersion depuis AsyncStorage au mount
+  const persistWishlistCache = useCallback(
+    async (items, targetSteamId = steamId) => {
+      const cacheKey = buildStorageKey('wishlist', targetSteamId);
+      if (!cacheKey) {
+        return;
+      }
+      await setJSONItem(cacheKey, items);
+    },
+    [steamId],
+  );
+
+  const persistWishlistVersion = useCallback(
+    async (newVersion, targetSteamId = steamId, meta = {}) => {
+      if (!newVersion) {
+        return;
+      }
+
+      const versionKey = buildStorageKey('wishlistVersion', targetSteamId);
+      if (!versionKey) {
+        return;
+      }
+
+      const serverTs = Date.parse(newVersion);
+      const localTs = wishlistVersion ? Date.parse(wishlistVersion) : null;
+
+      const shouldUpdate =
+        !wishlistVersion ||
+        Number.isNaN(serverTs) ||
+        Number.isNaN(localTs) ||
+        serverTs >= localTs;
+
+      if (!shouldUpdate) {
+        debugLog('[WISHLIST-VERSION] Version locale conservée', {
+          raison: meta.origin || 'persistWishlistVersion',
+          locale: wishlistVersion,
+          serveur: newVersion,
+        });
+        return;
+      }
+
+      safeSetState(setWishlistVersion, newVersion);
+      if (typeof setContextWishlistVersion === 'function') {
+        setContextWishlistVersion(newVersion);
+      }
+      await AsyncStorage.setItem(versionKey, newVersion);
+    },
+    [safeSetState, setContextWishlistVersion, steamId, wishlistVersion],
+  );
+
   useEffect(() => {
-    const loadVersion = async () => {
+    if (!steamId) {
+      safeSetState(setWishlist, []);
+      safeSetState(setWishlistVersion, null);
+      if (typeof setContextWishlistVersion === 'function') {
+        setContextWishlistVersion(null);
+      }
+      wishlistHydratedFromCacheRef.current = false;
+      return;
+    }
+
+    let isActive = true;
+    wishlistHydratedFromCacheRef.current = false;
+
+    const hydrateFromCache = async currentSteamId => {
       try {
-        const savedVersion = await AsyncStorage.getItem('wishlistVersion');
-        if (savedVersion) {
-          setWishlistVersion(savedVersion);
-          debugLog('[WISHLIST-VERSION] Version chargée:', savedVersion);
+        const cacheKey = buildStorageKey('wishlist', currentSteamId);
+        const versionKey = buildStorageKey('wishlistVersion', currentSteamId);
+
+        const [cachedWishlist, cachedVersion] = await Promise.all([
+          getJSONItem(cacheKey, null),
+          AsyncStorage.getItem(versionKey),
+        ]);
+
+        if (!isActive || !isMountedRef.current) {
+          return;
         }
-      } catch (err) {
-        debugError('[WISHLIST-VERSION] Erreur chargement version:', err);
+
+        if (Array.isArray(cachedWishlist)) {
+          wishlistHydratedFromCacheRef.current = true;
+          safeSetState(setWishlist, cachedWishlist);
+          debugLog('[WISHLIST] cache_hit', {count: cachedWishlist.length});
+        } else {
+          debugLog('[WISHLIST] cache_miss');
+        }
+
+        if (cachedVersion) {
+          safeSetState(setWishlistVersion, cachedVersion);
+          if (typeof setContextWishlistVersion === 'function') {
+            setContextWishlistVersion(cachedVersion);
+          }
+        }
+      } catch (error) {
+        debugError('[WISHLIST] Erreur lors du chargement du cache:', error);
       }
     };
-    loadVersion();
-  }, []);
 
-  // Sauvegarder wishlistVersion dans AsyncStorage quand elle change
-  useEffect(() => {
-    const saveVersion = async () => {
-      try {
-        if (wishlistVersion) {
-          await AsyncStorage.setItem('wishlistVersion', wishlistVersion);
-          debugLog('[WISHLIST-VERSION] Version sauvegardée:', wishlistVersion);
-        }
-      } catch (err) {
-        debugError('[WISHLIST-VERSION] Erreur sauvegarde version:', err);
-      }
+    hydrateFromCache(steamId);
+
+    return () => {
+      isActive = false;
     };
-    saveVersion();
-  }, [wishlistVersion]);
+  }, [safeSetState, setContextWishlistVersion, steamId]);
 
-  /**
-   * Charge la wishlist depuis le backend
-   * @param {boolean} silent - Si true, ne pas afficher le loading
-   */
+  useEffect(() => {
+    if (wishlistFetchAbortControllerRef.current) {
+      wishlistFetchAbortControllerRef.current.abort();
+      wishlistFetchAbortControllerRef.current = null;
+      wishlistFetchInFlightRef.current = false;
+    }
+    wishlistLastRequestIdRef.current = null;
+    wishlistHydratedFromCacheRef.current = false;
+  }, [steamId]);
+
   const fetchWishlist = useCallback(
-    async (silent = false) => {
+    async (silent = false, options = {}) => {
       if (!steamId) {
         debugLog('[WISHLIST] Pas de steamId fourni, skip fetch');
         return [];
       }
 
-      const requestId = ++requestIdRef.current;
+      if (wishlistFetchInFlightRef.current) {
+        debugLog('[WISHLIST] refresh_skipped_inflight');
+        return [];
+      }
+
+      const {expectedWishlistVersion, origin = 'fetchWishlist'} = options;
+
+      const requestId = `${Date.now()}-${Math.random()
+        .toString(16)
+        .slice(2)}`;
+
+      wishlistFetchInFlightRef.current = true;
+      wishlistLastRequestIdRef.current = requestId;
+
+      const abortController = new AbortController();
+      wishlistFetchAbortControllerRef.current = abortController;
+      const requestConfig = {signal: abortController.signal};
+
       const shouldProcess = () =>
-        isMountedRef.current && requestId === requestIdRef.current;
+        isMountedRef.current && wishlistLastRequestIdRef.current === requestId;
 
       try {
         if (!silent) {
@@ -80,10 +202,12 @@ export const useWishlist = steamId => {
         }
         safeSetState(setError, null);
 
-        debugLog(`[WISHLIST] Chargement pour ${steamId}... (silent=${silent})`);
-        const response = await steamService.getUserWishlist(steamId);
+        debugLog('[WISHLIST] Chargement...', {steamId, origin, silent});
+        const response = await steamService.getUserWishlist(
+          steamId,
+          requestConfig,
+        );
 
-        // La réponse peut être un tableau ou un objet avec items
         let wishlistItems = [];
         if (Array.isArray(response.data)) {
           wishlistItems = response.data;
@@ -94,36 +218,68 @@ export const useWishlist = steamId => {
         }
 
         if (!shouldProcess()) {
-          return [];
+          return wishlistItems;
         }
 
-        debugLog(`[WISHLIST] Wishlist chargée (${wishlistItems.length} jeux)`);
+        debugLog('[WISHLIST] Wishlist chargée', {
+          count: wishlistItems.length,
+          origin,
+        });
         safeSetState(setWishlist, wishlistItems);
+        wishlistHydratedFromCacheRef.current = true;
 
-        // ✨ Fetch et sauvegarder la version wishlist
-        try {
-          debugLog('[WISHLIST] fetchStatus (origine=fetchWishlist)');
-          const statusResponse = await steamService.fetchStatus(steamId);
-          const newWishlistVersion = statusResponse?.data?.wishlistVersion;
-
-          if (newWishlistVersion) {
-            debugLog('[WISHLIST-VERSION] Sauvegarde version:', newWishlistVersion);
-            setWishlistVersion(newWishlistVersion);
+        let serverWishlistVersion = expectedWishlistVersion || null;
+        if (!serverWishlistVersion) {
+          try {
+            debugLog('[WISHLIST-VERSION] status_check_start', {origin});
+            const statusResponse = await steamService.fetchStatus(
+              steamId,
+              requestConfig,
+            );
+            serverWishlistVersion =
+              statusResponse?.data?.wishlistVersion || null;
+            debugLog('[WISHLIST-VERSION] status_check_ok', {
+              origin,
+              serverWishlistVersion,
+            });
+          } catch (statusError) {
+            if (
+              statusError?.name === 'CanceledError' ||
+              statusError?.name === 'AbortError' ||
+              statusError?.code === 'ERR_CANCELED'
+            ) {
+              debugLog('[WISHLIST-VERSION] status_check_cancelled', {origin});
+            } else {
+              debugError('[WISHLIST-VERSION] status_check_fail', statusError);
+            }
           }
-        } catch (versionError) {
-          debugError('[WISHLIST-VERSION] Erreur fetch version:', versionError);
-          // Non bloquant, on continue
         }
+
+        if (serverWishlistVersion) {
+          await persistWishlistVersion(serverWishlistVersion, steamId, {
+            origin,
+          });
+        }
+
+        await persistWishlistCache(wishlistItems, steamId);
 
         return wishlistItems;
       } catch (err) {
+        if (
+          err?.name === 'CanceledError' ||
+          err?.name === 'AbortError' ||
+          err?.code === 'ERR_CANCELED'
+        ) {
+          debugLog('[WISHLIST] Requête annulée', {origin});
+          return [];
+        }
+
         debugError('❌ Erreur lors du chargement de la wishlist:', err);
 
         if (!shouldProcess()) {
           return [];
         }
 
-        // Gérer les erreurs spécifiques
         if (err.response?.status === 404) {
           safeSetState(setError, 'Wishlist non trouvée ou privée');
         } else if (err.response?.status === 403) {
@@ -138,44 +294,46 @@ export const useWishlist = steamId => {
         );
 
         safeSetState(setWishlist, []);
+        await persistWishlistCache([], steamId);
+
         return [];
       } finally {
-        if (!shouldProcess()) {
-          return [];
+        if (shouldProcess()) {
+          safeSetState(setLoading, false);
+          safeSetState(setRefreshing, false);
+          wishlistLastRequestIdRef.current = null;
         }
-
-        safeSetState(setLoading, false);
-        safeSetState(setRefreshing, false);
+        wishlistFetchInFlightRef.current = false;
+        if (wishlistFetchAbortControllerRef.current === abortController) {
+          wishlistFetchAbortControllerRef.current = null;
+        }
       }
     },
-    [safeSetState, steamId],
+    [
+      persistWishlistCache,
+      persistWishlistVersion,
+      safeSetState,
+      steamId,
+    ],
   );
 
-  /**
-   * Rafraîchit la wishlist avec indicateur de refreshing
-   */
   const handleRefresh = useCallback(async () => {
     safeSetState(setRefreshing, true);
-    await fetchWishlist(false);
+    await fetchWishlist(false, {origin: 'handleRefresh'});
   }, [fetchWishlist, safeSetState]);
 
-  /**
-   * Trie la wishlist par date d'ajout (plus récents d'abord)
-   */
   const sortedWishlist = useCallback(() => {
-    if (!Array.isArray(wishlist)) return [];
+    if (!Array.isArray(wishlist)) {
+      return [];
+    }
 
     return [...wishlist].sort((a, b) => {
       const dateA = a.date_added || 0;
       const dateB = b.date_added || 0;
-      return dateB - dateA; // Plus récents d'abord
+      return dateB - dateA;
     });
   }, [wishlist]);
 
-  /**
-   * Filtre la wishlist par nom de jeu
-   * @param {string} query - Terme de recherche
-   */
   const filterWishlist = useCallback(
     query => {
       if (!query || query.trim() === '') {
@@ -190,9 +348,6 @@ export const useWishlist = steamId => {
     [sortedWishlist],
   );
 
-  /**
-   * Statistiques de la wishlist
-   */
   const wishlistStats = useCallback(() => {
     if (!Array.isArray(wishlist)) {
       return {
@@ -201,7 +356,6 @@ export const useWishlist = steamId => {
       };
     }
 
-    // Jeux ajoutés dans les 30 derniers jours
     const thirtyDaysAgo = Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60;
     const recentlyAdded = wishlist.filter(
       item => (item.date_added || 0) > thirtyDaysAgo,
@@ -213,47 +367,95 @@ export const useWishlist = steamId => {
     };
   }, [wishlist]);
 
-  const updateWishlistFollowState = useCallback((appId, nextIsFollowed) => {
-    safeSetState(setWishlist, current =>
-      Array.isArray(current)
-        ? current.map(item =>
-            item?.appid?.toString() === appId?.toString()
-              ? {...item, isFollowed: nextIsFollowed}
-              : item,
-          )
-        : current,
-    );
-  }, [safeSetState]);
-
-  /**
-   * ✨ Refresh conditionnel basé sur la version wishlist
-   * Appelé au focus pour vérifier si les données ont changé
-   */
-  const maybeRefreshWishlist = useCallback(async () => {
-    if (!steamId) return;
-
-    try {
-      debugLog('[WISHLIST-VERSION] fetchStatus (origine=maybeRefreshWishlist)');
-      const statusResponse = await steamService.fetchStatus(steamId);
-      const serverWishlistVersion = statusResponse?.data?.wishlistVersion;
-
-      if (!serverWishlistVersion) {
-        debugLog('[WISHLIST-VERSION] Pas de version serveur, skip refresh');
+  const updateWishlistFollowState = useCallback(
+    (appId, nextIsFollowed) => {
+      if (!appId) {
         return;
       }
 
-      if (serverWishlistVersion !== wishlistVersion) {
-        debugLog('[WISHLIST-VERSION] Version différente détectée, refresh');
-        debugLog('  Serveur:', serverWishlistVersion);
-        debugLog('  Locale:', wishlistVersion);
-        await handleRefresh();
-      } else {
-        debugLog('[WISHLIST-VERSION] Versions identiques, skip');
+      safeSetState(setWishlist, current => {
+        if (!Array.isArray(current)) {
+          return current;
+        }
+
+        const next = current.map(item =>
+          item?.appid?.toString() === appId?.toString()
+            ? {...item, isFollowed: nextIsFollowed}
+            : item,
+        );
+
+        wishlistHydratedFromCacheRef.current = true;
+        persistWishlistCache(next, steamId).catch(err => {
+          debugError('[WISHLIST] Erreur lors de la mise à jour du cache:', err);
+        });
+
+        return next;
+      });
+    },
+    [persistWishlistCache, safeSetState, steamId],
+  );
+
+  const maybeRefreshWishlist = useCallback(
+    async (origin = 'maybeRefreshWishlist') => {
+      if (!steamId) {
+        return;
       }
-    } catch (error) {
-      debugError('[WISHLIST-VERSION] Erreur check version:', error);
-    }
-  }, [steamId, wishlistVersion, handleRefresh]);
+
+      if (loading || refreshing || wishlistFetchInFlightRef.current) {
+        debugLog('[WISHLIST-VERSION] refresh_skipped_inflight', {
+          origin,
+          loading,
+          refreshing,
+        });
+        return;
+      }
+
+      const runStatusCheck = async () => {
+        try {
+          debugLog('[WISHLIST-VERSION] status_check_start', {origin});
+          const statusResponse = await steamService.fetchStatus(steamId);
+          const serverWishlistVersion =
+            statusResponse?.data?.wishlistVersion || null;
+
+          if (!serverWishlistVersion) {
+            debugLog('[WISHLIST-VERSION] status_missing', {origin});
+            return;
+          }
+
+          if (serverWishlistVersion !== wishlistVersion) {
+            debugLog('[WISHLIST-VERSION] status_mismatch', {
+              origin,
+              serveur: serverWishlistVersion,
+              locale: wishlistVersion,
+            });
+            await fetchWishlist(false, {
+              expectedWishlistVersion: serverWishlistVersion,
+              origin,
+            });
+          } else {
+            debugLog('[WISHLIST-VERSION] status_match', {
+              origin,
+              version: serverWishlistVersion,
+            });
+          }
+        } catch (error) {
+          debugError('[WISHLIST-VERSION] status_check_fail', error);
+        } finally {
+          statusDebounceTimeoutRef.current = null;
+        }
+      };
+
+      if (statusDebounceTimeoutRef.current) {
+        clearTimeout(statusDebounceTimeoutRef.current);
+      }
+
+      statusDebounceTimeoutRef.current = setTimeout(
+        runStatusCheck,
+        STATUS_DEBOUNCE_DELAY,
+      );
+    },
+    [fetchWishlist, loading, refreshing, steamId, wishlistVersion],
+  );
 
   return {
     wishlist,

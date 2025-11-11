@@ -9,6 +9,9 @@ import React, {
 } from 'react';
 import { Alert, AppState } from 'react-native';
 import {
+  buildStorageKey,
+  getJSONItem,
+  setJSONItem,
   useAsyncStorage,
   useLastVerificationDate,
 } from '../hooks/useAsyncStorage';
@@ -76,14 +79,21 @@ const withFallbackTimestamps = games =>
     return game;
   });
 
+const STATUS_DEBOUNCE_DELAY = 250;
+const getGamesCacheKey = steamId => buildStorageKey('games', steamId);
+const getGamesVersionKey = steamId => buildStorageKey('gamesVersion', steamId);
+const getWishlistCacheKey = steamId => buildStorageKey('wishlist', steamId);
+const getWishlistVersionKey = steamId =>
+  buildStorageKey('wishlistVersion', steamId);
+
 const loadUserProfile = async steamId => {
   const response = await userService.getUser(steamId);
   return response.data;
 };
 
-const loadGamesLibrary = async steamId => {
+const loadGamesLibrary = async (steamId, requestConfig = {}) => {
   try {
-    const response = await steamService.getUserGames(steamId);
+    const response = await steamService.getUserGames(steamId, requestConfig);
     const games = extractGamesFromResponse(response);
     debugLog(
       '[LOADDATA] Jeux récupérés:',
@@ -156,8 +166,15 @@ export const useAppContext = () => useContext(AppContext);
 export const AppProvider = ({children, navigation = null}) => {
   // Hooks personnalisés
   const {syncRecentActiveGames} = useGameSync();
-  const skipNextGamesRefreshRef = useRef(false);
   const {updateVerificationDate, isOlderThanOneDay} = useLastVerificationDate();
+
+  // Refs pour la gestion des fetchs/versions
+  const gamesFetchInFlightRef = useRef(false);
+  const gamesLastRequestIdRef = useRef(null);
+  const gamesFetchAbortControllerRef = useRef(null);
+  const statusDebounceTimeoutRef = useRef(null);
+  const gamesHydratedFromCacheRef = useRef(false);
+  const skipNextGamesRefreshRef = useRef(false);
 
   // États principaux
   const [games, setGames] = useState([]);
@@ -169,8 +186,8 @@ export const AppProvider = ({children, navigation = null}) => {
   const [lastRefreshTime, setLastRefreshTime] = useState(Date.now());
 
   // États pour le versioning (invalidation cache)
-  const [gamesVersion, setGamesVersion] = useAsyncStorage('gamesVersion', null);
-  const [wishlistVersion, setWishlistVersion] = useAsyncStorage('wishlistVersion', null);
+  const [gamesVersion, setGamesVersion] = useState(null);
+  const [wishlistVersion, setWishlistVersion] = useState(null);
 
   // État de l'application
   const appState = useRef(AppState.currentState);
@@ -199,8 +216,12 @@ export const AppProvider = ({children, navigation = null}) => {
 
     return () => {
       subscription.remove();
+      if (statusDebounceTimeoutRef.current) {
+        clearTimeout(statusDebounceTimeoutRef.current);
+        statusDebounceTimeoutRef.current = null;
+      }
     };
-  }, []);
+  }, [loadData]);
 
   // Surveiller les changements de steamId pour recharger les données après reconnexion
   useEffect(() => {
@@ -224,7 +245,7 @@ export const AppProvider = ({children, navigation = null}) => {
     } else {
       debugLog('🔄 [useEffect[steamId]] ⏭️ Skip (pas de steamId)');
     }
-  }, [steamId]);
+  }, [steamId, games.length, loading, refreshing, loadData]);
 
   // La persistance des options est maintenant gérée automatiquement par useAsyncStorage
 
@@ -301,93 +322,315 @@ export const AppProvider = ({children, navigation = null}) => {
     setRefreshing(false);
   };
 
-  // Fonction pour charger les données
-  const loadData = async (forceReload = false, origin = 'unknown') => {
-    debugLog('\n[LOADDATA] Début loadData...', `origine=${origin}`);
-    debugLog('[LOADDATA] forceReload:', forceReload);
-    debugLog('[LOADDATA] steamId actuel (state):', steamId || '(vide)');
-    debugLog('[LOADDATA] games.length:', games.length);
-
-    const savedSteamId = await AsyncStorage.getItem('steamId');
-    debugLog(
-      '[LOADDATA] savedSteamId (AsyncStorage):',
-      savedSteamId || '(vide)',
-    );
-
-    if (!savedSteamId) {
-      finalizeLoadingState();
-      if (navigation) {
-        navigation.navigate('Login');
+  const persistGamesCache = useCallback(
+    async (nextGames, targetSteamId = steamId) => {
+      const cacheKey = getGamesCacheKey(targetSteamId);
+      if (!cacheKey) {
+        return;
       }
-      return;
-    }
+      await setJSONItem(cacheKey, nextGames);
+    },
+    [steamId],
+  );
 
-    const isReconnection = steamId === '' && savedSteamId !== '';
-    if (steamId !== savedSteamId) {
-      debugLog('[LOADDATA] steamId différent → setSteamId()');
-      setSteamId(savedSteamId);
-    }
+  const persistGamesVersion = useCallback(
+    async (newVersion, targetSteamId = steamId, meta = {}) => {
+      if (!newVersion) {
+        return;
+      }
 
-    const mustReload = shouldReloadData(
-      forceReload,
-      isReconnection,
-      games.length,
-    );
-    debugLog('[LOADDATA] shouldReload:', mustReload);
+      const versionKey = getGamesVersionKey(targetSteamId);
+      if (!versionKey) {
+        return;
+      }
 
-    if (!mustReload) {
-      return;
-    }
+      const serverTs = Date.parse(newVersion);
+      const localTs = gamesVersion ? Date.parse(gamesVersion) : null;
 
-    beginLoadingState(forceReload);
+      const shouldUpdate =
+        !gamesVersion ||
+        Number.isNaN(serverTs) ||
+        Number.isNaN(localTs) ||
+        serverTs >= localTs;
 
-    try {
-      const userData = await loadUserProfile(savedSteamId);
-      setUser(userData);
-      debugLog(
-        '[LOADDATA] Utilisateur récupéré:',
-        userData?.username || '(inconnu)',
-      );
-
-      const normalizedGames = await loadGamesLibrary(savedSteamId);
-      setGames(normalizedGames);
-      syncRecentActiveGames(normalizedGames, savedSteamId);
-      debugLog(
-        '[LOADDATA] setGames ->',
-        Array.isArray(normalizedGames) ? normalizedGames.length : 0,
-        'jeux',
-      );
-
-      // ✨ Fetch et sauvegarder la version games
-      try {
-        debugLog('[LOADDATA] fetchStatus (origine=loadData)', {
-          forceReload,
-          origin,
+      if (!shouldUpdate) {
+        debugLog('[VERSION] Version locale conservée', {
+          raison: meta.reason || 'persistGamesVersion',
+          locale: gamesVersion,
+          serveur: newVersion,
         });
-        const statusResponse = await steamService.fetchStatus(savedSteamId);
-        const newGamesVersion = statusResponse?.data?.gamesVersion;
-
-        if (newGamesVersion) {
-          debugLog('[VERSION] Sauvegarde version:', newGamesVersion);
-          setGamesVersion(newGamesVersion);
-        }
-      } catch (versionError) {
-        debugError('[VERSION] Erreur fetch version:', versionError);
-        // Non bloquant, on continue
+        return;
       }
 
-      updateVerificationDate();
-      setLastRefreshTime(Date.now());
+      setGamesVersion(newVersion);
+      await AsyncStorage.setItem(versionKey, newVersion);
+    },
+    [gamesVersion, steamId],
+  );
+
+  const handleLogout = useCallback(async () => {
+    try {
+      debugLog('\n🚪 [LOGOUT] Début de la déconnexion...');
+      debugLog('🚪 [LOGOUT] steamId avant reset:', steamId || '(vide)');
+      debugLog('🚪 [LOGOUT] games count avant reset:', games.length);
+
+      if (statusDebounceTimeoutRef.current) {
+        clearTimeout(statusDebounceTimeoutRef.current);
+        statusDebounceTimeoutRef.current = null;
+      }
+
+      if (gamesFetchAbortControllerRef.current) {
+        try {
+          gamesFetchAbortControllerRef.current.abort();
+          debugLog('🚪 [LOGOUT] Abort du fetch en cours');
+        } catch (abortError) {
+          debugError('🚪 [LOGOUT] Erreur lors de l\'abort:', abortError);
+        }
+        gamesFetchAbortControllerRef.current = null;
+      }
+
+      gamesFetchInFlightRef.current = false;
+      gamesLastRequestIdRef.current = null;
+      gamesHydratedFromCacheRef.current = false;
+      skipNextGamesRefreshRef.current = false;
+
+      const storageKeys = [
+        'steamId',
+        'lastVerificationDate',
+        'notificationsEnabled',
+        'autoFollowEnabled',
+        'autoFollowWishlistEnabled',
+        'sortOption',
+        'gamesVersion',
+        'wishlistVersion',
+      ];
+
+      const currentSteamId =
+        steamId || (await AsyncStorage.getItem('steamId')) || null;
+
+      if (currentSteamId) {
+        storageKeys.push(
+          getGamesCacheKey(currentSteamId),
+          getGamesVersionKey(currentSteamId),
+          getWishlistCacheKey(currentSteamId),
+          getWishlistVersionKey(currentSteamId),
+        );
+      }
+
+      await AsyncStorage.multiRemove(storageKeys.filter(Boolean));
+      debugLog('🚪 [LOGOUT] ✅ AsyncStorage nettoyé', storageKeys);
+
+      setSteamId('');
+      setUser(null);
+      setGames([]);
+      setFilteredGames([]);
+      setGamesVersion(null);
+      setWishlistVersion(null);
+      setLastRefreshTime(0);
+      setSearchQuery('');
+      setSortOption('default');
+
+      if (navigation) {
+        navigation.replace('Login');
+      } else {
+        showAlert(
+          'Déconnexion réussie',
+          "Vous avez été déconnecté. Veuillez redémarrer l'application.",
+        );
+      }
+
+      debugLog('🚪 [LOGOUT] ✅ Déconnexion terminée\n');
     } catch (error) {
-      handleDataLoadError({
-        error,
-        onRetry: () => loadData(true, 'loadDataRetry'),
-        onLogout: handleLogout,
-      });
-    } finally {
-      finalizeLoadingState();
+      debugError('🚪 [LOGOUT] ❌ Erreur lors de la déconnexion:', error);
+      showAlert(
+        'Erreur de déconnexion',
+        'Une erreur est survenue lors de la déconnexion. Veuillez réessayer.',
+      );
     }
-  };
+  }, [
+    games.length,
+    navigation,
+    setSortOption,
+    steamId,
+  ]);
+
+  // Fonction pour charger les données
+  const loadData = useCallback(
+    async (forceReload = false, origin = 'unknown', options = {}) => {
+      const {expectedGamesVersion} = options;
+
+      debugLog('\n[LOADDATA] Début loadData...', `origine=${origin}`);
+      debugLog('[LOADDATA] forceReload:', forceReload);
+      debugLog('[LOADDATA] steamId actuel (state):', steamId || '(vide)');
+      debugLog('[LOADDATA] games.length:', games.length);
+
+      const savedSteamId = await AsyncStorage.getItem('steamId');
+      debugLog(
+        '[LOADDATA] savedSteamId (AsyncStorage):',
+        savedSteamId || '(vide)',
+      );
+
+      if (!savedSteamId) {
+        finalizeLoadingState();
+        if (navigation) {
+          navigation.navigate('Login');
+        }
+        return;
+      }
+
+      const gamesCacheKey = getGamesCacheKey(savedSteamId);
+      const gamesVersionKey = getGamesVersionKey(savedSteamId);
+
+      if (!gamesHydratedFromCacheRef.current) {
+        const [cachedGames, cachedVersion] = await Promise.all([
+          getJSONItem(gamesCacheKey, null),
+          AsyncStorage.getItem(gamesVersionKey),
+        ]);
+
+        if (Array.isArray(cachedGames) && cachedGames.length > 0) {
+          debugLog('[CACHE] cache_hit games', {
+            count: cachedGames.length,
+          });
+          gamesHydratedFromCacheRef.current = true;
+          setGames(cachedGames);
+          if (cachedVersion) {
+            setGamesVersion(cachedVersion);
+          }
+        } else {
+          debugLog('[CACHE] cache_miss games');
+        }
+      }
+
+      const isReconnection = steamId === '' && savedSteamId !== '';
+      if (steamId !== savedSteamId) {
+        debugLog('[LOADDATA] steamId différent → setSteamId()');
+        setSteamId(savedSteamId);
+      }
+
+      const mustReload = shouldReloadData(
+        forceReload,
+        isReconnection,
+        games.length,
+      );
+      debugLog('[LOADDATA] shouldReload:', mustReload);
+
+      if (!mustReload && !forceReload) {
+        debugLog('[LOADDATA] Skip fetch (pas nécessaire)');
+        return;
+      }
+
+      if (gamesFetchInFlightRef.current) {
+        debugLog('[LOADDATA] refresh_skipped_inflight');
+        return;
+      }
+
+      beginLoadingState(forceReload);
+
+      const requestId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      gamesFetchInFlightRef.current = true;
+      gamesLastRequestIdRef.current = requestId;
+
+      const abortController = new AbortController();
+      gamesFetchAbortControllerRef.current = abortController;
+      const requestConfig = {signal: abortController.signal};
+
+      try {
+        const userData = await loadUserProfile(savedSteamId);
+        if (gamesLastRequestIdRef.current !== requestId) {
+          debugLog('[LOADDATA] Résultat userData ignoré (requête obsolète)');
+          return;
+        }
+        setUser(userData);
+        debugLog(
+          '[LOADDATA] Utilisateur récupéré:',
+          userData?.username || '(inconnu)',
+        );
+
+        const normalizedGames = await loadGamesLibrary(
+          savedSteamId,
+          requestConfig,
+        );
+        if (gamesLastRequestIdRef.current !== requestId) {
+          debugLog('[LOADDATA] Résultat games ignoré (requête obsolète)');
+          return;
+        }
+
+        setGames(normalizedGames);
+        gamesHydratedFromCacheRef.current = true;
+        syncRecentActiveGames(normalizedGames, savedSteamId);
+        debugLog(
+          '[LOADDATA] setGames ->',
+          Array.isArray(normalizedGames) ? normalizedGames.length : 0,
+          'jeux',
+        );
+
+        let serverGamesVersion = expectedGamesVersion || null;
+        if (!serverGamesVersion) {
+          try {
+            debugLog('[LOADDATA] status_check_start (origine=loadData)', {
+              origin,
+              forceReload,
+            });
+            const statusResponse = await steamService.fetchStatus(
+              savedSteamId,
+              requestConfig,
+            );
+            serverGamesVersion = statusResponse?.data?.gamesVersion || null;
+            debugLog('[LOADDATA] status_check_ok (origine=loadData)', {
+              origin,
+              serverGamesVersion,
+            });
+          } catch (statusError) {
+            if (statusError?.name === 'CanceledError') {
+              debugLog('[LOADDATA] status_check_cancelled');
+            } else {
+              debugError('[LOADDATA] status_check_fail', statusError);
+            }
+          }
+        }
+
+        if (serverGamesVersion) {
+          await persistGamesVersion(serverGamesVersion, savedSteamId, {
+            reason: `loadData:${origin}`,
+          });
+        }
+
+        await persistGamesCache(normalizedGames, savedSteamId);
+
+        updateVerificationDate();
+        setLastRefreshTime(Date.now());
+      } catch (error) {
+        if (error?.name === 'CanceledError' || error?.name === 'AbortError') {
+          debugLog('[LOADDATA] Requête annulée', {origin});
+        } else {
+          handleDataLoadError({
+            error,
+            onRetry: () => loadData(true, 'loadDataRetry'),
+            onLogout: handleLogout,
+          });
+        }
+      } finally {
+        if (gamesLastRequestIdRef.current === requestId) {
+          finalizeLoadingState();
+          gamesLastRequestIdRef.current = null;
+        }
+        gamesFetchInFlightRef.current = false;
+        if (gamesFetchAbortControllerRef.current === abortController) {
+          gamesFetchAbortControllerRef.current = null;
+        }
+      }
+    },
+    [
+      games.length,
+      navigation,
+      persistGamesCache,
+      persistGamesVersion,
+      steamId,
+      syncRecentActiveGames,
+      updateVerificationDate,
+      handleLogout,
+    ],
+  );
 
 // Vérifier la dernière date de vérification
   const checkLastVerificationDate = async () => {
@@ -414,64 +657,9 @@ export const AppProvider = ({children, navigation = null}) => {
   };
 
   // Fonction pour rafraîchir les données
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     loadData(true, 'handleRefresh');
-  };
-
-  // Fonction pour se déconnecter
-  const handleLogout = async () => {
-    try {
-      debugLog('\n🚪 [LOGOUT] Début de la déconnexion...');
-      debugLog('🚪 [LOGOUT] steamId avant reset:', steamId);
-      debugLog('🚪 [LOGOUT] games count avant reset:', games.length);
-      
-      // Supprimer les données persistées liées au compte
-      await AsyncStorage.multiRemove([
-        'steamId',
-        'lastVerificationDate',
-        'notificationsEnabled',
-        'autoFollowEnabled',
-        'autoFollowWishlistEnabled',
-        'sortOption',
-        'gamesVersion',
-        'wishlistVersion',
-      ]);
-      debugLog(
-        '🚪 [LOGOUT] ✅ AsyncStorage vidé (steamId, versions, settings)',
-      );
-
-      // Réinitialiser TOUS les états du contexte
-      setSteamId('');
-      setUser(null);
-      setGames([]);
-      setFilteredGames([]);
-      setLastRefreshTime(0);
-      setSortOption('default');
-      setGamesVersion(null);
-      setWishlistVersion(null);
-      debugLog('🚪 [LOGOUT] ✅ États réinitialisés (steamId="", user=null, games=[], versions=null)');
-
-      // Navigation si disponible
-      if (navigation) {
-        debugLog('🚪 [LOGOUT] ✅ Navigation vers LoginScreen');
-        navigation.replace('Login');
-      } else {
-        debugLog('🚪 [LOGOUT] ⚠️ Navigation non disponible');
-        showAlert(
-          'Déconnexion réussie',
-          "Vous avez été déconnecté avec succès. Veuillez redémarrer l'application.",
-        );
-      }
-      
-      debugLog('🚪 [LOGOUT] ✅ Déconnexion terminée\n');
-    } catch (error) {
-      debugError('🚪 [LOGOUT] ❌ Erreur lors de la déconnexion:', error);
-      showAlert(
-        'Erreur de déconnexion',
-        'Une erreur est survenue lors de la déconnexion. Veuillez réessayer.',
-      );
-    }
-  };
+  }, [loadData]);
 
   // Fonction pour gerer le suivi/desabonnement d'un jeu
   const handleFollowGame = async (gameMeta = {}) => {
@@ -518,6 +706,7 @@ export const AppProvider = ({children, navigation = null}) => {
 
       const previousGames = games;
       let localToggleApplied = false;
+      let optimisticGames = games;
 
       if (game) {
         const updatedGames = games.map(g => {
@@ -530,6 +719,7 @@ export const AppProvider = ({children, navigation = null}) => {
 
         if (localToggleApplied) {
           setGames(updatedGames);
+          optimisticGames = updatedGames;
         }
       }
 
@@ -543,7 +733,9 @@ export const AppProvider = ({children, navigation = null}) => {
           );
           const updatedUser = followResponse?.data;
           if (updatedUser?.gamesVersion) {
-            setGamesVersion(updatedUser.gamesVersion);
+            await persistGamesVersion(updatedUser.gamesVersion, steamId, {
+              reason: 'followGame',
+            });
           }
           debugLog('Jeu suivi avec succès:', gameName);
 
@@ -570,6 +762,9 @@ export const AppProvider = ({children, navigation = null}) => {
             });
           }
           skipNextGamesRefreshRef.current = true;
+          if (localToggleApplied) {
+            await persistGamesCache(optimisticGames, steamId);
+          }
         } else {
           const unfollowResponse = await userService.unfollowGame(
             steamId,
@@ -577,7 +772,9 @@ export const AppProvider = ({children, navigation = null}) => {
           );
           const updatedUser = unfollowResponse?.data;
           if (updatedUser?.gamesVersion) {
-            setGamesVersion(updatedUser.gamesVersion);
+            await persistGamesVersion(updatedUser.gamesVersion, steamId, {
+              reason: 'unfollowGame',
+            });
           }
           debugLog('Jeu retiré des suivis:', gameName);
 
@@ -600,6 +797,9 @@ export const AppProvider = ({children, navigation = null}) => {
             });
           }
           skipNextGamesRefreshRef.current = true;
+          if (localToggleApplied) {
+            await persistGamesCache(optimisticGames, steamId);
+          }
         }
 
         filterAndSortGames();
@@ -611,6 +811,7 @@ export const AppProvider = ({children, navigation = null}) => {
 
         if (localToggleApplied) {
           setGames(previousGames);
+          await persistGamesCache(previousGames, steamId);
         }
 
         showAlert(
@@ -670,6 +871,7 @@ export const AppProvider = ({children, navigation = null}) => {
 
           // Mettre à jour les jeux
           setGames(newGames);
+          await persistGamesCache(newGames, steamId);
           syncRecentActiveGames(newGames, steamId);
         }
       }
@@ -688,38 +890,68 @@ export const AppProvider = ({children, navigation = null}) => {
    * ✨ Refresh conditionnel basé sur la version games
    * Appelé au focus pour vérifier si les données ont changé
    */
-  const maybeRefreshGames = useCallback(async () => {
-    if (!steamId) return;
-
-    if (skipNextGamesRefreshRef.current) {
-      debugLog('[VERSION] Skip maybeRefreshGames (flag skipNextGamesRefreshRef)');
-      skipNextGamesRefreshRef.current = false;
-      return;
-    }
-
-    try {
-      debugLog('[VERSION] fetchStatus (origine=maybeRefreshGames)');
-      const statusResponse = await steamService.fetchStatus(steamId);
-      const serverGamesVersion = statusResponse?.data?.gamesVersion;
-
-      if (!serverGamesVersion) {
-        debugLog('[VERSION] Pas de version serveur, skip refresh');
+  const maybeRefreshGames = useCallback(
+    async (origin = 'maybeRefreshGames') => {
+      if (!steamId) {
         return;
       }
 
-      if (serverGamesVersion !== gamesVersion) {
-        debugLog('[VERSION] Version différente détectée, refresh');
-        debugLog('  Serveur:', serverGamesVersion);
-        debugLog('  Locale:', gamesVersion);
-        debugLog('[VERSION] → appel loadData(forceReload=true, origine=maybeRefreshGames)');
-        await loadData(true, 'maybeRefreshGames');
-      } else {
-        debugLog('[VERSION] Versions identiques, skip');
+      if (skipNextGamesRefreshRef.current) {
+        debugLog('[VERSION] refresh_skipped (skip flag)', {origin});
+        skipNextGamesRefreshRef.current = false;
+        return;
       }
-    } catch (error) {
-      debugError('[VERSION] Erreur check version:', error);
-    }
-  }, [steamId, gamesVersion, loadData]);
+
+      if (loading || refreshing || gamesFetchInFlightRef.current) {
+        debugLog('[VERSION] refresh_skipped_inflight', {
+          origin,
+          loading,
+          refreshing,
+        });
+        return;
+      }
+
+      const runStatusCheck = async () => {
+        try {
+          debugLog('[VERSION] status_check_start', {origin});
+          const statusResponse = await steamService.fetchStatus(steamId);
+          const serverGamesVersion = statusResponse?.data?.gamesVersion;
+
+          if (!serverGamesVersion) {
+            debugLog('[VERSION] status_missing', {origin});
+            return;
+          }
+
+          if (serverGamesVersion !== gamesVersion) {
+            debugLog('[VERSION] status_mismatch', {
+              origin,
+              serveur: serverGamesVersion,
+              local: gamesVersion,
+            });
+            await loadData(true, origin, {
+              expectedGamesVersion: serverGamesVersion,
+            });
+          } else {
+            debugLog('[VERSION] status_match', {origin, version: serverGamesVersion});
+          }
+        } catch (error) {
+          debugError('[VERSION] status_check_fail', error);
+        } finally {
+          statusDebounceTimeoutRef.current = null;
+        }
+      };
+
+      if (statusDebounceTimeoutRef.current) {
+        clearTimeout(statusDebounceTimeoutRef.current);
+      }
+
+      statusDebounceTimeoutRef.current = setTimeout(
+        runStatusCheck,
+        STATUS_DEBOUNCE_DELAY,
+      );
+    },
+    [gamesVersion, loadData, loading, refreshing, steamId],
+  );
 
   // Valeur du contexte
   const contextValue = {

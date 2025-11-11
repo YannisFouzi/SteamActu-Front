@@ -118,3 +118,45 @@ export const useSteamId = () => {
     isLoaded,
   };
 };
+
+export const buildStorageKey = (prefix, steamId) => {
+  if (!steamId) {
+    return null;
+  }
+  return `app:${prefix}:${steamId}`;
+};
+
+export const getJSONItem = async (key, fallback = null) => {
+  if (!key) {
+    return fallback;
+  }
+
+  try {
+    const storedValue = await AsyncStorage.getItem(key);
+    if (!storedValue) {
+      return fallback;
+    }
+    return JSON.parse(storedValue);
+  } catch (error) {
+    debugError(`[AsyncStorage] Erreur parse JSON pour ${key}:`, error);
+    await AsyncStorage.removeItem(key);
+    return fallback;
+  }
+};
+
+export const setJSONItem = async (key, value) => {
+  if (!key) {
+    return;
+  }
+
+  try {
+    if (value === null || value === undefined) {
+      await AsyncStorage.removeItem(key);
+      return;
+    }
+
+    await AsyncStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    debugError(`[AsyncStorage] Erreur sauvegarde JSON pour ${key}:`, error);
+  }
+};

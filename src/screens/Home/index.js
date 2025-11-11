@@ -466,15 +466,25 @@ const HomeScreen = () => {
 
       // Check version quand on revient sur l'écran
       if (steamId) {
-        debugLog('[HOME] focus event -> maybeRefreshGames()');
-        maybeRefreshGames();
+        if (!gamesLoading) {
+          debugLog('[HOME] focus event -> maybeRefreshGames()');
+          maybeRefreshGames('homeFocus');
+        } else {
+          debugLog('[HOME] focus event -> maybeRefreshGames() skip (loading)');
+        }
 
         if (
           activeTab === TABS.FOLLOW_GAMES &&
           activeFollowTab === FOLLOW_GAME_TABS.WISHLIST
         ) {
-          debugLog('[HOME] focus event -> maybeRefreshWishlist()');
-          maybeRefreshWishlist();
+          if (!wishlistLoading && !wishlistRefreshing) {
+            debugLog('[HOME] focus event -> maybeRefreshWishlist()');
+            maybeRefreshWishlist('homeFocus');
+          } else {
+            debugLog(
+              '[HOME] focus event -> maybeRefreshWishlist() skip (loading)',
+            );
+          }
         }
       }
     };
@@ -491,6 +501,9 @@ const HomeScreen = () => {
       steamId,
       activeTab,
       activeFollowTab,
+      gamesLoading,
+      wishlistLoading,
+      wishlistRefreshing,
       maybeRefreshGames,
       maybeRefreshWishlist,
     ]);
@@ -509,9 +522,12 @@ const HomeScreen = () => {
       activeFollowTab === FOLLOW_GAME_TABS.MY_GAMES &&
       steamId
     ) {
-      debugLog('[HOME] tab switch -> maybeRefreshGames()');
-      debugLog('[HOME] tab switch -> maybeRefreshGames()');
-      maybeRefreshGames();
+      if (!gamesLoading) {
+        debugLog('[HOME] tab switch -> maybeRefreshGames()');
+        maybeRefreshGames('tabSwitch');
+      } else {
+        debugLog('[HOME] tab switch -> maybeRefreshGames() skip (loading)');
+      }
     }
 
     // Si on est sur l'onglet "Wishlist", check version
@@ -520,14 +536,22 @@ const HomeScreen = () => {
       activeFollowTab === FOLLOW_GAME_TABS.WISHLIST &&
       steamId
     ) {
-      debugLog('[HOME] tab switch -> maybeRefreshWishlist()');
-      debugLog('[HOME] tab switch -> maybeRefreshWishlist()');
-      maybeRefreshWishlist();
+      if (!wishlistLoading && !wishlistRefreshing) {
+        debugLog('[HOME] tab switch -> maybeRefreshWishlist()');
+        maybeRefreshWishlist('tabSwitch');
+      } else {
+        debugLog(
+          '[HOME] tab switch -> maybeRefreshWishlist() skip (loading)',
+        );
+      }
     }
   }, [
     activeTab,
     activeFollowTab,
+    gamesLoading,
     steamId,
+    wishlistLoading,
+    wishlistRefreshing,
     maybeRefreshGames,
     maybeRefreshWishlist,
   ]);

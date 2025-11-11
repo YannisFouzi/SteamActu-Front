@@ -110,15 +110,16 @@ const newsService = {
 };
 
 const steamService = {
-  getUserGames: steamId => api.get(`/steam/games/${steamId}`),
-  getUserWishlist: steamId => api.get(`/steam/wishlist/${steamId}`),
+  getUserGames: (steamId, config = {}) => api.get(`/steam/games/${steamId}`, config),
+  getUserWishlist: (steamId, config = {}) =>
+    api.get(`/steam/wishlist/${steamId}`, config),
   searchGames: (query, limit = 5) =>
     api.get("/steam/search", {params: {q: query, limit}}),
   /**
    * Endpoint léger pour récupérer les versions de données
    * Permet de savoir si les données ont changé sans télécharger tout
    */
-  fetchStatus: steamId => api.get(`/steam/status/${steamId}`),
+  fetchStatus: (steamId, config = {}) => api.get(`/steam/status/${steamId}`, config),
 };
 
 const steamAuthService = {

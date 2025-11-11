@@ -17,7 +17,7 @@ const isDevelopment = ENVIRONMENT === 'development';
 
 const API_BASE_URL = getEnvVar(
   'API_BASE_URL',
-  isDevelopment ? 'http://10.0.2.2:5000/api' : 'https://your-production-api.com/api',
+  isDevelopment ? 'http://192.168.50.42:5000/api' : 'https://your-production-api.com/api',
 );
 
 const STEAM_MEDIA_CDN = getEnvVar(
