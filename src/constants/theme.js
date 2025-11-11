@@ -198,6 +198,9 @@ export const SCREEN_CONFIGS = {
   Settings: {
     title: 'Paramètres',
   },
+  Contact: {
+    title: 'Contact',
+  },
   GameDetails: {
     getDynamicOptions: ({route}) => ({
       title: route?.params?.game?.name || 'Détails du jeu',

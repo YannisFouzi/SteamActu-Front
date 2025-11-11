@@ -8,6 +8,7 @@ import {
   SCREEN_CONFIGS,
 } from '../constants';
 import { useAppContext } from '../context/AppContext';
+import ContactScreen from '../screens/ContactScreen';
 import HomeScreen from '../screens/Home';
 import LoginScreen from '../screens/LoginScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -21,6 +22,7 @@ const linking = {
       Login: 'auth',
       Home: 'home',
       Settings: 'settings',
+      Contact: 'contact',
     },
   },
 };
@@ -51,6 +53,11 @@ const AppNavigator = () => {
           name="Settings"
           component={SettingsScreen}
           options={SCREEN_CONFIGS.Settings}
+        />
+        <Stack.Screen
+          name="Contact"
+          component={ContactScreen}
+          options={SCREEN_CONFIGS.Contact}
         />
       </Stack.Navigator>
     </NavigationContainer>

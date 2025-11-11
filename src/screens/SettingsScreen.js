@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import LogoutButton from '../components/LogoutButton';
 import SettingSection from '../components/SettingSection';
 import { COLORS, CONTAINER_STYLES, TEXT_STYLES } from '../constants';
@@ -150,6 +151,21 @@ const SettingsScreen = () => {
         </Text>
       </View>
 
+      <TouchableOpacity
+        style={styles.contactShortcut}
+        onPress={() => navigation.navigate('Contact')}
+        activeOpacity={0.85}>
+        <View style={styles.contactShortcutIcon}>
+          <Icon name="person-circle-outline" size={24} color={COLORS.WHITE} />
+        </View>
+
+        <View style={styles.contactShortcutContent}>
+          <Text style={styles.contactShortcutTitle}>Mes infos de contact</Text>
+        </View>
+
+        <Icon name="chevron-forward" size={18} color={COLORS.STEAM_TEXT_GRAY} />
+      </TouchableOpacity>
+
       <View style={styles.aboutSection}>
         <Text style={styles.sectionTitle}>À propos</Text>
         <Text style={styles.aboutText}>Steam Notifications v1.0.0</Text>
@@ -218,6 +234,36 @@ const styles = StyleSheet.create({
     color: COLORS.ERROR,
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+  contactShortcut: {
+    marginHorizontal: 16,
+    marginTop: 24,
+    marginBottom: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    backgroundColor: COLORS.STEAM_NAVY,
+    borderWidth: 1,
+    borderColor: COLORS.STEAM_BORDER,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  contactShortcutIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.STEAM_BLUE_TRANSPARENT,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  contactShortcutContent: {
+    flex: 1,
+  },
+  contactShortcutTitle: {
+    fontSize: 16,
+    color: COLORS.WHITE,
+    fontWeight: '700',
   },
 });
 
