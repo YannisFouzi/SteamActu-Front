@@ -579,7 +579,7 @@ export const AppProvider = ({children, navigation = null}) => {
       } else {
         showAlert(
           'Déconnexion réussie',
-          "Vous avez été déconnecté. Veuillez redémarrer l'application.",
+          "Vous avez été déconnecté.",
         );
       }
 
