@@ -3,7 +3,16 @@ import notifee, {
   AuthorizationStatus,
   EventType,
 } from '@notifee/react-native';
-import messaging from '@react-native-firebase/messaging';
+import { getApp } from '@react-native-firebase/app';
+import {
+  deleteToken,
+  getInitialNotification,
+  getMessaging,
+  getToken,
+  onMessage,
+  onNotificationOpenedApp,
+  onTokenRefresh,
+} from '@react-native-firebase/messaging';
 import { Linking, Platform } from 'react-native';
 import { debugError, debugLog, showAlert } from '../hooks/hooksLogger';
 import { userService } from './api';
@@ -16,6 +25,8 @@ const ACTION_FOLLOW_GAME = 'follow-game';
 
 let androidChannelInitialized = false;
 let iosCategoriesInitialized = false;
+const appInstance = getApp();
+const messagingInstance = getMessaging(appInstance);
 
 const backgroundEventHandlers = new Set();
 
@@ -107,7 +118,7 @@ export async function registerFCMToken(steamId) {
     }
 
     // Récupérer le token FCM
-    const token = await messaging().getToken();
+    const token = await getToken(messagingInstance);
     debugLog('[FCM] Token obtenu:', token.substring(0, 20) + '...');
 
     // Envoyer le token au backend via userService
@@ -134,9 +145,13 @@ export async function unregisterFCMToken(steamId) {
       return false;
     }
 
-    const token = await messaging().getToken();
+    const token = await getToken(messagingInstance);
 
-    await userService.unregisterFCMToken(steamId, token);
+    if (token) {
+      await userService.unregisterFCMToken(steamId, token);
+    }
+
+    await deleteToken(messagingInstance);
 
     debugLog('[FCM] Token supprimé du backend');
     return true;
@@ -316,7 +331,8 @@ export function setupNotificationHandlers(steamId, options = {}) {
   });
 
   // Gestion du rafraîchissement du token FCM
-  const unsubscribeTokenRefresh = messaging().onTokenRefresh(
+  const unsubscribeTokenRefresh = onTokenRefresh(
+    messagingInstance,
     async newToken => {
       debugLog('[FCM] Token rafraîchi:', newToken.substring(0, 20) + '...');
       if (steamId) {
@@ -456,24 +472,26 @@ export function setupNotificationHandlers(steamId, options = {}) {
   );
   backgroundEventHandlers.add(handleNotificationEvent);
 
-  const unsubscribeOnMessage = messaging().onMessage(
+  const unsubscribeOnMessage = onMessage(
+    messagingInstance,
     async remoteMessage => {
       debugLog('[FCM] Message reçu (foreground):', remoteMessage);
       await displayRemoteNotification(remoteMessage);
     },
   );
 
-  const unsubscribeOnNotificationOpenedApp =
-    messaging().onNotificationOpenedApp(async remoteMessage => {
+  const unsubscribeOnNotificationOpenedApp = onNotificationOpenedApp(
+    messagingInstance,
+    async remoteMessage => {
       debugLog('[FCM] Notification ouverte (background via FCM):', remoteMessage);
       const payload = extractNotificationPayload(remoteMessage);
       if (payload?.data?.url) {
         await openUrlSafely(payload.data.url);
       }
-    });
+    },
+  );
 
-  messaging()
-    .getInitialNotification()
+  getInitialNotification(messagingInstance)
     .then(async remoteMessage => {
       if (remoteMessage) {
         debugLog('[FCM] App ouverte depuis notification (initiale):', remoteMessage);
