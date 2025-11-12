@@ -10,10 +10,12 @@ import {
   View,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import FollowModeSetting from '../components/FollowModeSetting';
 import LogoutButton from '../components/LogoutButton';
 import SettingSection from '../components/SettingSection';
 import { COLORS, CONTAINER_STYLES, TEXT_STYLES } from '../constants';
 import { useAppContext } from '../context/AppContext';
+import { debugError } from '../hooks/hooksLogger';
 import { useUserSettings } from '../hooks/useUserSettings';
 import { userService } from '../services/api';
 
@@ -40,12 +42,12 @@ const SettingsScreen = () => {
   const {
     loading,
     saving,
-    notificationsEnabled,
-    autoFollowEnabled,
-    autoFollowWishlistEnabled,
-    handleToggleNotifications,
-    handleToggleAutoFollow,
-    handleToggleAutoFollowWishlist,
+    newsNotifications,
+    libraryFollowMode,
+    wishlistFollowMode,
+    handleToggleNews,
+    handleLibraryModeChange,
+    handleWishlistModeChange,
   } = useUserSettings();
 
   // Gestionnaire pour la déconnexion
@@ -111,6 +113,47 @@ const SettingsScreen = () => {
     );
   }, [handleLogout, navigation, steamId]);
 
+  const followModeDisabled = saving || loggingOut;
+
+  const libraryOptions = [
+    {
+      value: 'off',
+      title: 'Désactivé',
+      subtitle: 'Les jeux achetés ne seront pas ajoutés aux suivis.',
+    },
+    {
+      value: 'auto',
+      title: 'Ajout automatique',
+      subtitle: 'Chaque jeu acheté est ajouté directement à vos jeux suivis.',
+    },
+    {
+      value: 'prompt',
+      title: 'Demander confirmation',
+      subtitle:
+        'Recevez une notification pour confirmer le suivi de chaque jeu acheté.',
+    },
+  ];
+
+  const wishlistOptions = [
+    {
+      value: 'off',
+      title: 'Désactivé',
+      subtitle: 'Les jeux wishlistés ne seront pas ajoutés aux suivis.',
+    },
+    {
+      value: 'auto',
+      title: 'Ajout automatique',
+      subtitle:
+        'Chaque jeu ajouté à votre wishlist est suivi automatiquement.',
+    },
+    {
+      value: 'prompt',
+      title: 'Demander confirmation',
+      subtitle:
+        'Une notification vous demande de confirmer le suivi de chaque jeu wishlisté.',
+    },
+  ];
+
   if (loading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
@@ -123,27 +166,29 @@ const SettingsScreen = () => {
   return (
     <ScrollView style={styles.container}>
       <SettingSection
-        label="Activer les notifications"
-        description="Recevez des notifications lorsque de nouvelles actualités sont publiées pour les jeux que vous suivez."
-        value={notificationsEnabled}
-        onValueChange={handleToggleNotifications}
+        label="Notifications d’actualités"
+        description="Activez ce réglage pour recevoir une notification lorsqu’une nouvelle news est publiée sur vos jeux suivis."
+        value={newsNotifications}
+        onValueChange={handleToggleNews}
         disabled={saving || loggingOut}
       />
 
-      <SettingSection
-        label="Suivre automatiquement les nouveaux jeux"
-        description="Les nouveaux jeux que vous achetez seront automatiquement ajoutés à votre liste de jeux suivis pour les notifications."
-        value={autoFollowEnabled}
-        onValueChange={handleToggleAutoFollow}
-        disabled={saving || loggingOut}
+      <FollowModeSetting
+        label="Jeux achetés"
+        description="Choisissez comment gérer le suivi des jeux détectés dans votre bibliothèque."
+        value={libraryFollowMode}
+        options={libraryOptions}
+        onChange={handleLibraryModeChange}
+        disabled={followModeDisabled}
       />
 
-      <SettingSection
-        label="Suivre automatiquement les jeux de la wishlist"
-        description="Les nouveaux jeux que vous ajoutez à votre wishlist Steam seront automatiquement ajoutés à votre liste de jeux suivis."
-        value={autoFollowWishlistEnabled}
-        onValueChange={handleToggleAutoFollowWishlist}
-        disabled={saving || loggingOut}
+      <FollowModeSetting
+        label="Jeux wishlistés"
+        description="Décidez si les jeux ajoutés à votre wishlist doivent être suivis automatiquement."
+        value={wishlistFollowMode}
+        options={wishlistOptions}
+        onChange={handleWishlistModeChange}
+        disabled={followModeDisabled}
       />
 
       <View style={styles.section}>

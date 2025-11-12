@@ -1,13 +1,52 @@
+import notifee from '@notifee/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, Platform } from 'react-native';
-import notifee from '@notifee/react-native';
 import { userService } from '../services/api';
 import {
   registerFCMToken,
   unregisterFCMToken,
 } from '../services/notificationService';
 import { debugError, showAlert } from './hooksLogger';
+
+const FOLLOW_MODES = ['off', 'auto', 'prompt'];
+
+const normalizeFollowMode = (value, legacyBoolean = undefined) => {
+  if (typeof value === 'string') {
+    const normalized = value.toLowerCase();
+    if (FOLLOW_MODES.includes(normalized)) {
+      return normalized;
+    }
+  }
+
+  if (typeof legacyBoolean === 'string') {
+    try {
+      const parsed = JSON.parse(legacyBoolean);
+      if (typeof parsed === 'boolean') {
+        return parsed ? 'auto' : 'off';
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }
+
+  if (typeof legacyBoolean === 'boolean') {
+    return legacyBoolean ? 'auto' : 'off';
+  }
+
+  return 'off';
+};
+
+const shouldEnablePrompts = (libraryFollowMode, wishlistFollowMode) =>
+  libraryFollowMode === 'prompt' || wishlistFollowMode === 'prompt';
+
+const requiresNotifications = (
+  newsNotifications,
+  libraryFollowMode,
+  wishlistFollowMode,
+) =>
+  Boolean(newsNotifications) ||
+  shouldEnablePrompts(libraryFollowMode, wishlistFollowMode);
 
 /**
  * Hook personnalisé pour la gestion des paramètres utilisateur
@@ -17,9 +56,9 @@ export const useUserSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [steamId, setSteamId] = useState('');
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [autoFollowEnabled, setAutoFollowEnabled] = useState(false);
-  const [autoFollowWishlistEnabled, setAutoFollowWishlistEnabled] = useState(false);
+  const [newsNotifications, setNewsNotifications] = useState(false);
+  const [libraryFollowMode, setLibraryFollowMode] = useState('off');
+  const [wishlistFollowMode, setWishlistFollowMode] = useState('off');
   const isMountedRef = useRef(true);
 
   const safeSetState = useCallback((setter, value) => {
@@ -34,7 +73,114 @@ export const useUserSettings = () => {
     };
   }, []);
 
-  // Charger les paramètres de l'utilisateur depuis AsyncStorage
+  const ensureNotificationsPermission = useCallback(async () => {
+    try {
+      const result = await registerFCMToken(steamId);
+      if (result?.success) {
+        return true;
+      }
+
+      if (result?.status === 'blocked') {
+        showAlert(
+          'Notifications bloquées',
+          "Android bloque les notifications pour Steam Actu. Activez-les dans les paramètres.",
+          [
+            { text: 'Annuler', style: 'cancel' },
+            {
+              text: 'Ouvrir les paramètres',
+              onPress: async () => {
+                try {
+                  if (Platform.OS === 'android') {
+                    await notifee.openNotificationSettings();
+                  } else {
+                    await Linking.openSettings();
+                  }
+                } catch (settingsError) {
+                  debugError(
+                    '[FCM] Impossible d’ouvrir les paramètres:',
+                    settingsError,
+                  );
+                }
+              },
+            },
+          ],
+        );
+      } else {
+        showAlert(
+          'Notifications désactivées',
+          "Impossible d'activer les notifications pour le moment. Veuillez réessayer plus tard.",
+        );
+      }
+
+      return false;
+    } catch (error) {
+      debugError('[FCM] Erreur lors de l’activation des notifications:', error);
+      showAlert(
+        'Erreur',
+        "Impossible d'activer les notifications pour le moment. Veuillez réessayer plus tard.",
+      );
+      return false;
+    }
+  }, [steamId]);
+
+  const persistSettings = useCallback(
+    async (newNews, newLibraryMode, newWishlistMode) => {
+      if (!steamId) {
+        debugError('Impossible de sauvegarder les paramètres: steamId manquant');
+        showAlert('Erreur', 'Utilisateur non connecté.');
+        return false;
+      }
+
+      try {
+        safeSetState(setSaving, true);
+
+        const followPromptNotifications = shouldEnablePrompts(
+          newLibraryMode,
+          newWishlistMode,
+        );
+
+        await AsyncStorage.multiSet([
+          ['newsNotifications', JSON.stringify(newNews)],
+          ['libraryFollowMode', newLibraryMode],
+          ['wishlistFollowMode', newWishlistMode],
+        ]);
+
+        await AsyncStorage.multiRemove([
+          'notificationsEnabled',
+          'autoFollowEnabled',
+          'autoFollowWishlistEnabled',
+        ]);
+
+        try {
+          await userService.updateNotificationSettings(steamId, {
+            newsNotifications: newNews,
+            followPromptNotifications,
+            libraryFollowMode: newLibraryMode,
+            wishlistFollowMode: newWishlistMode,
+          });
+        } catch (apiError) {
+          debugError(
+            'Erreur lors de la synchronisation avec le backend:',
+            apiError,
+          );
+        }
+
+        return true;
+      } catch (error) {
+        debugError('Erreur lors de la sauvegarde des paramètres:', error);
+        showAlert(
+          'Erreur',
+          'Impossible de sauvegarder vos paramètres. Veuillez réessayer.',
+        );
+        return false;
+      } finally {
+        safeSetState(setSaving, false);
+      }
+    },
+    [safeSetState, steamId],
+  );
+
+  // Charger les paramètres de l'utilisateur depuis AsyncStorage / backend
   const loadUserSettings = useCallback(async () => {
     safeSetState(setLoading, true);
 
@@ -61,48 +207,69 @@ export const useUserSettings = () => {
 
       if (serverSettings) {
         const {
-          enabled = false,
-          autoFollowNewGames = false,
-          autoFollowWishlistGames = false,
+          newsNotifications: serverNews,
+          followPromptNotifications,
+          enabled, // legacy
+          libraryFollowMode: serverLibraryMode,
+          wishlistFollowMode: serverWishlistMode,
+          autoFollowNewGames,
+          autoFollowWishlistGames,
         } = serverSettings;
 
-        safeSetState(setNotificationsEnabled, Boolean(enabled));
-        safeSetState(setAutoFollowEnabled, Boolean(autoFollowNewGames));
-        safeSetState(
-          setAutoFollowWishlistEnabled,
-          Boolean(autoFollowWishlistGames),
+        const resolvedLibraryMode = normalizeFollowMode(
+          serverLibraryMode,
+          autoFollowNewGames,
+        );
+        const resolvedWishlistMode = normalizeFollowMode(
+          serverWishlistMode,
+          autoFollowWishlistGames,
         );
 
+        const resolvedNews =
+          typeof serverNews === 'boolean'
+            ? serverNews
+            : typeof enabled === 'boolean'
+            ? enabled
+            : false;
+
+        // Si legacy followPrompt true mais modes différents, on l’ignore
+        const shouldEnable =
+          followPromptNotifications ||
+          shouldEnablePrompts(resolvedLibraryMode, resolvedWishlistMode);
+
+        safeSetState(setNewsNotifications, resolvedNews);
+        safeSetState(setLibraryFollowMode, resolvedLibraryMode);
+        safeSetState(setWishlistFollowMode, resolvedWishlistMode);
+
         await AsyncStorage.multiSet([
-          ['notificationsEnabled', JSON.stringify(Boolean(enabled))],
-          ['autoFollowEnabled', JSON.stringify(Boolean(autoFollowNewGames))],
-          [
-            'autoFollowWishlistEnabled',
-            JSON.stringify(Boolean(autoFollowWishlistGames)),
-          ],
+          ['newsNotifications', JSON.stringify(resolvedNews)],
+          ['libraryFollowMode', resolvedLibraryMode],
+          ['wishlistFollowMode', resolvedWishlistMode],
         ]);
+
+        if (!shouldEnable) {
+          await unregisterFCMToken(savedSteamId);
+        }
       } else {
-        const savedNotifications = await AsyncStorage.getItem(
-          'notificationsEnabled',
-        );
-        const savedAutoFollow = await AsyncStorage.getItem('autoFollowEnabled');
-        const savedAutoFollowWishlist = await AsyncStorage.getItem(
+        const storedNews = await AsyncStorage.getItem('newsNotifications');
+        const storedLibraryMode = await AsyncStorage.getItem('libraryFollowMode');
+        const legacyLibraryMode = await AsyncStorage.getItem('autoFollowEnabled');
+        const storedWishlistMode = await AsyncStorage.getItem('wishlistFollowMode');
+        const legacyWishlistMode = await AsyncStorage.getItem(
           'autoFollowWishlistEnabled',
         );
 
         safeSetState(
-          setNotificationsEnabled,
-          savedNotifications !== null ? JSON.parse(savedNotifications) : false,
+          setNewsNotifications,
+          storedNews !== null ? JSON.parse(storedNews) : false,
         );
         safeSetState(
-          setAutoFollowEnabled,
-          savedAutoFollow !== null ? JSON.parse(savedAutoFollow) : false,
+          setLibraryFollowMode,
+          normalizeFollowMode(storedLibraryMode, legacyLibraryMode),
         );
         safeSetState(
-          setAutoFollowWishlistEnabled,
-          savedAutoFollowWishlist !== null
-            ? JSON.parse(savedAutoFollowWishlist)
-            : false,
+          setWishlistFollowMode,
+          normalizeFollowMode(storedWishlistMode, legacyWishlistMode),
         );
       }
 
@@ -117,153 +284,156 @@ export const useUserSettings = () => {
     } finally {
       safeSetState(setLoading, false);
     }
-  }, [safeSetState]);
+  }, [safeSetState, unregisterFCMToken]);
 
-  // Sauvegarder les paramètres
-  const saveSettings = useCallback(
-    async (newNotificationsEnabled, newAutoFollowEnabled, newAutoFollowWishlistEnabled) => {
-      if (!steamId) {
-        debugError('Impossible de sauvegarder les paramètres: steamId manquant');
-        showAlert('Erreur', 'Utilisateur non connecté.');
-        return false;
-      }
-
-      try {
-        safeSetState(setSaving, true);
-
-        // Sauvegarder localement dans AsyncStorage
-        await AsyncStorage.setItem(
-          'notificationsEnabled',
-          JSON.stringify(newNotificationsEnabled),
-        );
-        await AsyncStorage.setItem(
-          'autoFollowEnabled',
-          JSON.stringify(newAutoFollowEnabled),
-        );
-        await AsyncStorage.setItem(
-          'autoFollowWishlistEnabled',
-          JSON.stringify(newAutoFollowWishlistEnabled),
-        );
-
-        // Synchroniser avec le backend (optionnel, pour la cohérence)
-        try {
-          await userService.updateNotificationSettings(steamId, {
-            enabled: newNotificationsEnabled,
-            autoFollowNewGames: newAutoFollowEnabled,
-            autoFollowWishlistGames: newAutoFollowWishlistEnabled,
-          });
-        } catch (apiError) {
-          debugError(
-            'Erreur lors de la synchronisation avec le backend:',
-            apiError,
-          );
-          // On continue même si la sync échoue, les paramètres sont sauvegardés localement
-        }
-
-        return true;
-      } catch (error) {
-        debugError('Erreur lors de la sauvegarde des paramètres:', error);
-        showAlert(
-          'Erreur',
-          'Impossible de sauvegarder vos paramètres. Veuillez réessayer.',
-        );
-        return false;
-      } finally {
-        safeSetState(setSaving, false);
-      }
-    },
-    [safeSetState, steamId],
-  );
-
-  // Gestionnaire pour les notifications
-  const handleToggleNotifications = useCallback(
+  const handleToggleNews = useCallback(
     async value => {
       if (!steamId) {
         showAlert('Erreur', 'Utilisateur non connecté.');
         return;
       }
 
-      if (value) {
-        const result = await registerFCMToken(steamId);
+      const previousRequires = requiresNotifications(
+        newsNotifications,
+        libraryFollowMode,
+        wishlistFollowMode,
+      );
+      const nextRequires = requiresNotifications(
+        value,
+        libraryFollowMode,
+        wishlistFollowMode,
+      );
 
-        if (result?.success) {
-          setNotificationsEnabled(true);
-          await saveSettings(true, autoFollowEnabled, autoFollowWishlistEnabled);
+      if (value && !previousRequires) {
+        const granted = await ensureNotificationsPermission();
+        if (!granted) {
           return;
         }
-
-        setNotificationsEnabled(false);
-        await saveSettings(false, autoFollowEnabled, autoFollowWishlistEnabled);
-
-        if (result?.status === 'blocked') {
-          showAlert(
-            'Notifications bloquées',
-            "Android bloque les notifications pour Steam Actu. Activez-les dans les paramètres.",
-            [
-              {text: 'Annuler', style: 'cancel'},
-              {
-                text: 'Ouvrir les paramètres',
-                onPress: async () => {
-                  try {
-                    if (Platform.OS === 'android') {
-                      await notifee.openNotificationSettings();
-                    } else {
-                      await Linking.openSettings();
-                    }
-                  } catch (settingsError) {
-                    debugError(
-                      '[FCM] Impossible d’ouvrir les paramètres:',
-                      settingsError,
-                    );
-                  }
-                },
-              },
-            ],
-          );
-        } else {
-          showAlert(
-            'Notification non activée',
-            "Impossible d'activer les notifications pour le moment. Veuillez réessayer plus tard.",
-          );
-        }
-      } else {
-        setNotificationsEnabled(false);
-        await unregisterFCMToken(steamId);
-        await saveSettings(false, autoFollowEnabled, autoFollowWishlistEnabled);
       }
+
+      if (!value && previousRequires && !nextRequires) {
+        await unregisterFCMToken(steamId);
+      }
+
+      setNewsNotifications(value);
+      await persistSettings(value, libraryFollowMode, wishlistFollowMode);
     },
-    [autoFollowEnabled, autoFollowWishlistEnabled, saveSettings, steamId],
+    [
+      ensureNotificationsPermission,
+      libraryFollowMode,
+      newsNotifications,
+      persistSettings,
+      steamId,
+      unregisterFCMToken,
+      wishlistFollowMode,
+    ],
   );
 
-  // Gestionnaire pour le suivi automatique (bibliothèque)
-  const handleToggleAutoFollow = useCallback(
-    async value => {
-      setAutoFollowEnabled(value);
-      await saveSettings(notificationsEnabled, value, autoFollowWishlistEnabled);
+  const handleLibraryModeChange = useCallback(
+    async mode => {
+      if (!steamId) {
+        showAlert('Erreur', 'Utilisateur non connecté.');
+        return;
+      }
+
+      const safeMode = FOLLOW_MODES.includes(mode) ? mode : 'off';
+      if (safeMode === libraryFollowMode) {
+        return;
+      }
+
+      const previousRequires = requiresNotifications(
+        newsNotifications,
+        libraryFollowMode,
+        wishlistFollowMode,
+      );
+      const nextRequires = requiresNotifications(
+        newsNotifications,
+        safeMode,
+        wishlistFollowMode,
+      );
+
+      if (!previousRequires && nextRequires) {
+        const granted = await ensureNotificationsPermission();
+        if (!granted) {
+          return;
+        }
+      }
+
+      if (previousRequires && !nextRequires) {
+        await unregisterFCMToken(steamId);
+      }
+
+      setLibraryFollowMode(safeMode);
+      await persistSettings(newsNotifications, safeMode, wishlistFollowMode);
     },
-    [notificationsEnabled, autoFollowWishlistEnabled, saveSettings],
+    [
+      ensureNotificationsPermission,
+      libraryFollowMode,
+      newsNotifications,
+      persistSettings,
+      steamId,
+      unregisterFCMToken,
+      wishlistFollowMode,
+    ],
   );
 
-  // Gestionnaire pour le suivi automatique (wishlist)
-  const handleToggleAutoFollowWishlist = useCallback(
-    async value => {
-      setAutoFollowWishlistEnabled(value);
-      await saveSettings(notificationsEnabled, autoFollowEnabled, value);
+  const handleWishlistModeChange = useCallback(
+    async mode => {
+      if (!steamId) {
+        showAlert('Erreur', 'Utilisateur non connecté.');
+        return;
+      }
+
+      const safeMode = FOLLOW_MODES.includes(mode) ? mode : 'off';
+      if (safeMode === wishlistFollowMode) {
+        return;
+      }
+
+      const previousRequires = requiresNotifications(
+        newsNotifications,
+        libraryFollowMode,
+        wishlistFollowMode,
+      );
+      const nextRequires = requiresNotifications(
+        newsNotifications,
+        libraryFollowMode,
+        safeMode,
+      );
+
+      if (!previousRequires && nextRequires) {
+        const granted = await ensureNotificationsPermission();
+        if (!granted) {
+          return;
+        }
+      }
+
+      if (previousRequires && !nextRequires) {
+        await unregisterFCMToken(steamId);
+      }
+
+      setWishlistFollowMode(safeMode);
+      await persistSettings(newsNotifications, libraryFollowMode, safeMode);
     },
-    [notificationsEnabled, autoFollowEnabled, saveSettings],
+    [
+      ensureNotificationsPermission,
+      libraryFollowMode,
+      newsNotifications,
+      persistSettings,
+      steamId,
+      unregisterFCMToken,
+      wishlistFollowMode,
+    ],
   );
 
-  // Charger les paramètres au démarrage
   useEffect(() => {
     loadUserSettings();
   }, [loadUserSettings]);
 
-  // Réinitialiser les switches lorsque l'utilisateur est déconnecté
   useEffect(() => {
     if (!steamId) {
-      setNotificationsEnabled(false);
-      setAutoFollowEnabled(false);
-      setAutoFollowWishlistEnabled(false);
+      setNewsNotifications(false);
+      setLibraryFollowMode('off');
+      setWishlistFollowMode('off');
     }
   }, [steamId]);
 
@@ -271,12 +441,12 @@ export const useUserSettings = () => {
     loading,
     saving,
     steamId,
-    notificationsEnabled,
-    autoFollowEnabled,
-    autoFollowWishlistEnabled,
-    handleToggleNotifications,
-    handleToggleAutoFollow,
-    handleToggleAutoFollowWishlist,
+    newsNotifications,
+    libraryFollowMode,
+    wishlistFollowMode,
+    handleToggleNews,
+    handleLibraryModeChange,
+    handleWishlistModeChange,
     loadUserSettings,
   };
 };

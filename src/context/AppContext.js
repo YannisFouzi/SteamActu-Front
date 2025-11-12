@@ -306,17 +306,27 @@ export const AppProvider = ({children, navigation = null}) => {
 
     async function initializeNotifications() {
       try {
-        const storedValue = await AsyncStorage.getItem('notificationsEnabled');
-        const isEnabled =
-          storedValue !== null ? JSON.parse(storedValue) : false;
+        const storedNews = await AsyncStorage.getItem('newsNotifications');
+        const storedLibraryMode = await AsyncStorage.getItem('libraryFollowMode');
+        const storedWishlistMode = await AsyncStorage.getItem('wishlistFollowMode');
+
+        const newsEnabled =
+          storedNews !== null ? JSON.parse(storedNews) : false;
+        const libraryMode = storedLibraryMode || 'off';
+        const wishlistMode = storedWishlistMode || 'off';
+
+        const needsNotifications =
+          newsEnabled ||
+          libraryMode === 'prompt' ||
+          wishlistMode === 'prompt';
 
         if (canceled || !steamId) {
           return;
         }
 
-        if (isEnabled) {
+        if (needsNotifications) {
           debugLog(
-            '[FCM] 📥 notificationsEnabled=TRUE -> tentative enregistrement token',
+            '[FCM] 📥 Préférences notifications actives → tentative enregistrement token',
           );
           const result = await registerFCMToken(steamId);
 
@@ -327,7 +337,7 @@ export const AppProvider = ({children, navigation = null}) => {
           }
         } else {
           debugLog(
-            '[FCM] notificationsEnabled=FALSE -> enregistrement token ignoré',
+            '[FCM] Notifications inactives → enregistrement token ignoré',
           );
         }
       } catch (error) {
@@ -367,6 +377,7 @@ export const AppProvider = ({children, navigation = null}) => {
         onWishlistUnfollow: appId => notifyNotificationSync('wishlist', appId),
         onFollowedGamesTabUnfollow: appId =>
           notifyNotificationSync('followed', appId),
+        onFollowPromptConfirm: appId => notifyNotificationSync('followed', appId),
       });
       initializeNotifications();
     }
@@ -541,9 +552,9 @@ export const AppProvider = ({children, navigation = null}) => {
       const storageKeys = [
         'steamId',
         'lastVerificationDate',
-        'notificationsEnabled',
-        'autoFollowEnabled',
-        'autoFollowWishlistEnabled',
+        'newsNotifications',
+        'libraryFollowMode',
+        'wishlistFollowMode',
         'sortOption',
         'gamesVersion',
         'wishlistVersion',

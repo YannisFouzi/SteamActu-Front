@@ -12,6 +12,34 @@ import {
   showAlert,
 } from './hooksLogger';
 
+const FOLLOW_MODES = ['off', 'auto', 'prompt'];
+
+const normalizeFollowMode = (value, legacyValue) => {
+  if (typeof value === 'string') {
+    const normalized = value.toLowerCase();
+    if (FOLLOW_MODES.includes(normalized)) {
+      return normalized;
+    }
+  }
+
+  if (typeof legacyValue === 'string') {
+    try {
+      const parsed = JSON.parse(legacyValue);
+      if (typeof parsed === 'boolean') {
+        return parsed ? 'auto' : 'off';
+      }
+    } catch {
+      // ignore parsing errors
+    }
+  }
+
+  if (typeof legacyValue === 'boolean') {
+    return legacyValue ? 'auto' : 'off';
+  }
+
+  return 'off';
+};
+
 /**
  * Hook personnalisé pour la gestion de l'authentification Steam
  * Centralise toute la logique d'authentification et de gestion des URL
@@ -109,21 +137,44 @@ export const useSteamAuth = navigation => {
         const notificationSettings = response?.data?.notificationSettings;
         if (notificationSettings) {
           const {
-            enabled = false,
-            autoFollowNewGames = false,
-            autoFollowWishlistGames = false,
+            newsNotifications,
+            followPromptNotifications,
+            enabled,
+            libraryFollowMode,
+            wishlistFollowMode,
+            autoFollowNewGames,
+            autoFollowWishlistGames,
           } = notificationSettings;
 
+          const resolvedNews =
+            typeof newsNotifications === 'boolean'
+              ? newsNotifications
+              : typeof enabled === 'boolean'
+              ? enabled
+              : false;
+
           await AsyncStorage.multiSet([
-            ['notificationsEnabled', JSON.stringify(Boolean(enabled))],
-            ['autoFollowEnabled', JSON.stringify(Boolean(autoFollowNewGames))],
+            ['newsNotifications', JSON.stringify(resolvedNews)],
             [
-              'autoFollowWishlistEnabled',
-              JSON.stringify(Boolean(autoFollowWishlistGames)),
+              'libraryFollowMode',
+              normalizeFollowMode(libraryFollowMode, autoFollowNewGames),
             ],
+            [
+              'wishlistFollowMode',
+              normalizeFollowMode(wishlistFollowMode, autoFollowWishlistGames),
+            ],
+          ]);
+
+          await AsyncStorage.multiRemove([
+            'notificationsEnabled',
+            'autoFollowEnabled',
+            'autoFollowWishlistEnabled',
           ]);
         } else {
           await AsyncStorage.multiRemove([
+            'newsNotifications',
+            'libraryFollowMode',
+            'wishlistFollowMode',
             'notificationsEnabled',
             'autoFollowEnabled',
             'autoFollowWishlistEnabled',

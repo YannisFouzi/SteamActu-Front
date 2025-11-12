@@ -5,13 +5,14 @@ import notifee, {
 } from '@notifee/react-native';
 import messaging from '@react-native-firebase/messaging';
 import { Linking, Platform } from 'react-native';
-import { debugError, debugLog } from '../hooks/hooksLogger';
+import { debugError, debugLog, showAlert } from '../hooks/hooksLogger';
 import { userService } from './api';
 
 const NOTIFICATION_CHANNEL_ID = 'steam_news';
 const IOS_CATEGORY_ID = 'steam_news_actions';
 const ACTION_OPEN_NEWS = 'open-news';
 const ACTION_UNFOLLOW_GAME = 'unfollow-game';
+const ACTION_FOLLOW_GAME = 'follow-game';
 
 let androidChannelInitialized = false;
 let iosCategoriesInitialized = false;
@@ -226,6 +227,7 @@ function extractNotificationPayload(remoteMessage) {
       ...data,
       notificationId,
     },
+    type: data.type || 'general',
   };
 }
 
@@ -251,8 +253,13 @@ export async function displayRemoteNotification(remoteMessage) {
     await ensureAndroidNotificationChannel();
     await ensureIosNotificationCategories();
 
+    const canUnfollow =
+      payload.allowUnfollow &&
+      payload.data?.appId &&
+      payload.type !== 'follow_prompt';
+
     const actions =
-      Platform.OS === 'android' && payload.allowUnfollow && payload.data?.appId
+      Platform.OS === 'android' && canUnfollow
         ? [
             {
               id: ACTION_UNFOLLOW_GAME,
@@ -262,6 +269,9 @@ export async function displayRemoteNotification(remoteMessage) {
           ]
         : [];
 
+    const pressActionId =
+      payload.type === 'follow_prompt' ? ACTION_FOLLOW_GAME : ACTION_OPEN_NEWS;
+
     await notifee.displayNotification({
       id: payload.id,
       title: payload.title,
@@ -269,12 +279,12 @@ export async function displayRemoteNotification(remoteMessage) {
       data: payload.data,
       android: {
         channelId: NOTIFICATION_CHANNEL_ID,
-        pressAction: {id: ACTION_OPEN_NEWS},
+        pressAction: {id: pressActionId},
         actions,
         sound: 'default',
       },
       ios: {
-        categoryId: IOS_CATEGORY_ID,
+        categoryId: canUnfollow ? IOS_CATEGORY_ID : undefined,
         sound: 'default',
       },
     });
@@ -294,6 +304,7 @@ export function setupNotificationHandlers(steamId, options = {}) {
     onNewsUnfollow,
     onWishlistUnfollow,
     onFollowedGamesTabUnfollow,
+    onFollowPromptConfirm,
   } = options;
 
   // Créer le canal Android si nécessaire (obligatoire pour Android 8+)
@@ -319,8 +330,7 @@ export function setupNotificationHandlers(steamId, options = {}) {
     try {
       if (
         type === EventType.PRESS ||
-        type === EventType.ACTION_PRESS ||
-        type === EventType.DELIVERED
+        type === EventType.ACTION_PRESS
       ) {
         const pressActionId = detail?.pressAction?.id;
         const notification = detail?.notification;
@@ -375,6 +385,57 @@ export function setupNotificationHandlers(steamId, options = {}) {
           if (success && notification?.id) {
             await notifee.cancelNotification(notification.id);
             await notifee.cancelDisplayedNotification(notification.id);
+          }
+        } else if (
+          pressActionId === ACTION_FOLLOW_GAME ||
+          (type === EventType.PRESS &&
+            !pressActionId &&
+            data.type === 'follow_prompt')
+        ) {
+          const appId = data.appId;
+          if (!appId) {
+            debugLog(
+              '[FCM] Aucun appId trouvé pour follow_prompt, action ignorée',
+            );
+            return;
+          }
+
+          if (!steamId) {
+            debugLog('[FCM] steamId manquant, impossible de suivre le jeu');
+            return;
+          }
+
+          try {
+            debugLog('[FCM] 📥 Confirmation follow_prompt pour', appId);
+            await userService.followGame(
+              steamId,
+              appId,
+              data.gameName || '',
+              data.imageUrl || '',
+            );
+
+            if (typeof onFollowPromptConfirm === 'function') {
+              onFollowPromptConfirm(appId);
+            }
+          } catch (error) {
+            debugError('[FCM] Erreur lors du follow_prompt:', error);
+            showAlert(
+              'Suivi impossible',
+              "Impossible d'ajouter ce jeu aux suivis pour le moment. Réessayez plus tard.",
+            );
+            return;
+          }
+
+          try {
+            if (notification?.id) {
+              await notifee.cancelNotification(notification.id);
+              await notifee.cancelDisplayedNotification(notification.id);
+            }
+          } catch (cancelError) {
+            debugError(
+              '[FCM] Erreur lors de la fermeture de la notification follow_prompt:',
+              cancelError,
+            );
           }
         } else if (
           type === EventType.PRESS &&
