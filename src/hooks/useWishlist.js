@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { steamService } from '../services/api';
-import {
-  buildStorageKey,
-  getJSONItem,
-  setJSONItem,
-} from './useAsyncStorage';
 import { debugError, debugLog, maskSteamId, showAlert } from './hooksLogger';
+import {
+    buildStorageKey,
+    getJSONItem,
+    setJSONItem,
+} from './useAsyncStorage';
 
 const STATUS_DEBOUNCE_DELAY = 250;
 
@@ -399,6 +399,34 @@ export const useWishlist = steamId => {
     [persistWishlistCache, safeSetState, steamId],
   );
 
+  const removeWishlistEntry = useCallback(
+    appId => {
+      if (!appId) {
+        return;
+      }
+
+      safeSetState(setWishlist, current => {
+        if (!Array.isArray(current)) {
+          return current;
+        }
+
+        const next = current.map(item =>
+          item?.appid?.toString() === appId.toString()
+            ? {...item, isFollowed: false}
+            : item,
+        );
+
+        wishlistHydratedFromCacheRef.current = true;
+        persistWishlistCache(next, steamId).catch(err => {
+          debugError('[WISHLIST] Erreur lors de la mise à jour du cache:', err);
+        });
+
+        return next;
+      });
+    },
+    [persistWishlistCache, safeSetState, steamId],
+  );
+
   const maybeRefreshWishlist = useCallback(
     async (origin = 'maybeRefreshWishlist') => {
       if (!steamId) {
@@ -472,6 +500,7 @@ export const useWishlist = steamId => {
     filterWishlist,
     wishlistStats,
     updateWishlistFollowState,
+    removeWishlistEntry,
     maybeRefreshWishlist,
   };
 };

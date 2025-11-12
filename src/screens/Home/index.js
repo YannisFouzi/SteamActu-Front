@@ -1,15 +1,15 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Animated,
-  Easing,
-  FlatList,
-  RefreshControl,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  useWindowDimensions,
-  View,
+    Animated,
+    Easing,
+    FlatList,
+    RefreshControl,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    useWindowDimensions,
+    View,
 } from 'react-native';
 import { State as GestureState, PanGestureHandler } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -133,6 +133,7 @@ const HomeScreen = () => {
     setSortOption,
     filterAndSortGames,
     maybeRefreshGames,
+    registerNotificationSyncHandler,
   } = useAppContext();
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState(TABS.NEWS);
@@ -401,6 +402,16 @@ const HomeScreen = () => {
   const previousTabState = useRef({isNewsTab, isFeedTab});
   const isFirstRender = useRef(true);
   const hasFetchedWishlistRef = useRef(false);
+  const followedGamesExternalHandlerRef = useRef(null);
+
+  const registerFollowedGamesExternalHandler = useCallback(handler => {
+    followedGamesExternalHandlerRef.current = handler;
+    return () => {
+      if (followedGamesExternalHandlerRef.current === handler) {
+        followedGamesExternalHandlerRef.current = null;
+      }
+    };
+  }, []);
 
   // Hook wishlist
   const {
@@ -411,12 +422,18 @@ const HomeScreen = () => {
     handleRefresh: handleWishlistRefresh,
     filterWishlist,
     updateWishlistFollowState,
+    removeWishlistEntry,
     maybeRefreshWishlist,
   } = useWishlist(steamId);
 
   // Hook personnalisé pour la gestion des news
-  const {newsState, fetchNews, isNewsInitialized, isNewsLoading} =
-    useNewsManager(steamId);
+  const {
+    newsState,
+    fetchNews,
+    isNewsInitialized,
+    isNewsLoading,
+    removeNewsByAppId,
+  } = useNewsManager(steamId);
 
   // Charger les news au premier accès à l'onglet
   useEffect(() => {
@@ -554,6 +571,40 @@ const HomeScreen = () => {
     wishlistRefreshing,
     maybeRefreshGames,
     maybeRefreshWishlist,
+  ]);
+
+  useEffect(() => {
+    if (typeof registerNotificationSyncHandler !== 'function') {
+      return undefined;
+    }
+
+    const unregisterNews = registerNotificationSyncHandler('news', appId => {
+      removeNewsByAppId(appId);
+    });
+    const unregisterWishlist = registerNotificationSyncHandler(
+      'wishlist',
+      appId => {
+        removeWishlistEntry(appId);
+      },
+    );
+    const unregisterFollowed = registerNotificationSyncHandler(
+      'followed',
+      appId => {
+        if (followedGamesExternalHandlerRef.current) {
+          followedGamesExternalHandlerRef.current(appId);
+        }
+      },
+    );
+
+    return () => {
+      unregisterNews();
+      unregisterWishlist();
+      unregisterFollowed();
+    };
+  }, [
+    registerNotificationSyncHandler,
+    removeNewsByAppId,
+    removeWishlistEntry,
   ]);
 
   // Gestionnaire pour le suivi/désuivi des jeux depuis les news
@@ -743,6 +794,9 @@ const HomeScreen = () => {
           <FollowedGamesTab
             styles={styles}
             onToggleFollowState={updateWishlistFollowState}
+            registerExternalUnfollowHandler={
+              registerFollowedGamesExternalHandler
+            }
           />
         );
       }
@@ -759,7 +813,8 @@ const HomeScreen = () => {
       renderFollowTabContent,
       updateWishlistFollowState,
       steamId,
-      styles,
+    styles,
+    registerFollowedGamesExternalHandler,
     ],
   );
 

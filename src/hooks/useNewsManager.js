@@ -141,22 +141,47 @@ export const useNewsManager = steamId => {
   );
 
   // Fonction pour mettre à jour le statut de suivi d'un jeu dans les news
-  const updateNewsFollowStatus = useCallback((appId, isFollowed) => {
-    safeSetNewsState(prev => {
-      const previous = prev.news || createInitialNewsState();
-      return {
-        ...prev,
-        news: {
-          ...previous,
-          items: previous.items.map(item =>
-            item.appId?.toString() === appId
-              ? {...item, isFollowed: !isFollowed}
-              : item,
-          ),
-        },
-      };
-    });
-  }, [createInitialNewsState, safeSetNewsState]);
+  const updateNewsFollowStatus = useCallback(
+    (appId, isFollowed) => {
+      safeSetNewsState(prev => {
+        const previous = prev.news || createInitialNewsState();
+        return {
+          ...prev,
+          news: {
+            ...previous,
+            items: previous.items.map(item =>
+              item.appId?.toString() === appId
+                ? {...item, isFollowed: !isFollowed}
+                : item,
+            ),
+          },
+        };
+      });
+    },
+    [createInitialNewsState, safeSetNewsState],
+  );
+
+  const removeNewsByAppId = useCallback(
+    appId => {
+      if (!appId) {
+        return;
+      }
+
+      safeSetNewsState(prev => {
+        const previous = prev.news || createInitialNewsState();
+        return {
+          ...prev,
+          news: {
+            ...previous,
+            items: previous.items.filter(
+              item => item.appId?.toString() !== appId.toString(),
+            ),
+          },
+        };
+      });
+    },
+    [createInitialNewsState, safeSetNewsState],
+  );
 
   // Réinitialiser les news quand le steamId change
   useEffect(() => {
@@ -180,6 +205,7 @@ export const useNewsManager = steamId => {
     newsState,
     fetchNews,
     updateNewsFollowStatus,
+    removeNewsByAppId,
     activeNewsState: newsState.news,
     isNewsInitialized: newsState.news?.initialized,
     isNewsLoading: newsState.news?.loading,

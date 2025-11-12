@@ -181,6 +181,52 @@ export const AppProvider = ({children, navigation = null}) => {
   const gamesHydratedFromCacheRef = useRef(false);
   const skipNextGamesRefreshRef = useRef(false);
   const handleFollowGameRef = useRef(null);
+  const notificationSyncListenersRef = useRef({
+    news: new Set(),
+    wishlist: new Set(),
+    followed: new Set(),
+  });
+
+  const registerNotificationSyncHandler = useCallback(
+    (type, handler) => {
+      if (!type || typeof handler !== 'function') {
+        return () => {};
+      }
+
+      const listeners = notificationSyncListenersRef.current[type];
+      if (!listeners) {
+        return () => {};
+      }
+
+      listeners.add(handler);
+      return () => {
+        listeners.delete(handler);
+      };
+    },
+    [],
+  );
+
+  const notifyNotificationSync = useCallback((type, appId) => {
+    if (!type || !appId) {
+      return;
+    }
+
+    const listeners = notificationSyncListenersRef.current[type];
+    if (!listeners || listeners.size === 0) {
+      return;
+    }
+
+    listeners.forEach(listener => {
+      try {
+        listener(appId);
+      } catch (error) {
+        debugError(
+          '[FCM] Erreur lors de la notification de synchronisation:',
+          error,
+        );
+      }
+    });
+  }, []);
 
   // États principaux
   const [games, setGames] = useState([]);
@@ -317,6 +363,10 @@ export const AppProvider = ({children, navigation = null}) => {
             return false;
           }
         },
+        onNewsUnfollow: appId => notifyNotificationSync('news', appId),
+        onWishlistUnfollow: appId => notifyNotificationSync('wishlist', appId),
+        onFollowedGamesTabUnfollow: appId =>
+          notifyNotificationSync('followed', appId),
       });
       initializeNotifications();
     }
@@ -328,7 +378,7 @@ export const AppProvider = ({children, navigation = null}) => {
         cleanupNotifications();
       }
     };
-  }, [steamId]);
+  }, [steamId, notifyNotificationSync]);
 
   // La persistance des options est maintenant gérée automatiquement par useAsyncStorage
 
@@ -1076,6 +1126,7 @@ export const AppProvider = ({children, navigation = null}) => {
     filterAndSortGames,
     isGameFollowed,
     maybeRefreshGames,
+    registerNotificationSyncHandler,
   };
 
   return (

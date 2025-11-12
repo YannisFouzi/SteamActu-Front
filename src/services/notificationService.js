@@ -289,7 +289,12 @@ export async function displayRemoteNotification(remoteMessage) {
  * @param {Object} options - callbacks pour actions personnalisées
  */
 export function setupNotificationHandlers(steamId, options = {}) {
-  const {onUnfollowGame} = options;
+  const {
+    onUnfollowGame,
+    onNewsUnfollow,
+    onWishlistUnfollow,
+    onFollowedGamesTabUnfollow,
+  } = options;
 
   // Créer le canal Android si nécessaire (obligatoire pour Android 8+)
   ensureAndroidNotificationChannel().catch(error => {
@@ -344,6 +349,25 @@ export function setupNotificationHandlers(steamId, options = {}) {
               debugError(
                 '[FCM] Erreur lors de la désinscription via notification:',
                 error,
+              );
+            }
+          }
+
+          if (success) {
+            try {
+              if (typeof onNewsUnfollow === 'function') {
+                onNewsUnfollow(appId);
+              }
+              if (typeof onWishlistUnfollow === 'function') {
+                onWishlistUnfollow(appId);
+              }
+              if (typeof onFollowedGamesTabUnfollow === 'function') {
+                onFollowedGamesTabUnfollow(appId);
+              }
+            } catch (syncError) {
+              debugError(
+                '[FCM] Erreur lors de la synchronisation locale après unfollow:',
+                syncError,
               );
             }
           }

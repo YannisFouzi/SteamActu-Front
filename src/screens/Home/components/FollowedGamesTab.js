@@ -1,17 +1,21 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  View,
+    ActivityIndicator,
+    FlatList,
+    View,
 } from 'react-native';
 import GameCard from '../../../components/GameCard';
 import { COLORS } from '../../../constants';
 import { useAppContext } from '../../../context/AppContext';
+import { debugError } from '../../../hooks/hooksLogger';
 import { userService } from '../../../services/api';
 import EmptyStateMessage from './EmptyStateMessage';
-import { debugError } from '../../../hooks/hooksLogger';
 
-const FollowedGamesTab = ({styles, onToggleFollowState}) => {
+const FollowedGamesTab = ({
+  styles,
+  onToggleFollowState,
+  registerExternalUnfollowHandler,
+}) => {
   const {steamId} = useAppContext();
   const [followedGames, setFollowedGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +42,23 @@ const FollowedGamesTab = ({styles, onToggleFollowState}) => {
   useEffect(() => {
     fetchFollowedGames();
   }, [fetchFollowedGames]);
+
+  useEffect(() => {
+    if (typeof registerExternalUnfollowHandler !== 'function') {
+      return undefined;
+    }
+
+    const unregister = registerExternalUnfollowHandler(appId => {
+      if (!appId) {
+        return;
+      }
+      setFollowedGames(prev =>
+        prev.filter(game => game.appId?.toString() !== appId.toString()),
+      );
+    });
+
+    return unregister;
+  }, [registerExternalUnfollowHandler]);
 
   const renderGameItem = ({item}) => {
     const appId = item.appId?.toString();
