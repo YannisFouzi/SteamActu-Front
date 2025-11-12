@@ -1,11 +1,32 @@
-import messaging from '@react-native-firebase/messaging';
 import notifee, {
   AndroidImportance,
   AuthorizationStatus,
+  EventType,
 } from '@notifee/react-native';
-import {Platform, Linking} from 'react-native';
-import {debugLog, debugError} from '../hooks/hooksLogger';
-import {userService} from './api';
+import messaging from '@react-native-firebase/messaging';
+import { Linking, Platform } from 'react-native';
+import { debugError, debugLog } from '../hooks/hooksLogger';
+import { userService } from './api';
+
+const NOTIFICATION_CHANNEL_ID = 'steam_news';
+const IOS_CATEGORY_ID = 'steam_news_actions';
+const ACTION_OPEN_NEWS = 'open-news';
+const ACTION_UNFOLLOW_GAME = 'unfollow-game';
+
+let androidChannelInitialized = false;
+let iosCategoriesInitialized = false;
+
+const backgroundEventHandlers = new Set();
+
+notifee.onBackgroundEvent(async event => {
+  for (const handler of Array.from(backgroundEventHandlers)) {
+    try {
+      await handler(event);
+    } catch (error) {
+      debugError('[FCM] Erreur handler background Notifee:', error);
+    }
+  }
+});
 
 async function ensureNotificationPermission() {
   if (Platform.OS === 'android') {
@@ -124,9 +145,6 @@ export async function unregisterFCMToken(steamId) {
   }
 }
 
-// Flag interne pour éviter de recréer le canal à chaque appel
-let androidChannelInitialized = false;
-
 /**
  * S'assure que le canal Android requis par les notifications FCM existe
  * @returns {Promise<void>}
@@ -138,7 +156,7 @@ async function ensureAndroidNotificationChannel() {
 
   try {
     await notifee.createChannel({
-      id: 'steam_news',
+      id: NOTIFICATION_CHANNEL_ID,
       name: 'Actualités Steam',
       description: 'Notifications push pour les actualités des jeux suivis',
       importance: AndroidImportance.HIGH,
@@ -152,14 +170,133 @@ async function ensureAndroidNotificationChannel() {
   }
 }
 
+async function ensureIosNotificationCategories() {
+  if (Platform.OS !== 'ios' || iosCategoriesInitialized) {
+    return;
+  }
+
+  try {
+    await notifee.setNotificationCategories([
+      {
+        id: IOS_CATEGORY_ID,
+        actions: [
+          {
+            id: ACTION_UNFOLLOW_GAME,
+            title: 'Ne plus suivre ce jeu',
+            options: {
+              foreground: true,
+            },
+          },
+        ],
+      },
+    ]);
+    iosCategoriesInitialized = true;
+    debugLog('[FCM] Catégorie iOS "steam_news_actions" prête');
+  } catch (error) {
+    debugError('[FCM] Erreur création catégorie iOS:', error);
+  }
+}
+
+function extractNotificationPayload(remoteMessage) {
+  if (!remoteMessage) {
+    return null;
+  }
+
+  const data = remoteMessage.data || {};
+  const title = data.title || remoteMessage.notification?.title || '';
+  const body = data.body || remoteMessage.notification?.body || '';
+
+  if (!title && !body) {
+    debugLog('[FCM] Pas de titre/corps dans le message FCM, notification ignorée');
+    return null;
+  }
+
+  const notificationId =
+    data.notificationId || remoteMessage.messageId || `${Date.now()}`;
+
+  return {
+    id: notificationId,
+    title,
+    body,
+    allowUnfollow:
+      data.allowUnfollow === '1' ||
+      data.allowUnfollow === 'true' ||
+      data.allowUnfollow === 'yes',
+    data: {
+      ...data,
+      notificationId,
+    },
+  };
+}
+
+async function openUrlSafely(url) {
+  if (!url) {
+    return;
+  }
+
+  try {
+    await Linking.openURL(url);
+  } catch (error) {
+    debugError('[FCM] Erreur ouverture URL:', error);
+  }
+}
+
+export async function displayRemoteNotification(remoteMessage) {
+  try {
+    const payload = extractNotificationPayload(remoteMessage);
+    if (!payload) {
+      return;
+    }
+
+    await ensureAndroidNotificationChannel();
+    await ensureIosNotificationCategories();
+
+    const actions =
+      Platform.OS === 'android' && payload.allowUnfollow && payload.data?.appId
+        ? [
+            {
+              id: ACTION_UNFOLLOW_GAME,
+              title: 'Ne plus suivre ce jeu',
+              pressAction: {id: ACTION_UNFOLLOW_GAME},
+            },
+          ]
+        : [];
+
+    await notifee.displayNotification({
+      id: payload.id,
+      title: payload.title,
+      body: payload.body,
+      data: payload.data,
+      android: {
+        channelId: NOTIFICATION_CHANNEL_ID,
+        pressAction: {id: ACTION_OPEN_NEWS},
+        actions,
+        sound: 'default',
+      },
+      ios: {
+        categoryId: IOS_CATEGORY_ID,
+        sound: 'default',
+      },
+    });
+  } catch (error) {
+    debugError('[FCM] Erreur lors de l’affichage de la notification:', error);
+  }
+}
+
 /**
  * Configure le handler pour les notifications et le rafraîchissement du token
  * @param {string} steamId - Steam ID pour ré-enregistrer le token si refresh
+ * @param {Object} options - callbacks pour actions personnalisées
  */
-export function setupNotificationHandlers(steamId) {
+export function setupNotificationHandlers(steamId, options = {}) {
+  const {onUnfollowGame} = options;
+
   // Créer le canal Android si nécessaire (obligatoire pour Android 8+)
   ensureAndroidNotificationChannel().catch(error => {
     debugError('[FCM] Erreur ensureAndroidNotificationChannel:', error);
+  });
+  ensureIosNotificationCategories().catch(error => {
+    debugError('[FCM] Erreur ensureIosNotificationCategories:', error);
   });
 
   // Gestion du rafraîchissement du token FCM
@@ -173,36 +310,91 @@ export function setupNotificationHandlers(steamId) {
     },
   );
 
-  // Notification reçue en foreground
-  const unsubscribeOnMessage = messaging().onMessage(async remoteMessage => {
-    debugLog('[FCM] Notification reçue (foreground):', remoteMessage);
-    // Afficher une notification locale ou un toast
-    // TODO: Implémenter l'affichage local si nécessaire
-  });
+  const handleNotificationEvent = async ({type, detail}) => {
+    try {
+      if (
+        type === EventType.PRESS ||
+        type === EventType.ACTION_PRESS ||
+        type === EventType.DELIVERED
+      ) {
+        const pressActionId = detail?.pressAction?.id;
+        const notification = detail?.notification;
+        const data = notification?.data || {};
 
-  // Notification cliquée (app en background)
+        if (pressActionId === ACTION_OPEN_NEWS) {
+          if (data.url) {
+            await openUrlSafely(data.url);
+          }
+        } else if (pressActionId === ACTION_UNFOLLOW_GAME) {
+          const appId = data.appId;
+          if (!appId) {
+            debugLog(
+              '[FCM] Aucun appId trouvé pour "Ne plus suivre ce jeu", action ignorée',
+            );
+            return;
+          }
+
+          let success = true;
+          if (typeof onUnfollowGame === 'function') {
+            try {
+              const result = await onUnfollowGame(appId);
+              success = result !== false;
+            } catch (error) {
+              success = false;
+              debugError(
+                '[FCM] Erreur lors de la désinscription via notification:',
+                error,
+              );
+            }
+          }
+
+          if (success && notification?.id) {
+            await notifee.cancelNotification(notification.id);
+            await notifee.cancelDisplayedNotification(notification.id);
+          }
+        } else if (
+          type === EventType.PRESS &&
+          !pressActionId &&
+          data.url
+        ) {
+          // Cas où aucune action n'est fournie mais URL disponible (fallback)
+          await openUrlSafely(data.url);
+        }
+      }
+    } catch (error) {
+      debugError('[FCM] Erreur gestion événement notification:', error);
+    }
+  };
+
+  const foregroundSubscription = notifee.onForegroundEvent(
+    handleNotificationEvent,
+  );
+  backgroundEventHandlers.add(handleNotificationEvent);
+
+  const unsubscribeOnMessage = messaging().onMessage(
+    async remoteMessage => {
+      debugLog('[FCM] Message reçu (foreground):', remoteMessage);
+      await displayRemoteNotification(remoteMessage);
+    },
+  );
+
   const unsubscribeOnNotificationOpenedApp =
-    messaging().onNotificationOpenedApp(remoteMessage => {
-      debugLog('[FCM] Notification ouverte (background):', remoteMessage);
-      const url = remoteMessage.data?.url;
-      if (url) {
-        Linking.openURL(url).catch(err =>
-          debugError('[FCM] Erreur ouverture URL:', err),
-        );
+    messaging().onNotificationOpenedApp(async remoteMessage => {
+      debugLog('[FCM] Notification ouverte (background via FCM):', remoteMessage);
+      const payload = extractNotificationPayload(remoteMessage);
+      if (payload?.data?.url) {
+        await openUrlSafely(payload.data.url);
       }
     });
 
-  // Notification cliquée (app complètement fermée)
   messaging()
     .getInitialNotification()
-    .then(remoteMessage => {
+    .then(async remoteMessage => {
       if (remoteMessage) {
-        debugLog('[FCM] App ouverte depuis notification:', remoteMessage);
-        const url = remoteMessage.data?.url;
-        if (url) {
-          Linking.openURL(url).catch(err =>
-            debugError('[FCM] Erreur ouverture URL:', err),
-          );
+        debugLog('[FCM] App ouverte depuis notification (initiale):', remoteMessage);
+        const payload = extractNotificationPayload(remoteMessage);
+        if (payload?.data?.url) {
+          await openUrlSafely(payload.data.url);
         }
       }
     })
@@ -215,5 +407,7 @@ export function setupNotificationHandlers(steamId) {
     unsubscribeTokenRefresh();
     unsubscribeOnMessage();
     unsubscribeOnNotificationOpenedApp();
+    backgroundEventHandlers.delete(handleNotificationEvent);
+    foregroundSubscription();
   };
 }

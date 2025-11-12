@@ -1,33 +1,33 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useRef,
-    useState,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
 } from 'react';
 import { Alert, AppState } from 'react-native';
 import {
-    buildStorageKey,
-    getJSONItem,
-    setJSONItem,
-    useAsyncStorage,
-    useLastVerificationDate,
+  buildStorageKey,
+  getJSONItem,
+  setJSONItem,
+  useAsyncStorage,
+  useLastVerificationDate,
 } from '../hooks/useAsyncStorage';
 import { useGameSync } from '../hooks/useGameSync';
 import { steamService, userService } from '../services/api';
 import {
-    registerFCMToken,
-    setupNotificationHandlers,
-    unregisterFCMToken,
+  registerFCMToken,
+  setupNotificationHandlers,
+  unregisterFCMToken,
 } from '../services/notificationService';
 import {
-    getGameAppId,
-    getGameIconUrl,
-    getLastPlayedValue,
-    getPlaytimeForeverValue,
-    isRecentlyUpdated,
+  getGameAppId,
+  getGameIconUrl,
+  getLastPlayedValue,
+  getPlaytimeForeverValue,
+  isRecentlyUpdated,
 } from '../utils';
 
 const DEBUG_MODE =
@@ -180,6 +180,7 @@ export const AppProvider = ({children, navigation = null}) => {
   const statusDebounceTimeoutRef = useRef(null);
   const gamesHydratedFromCacheRef = useRef(false);
   const skipNextGamesRefreshRef = useRef(false);
+  const handleFollowGameRef = useRef(null);
 
   // États principaux
   const [games, setGames] = useState([]);
@@ -290,7 +291,33 @@ export const AppProvider = ({children, navigation = null}) => {
 
     if (steamId) {
       debugLog('[FCM] 🔔 Configuration des notifications pour:', steamId);
-      cleanupNotifications = setupNotificationHandlers(steamId);
+      cleanupNotifications = setupNotificationHandlers(steamId, {
+        onUnfollowGame: async appId => {
+          if (!appId) {
+            return false;
+          }
+
+          const handler = handleFollowGameRef.current;
+          if (!handler) {
+            return false;
+          }
+
+          debugLog(
+            '[FCM] 📤 Action "Ne plus suivre" reçue depuis la notification',
+            appId,
+          );
+          try {
+            const result = await handler({appId, isFollowed: true});
+            return result !== false;
+          } catch (error) {
+            debugError(
+              '[FCM] Erreur lors du traitement "Ne plus suivre" depuis la notification:',
+              error,
+            );
+            return false;
+          }
+        },
+      });
       initializeNotifications();
     }
 
@@ -893,6 +920,8 @@ export const AppProvider = ({children, navigation = null}) => {
       return false;
     }
   };
+
+  handleFollowGameRef.current = handleFollowGame;
 
   // Fonction pour vérifier les nouveaux jeux
   const checkForNewGames = async () => {
