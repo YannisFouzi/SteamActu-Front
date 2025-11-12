@@ -18,6 +18,7 @@ import { useAppContext } from '../context/AppContext';
 import { debugError } from '../hooks/hooksLogger';
 import { useUserSettings } from '../hooks/useUserSettings';
 import { userService } from '../services/api';
+import { useTutorial } from '../tutorial/useTutorial';
 
 const LEGAL_LINKS = [
   {
@@ -49,6 +50,12 @@ const SettingsScreen = () => {
     handleLibraryModeChange,
     handleWishlistModeChange,
   } = useUserSettings();
+  const {
+    restartTutorial,
+    completeTutorial,
+    state: tutorialState,
+  } = useTutorial();
+  const isTutorialActive = tutorialState.status === 'running';
 
   // Gestionnaire pour la déconnexion
   const handlePressLogout = useCallback(async () => {
@@ -166,11 +173,12 @@ const SettingsScreen = () => {
   return (
     <ScrollView style={styles.container}>
       <SettingSection
-        label="Notifications d’actualités"
-        description="Activez ce réglage pour recevoir une notification lorsqu’une nouvelle news est publiée sur vos jeux suivis."
+        label="Notifications d'actualités"
+        description="Activez ce réglage pour recevoir une notification lorsqu'une nouvelle news est publiée sur vos jeux suivis."
         value={newsNotifications}
         onValueChange={handleToggleNews}
         disabled={saving || loggingOut}
+        tutorialTargetId="settings-notifications"
       />
 
       <FollowModeSetting
@@ -180,6 +188,7 @@ const SettingsScreen = () => {
         options={libraryOptions}
         onChange={handleLibraryModeChange}
         disabled={followModeDisabled}
+        tutorialTargetId="settings-library"
       />
 
       <FollowModeSetting
@@ -189,7 +198,28 @@ const SettingsScreen = () => {
         options={wishlistOptions}
         onChange={handleWishlistModeChange}
         disabled={followModeDisabled}
+        tutorialTargetId="settings-wishlist"
       />
+
+      <View style={styles.tutorialSummaryCard}>
+        <Text style={styles.summaryText}>
+          Dès que vos réglages vous conviennent, appuyez sur “Terminer” pour
+          profiter pleinement des notifications et du suivi automatisé.
+        </Text>
+        {isTutorialActive ? (
+          <TouchableOpacity
+            style={styles.summaryButton}
+            onPress={completeTutorial}>
+            <Text style={styles.summaryButtonText}>Terminer le tutoriel</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.restartButton}
+            onPress={restartTutorial}>
+            <Text style={styles.restartButtonText}>Revoir le tutoriel</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
       <View style={styles.section}>
         <LogoutButton onPress={handlePressLogout} loading={loggingOut} />
@@ -382,6 +412,50 @@ const styles = StyleSheet.create({
   legalLabel: {
     flex: 1,
     fontSize: 15,
+    color: COLORS.WHITE,
+    fontWeight: '600',
+  },
+  tutorialSummaryCard: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 24,
+    padding: 20,
+    borderRadius: 18,
+    backgroundColor: COLORS.STEAM_NAVY,
+    borderWidth: 1,
+    borderColor: COLORS.STEAM_BORDER,
+  },
+  summaryText: {
+    color: COLORS.STEAM_TEXT_GRAY,
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  summaryButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: COLORS.STEAM_BLUE,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+  },
+  summaryButtonText: {
+    color: COLORS.WHITE,
+    fontWeight: '600',
+  },
+  summaryHelper: {
+    color: COLORS.STEAM_TEXT_GRAY,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  restartButton: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: COLORS.STEAM_BORDER,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+  },
+  restartButtonText: {
     color: COLORS.WHITE,
     fontWeight: '600',
   },

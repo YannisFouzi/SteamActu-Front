@@ -21,6 +21,9 @@ import { useAppContext } from '../../context/AppContext';
 import { debugLog } from '../../hooks/hooksLogger';
 import { useNewsManager } from '../../hooks/useNewsManager';
 import { useWishlist } from '../../hooks/useWishlist';
+import TutorialTarget from '../../tutorial/TutorialTarget';
+import { TUTORIAL_STEPS } from '../../tutorial/steps';
+import { useTutorial } from '../../tutorial/useTutorial';
 import EmptyStateMessage from './components/EmptyStateMessage';
 import FollowedGamesTab from './components/FollowedGamesTab';
 import GamesList from './components/GamesList';
@@ -135,6 +138,7 @@ const HomeScreen = () => {
     maybeRefreshGames,
     registerNotificationSyncHandler,
   } = useAppContext();
+  const { startTutorialIfNeeded, state: tutorialState } = useTutorial();
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState(TABS.NEWS);
   const [activeNewsTab, setActiveNewsTab] = useState(NEWS_TABS.FEED);
@@ -159,6 +163,74 @@ const HomeScreen = () => {
   useEffect(() => {
     pendingTransitionRef.current = pendingTransition;
   }, [pendingTransition]);
+
+  const tutorialStatus = tutorialState?.status;
+  const tutorialStepIndex = tutorialState?.stepIndex;
+
+  useEffect(() => {
+    if (tutorialStatus !== 'running') {
+      return;
+    }
+
+    const step =
+      typeof tutorialStepIndex === 'number'
+        ? TUTORIAL_STEPS[tutorialStepIndex]
+        : null;
+    if (!step || step.screen !== 'Home') {
+      return;
+    }
+
+    switch (step.id) {
+      case 'home-intro':
+        if (activeTab !== TABS.NEWS) {
+          setActiveTab(TABS.NEWS);
+        }
+        if (activeNewsTab !== NEWS_TABS.FEED) {
+          setActiveNewsTab(NEWS_TABS.FEED);
+        }
+        break;
+      case 'home-news-followed':
+        if (activeTab !== TABS.NEWS) {
+          setActiveTab(TABS.NEWS);
+        }
+        if (activeNewsTab !== NEWS_TABS.FOLLOWED_GAMES) {
+          setActiveNewsTab(NEWS_TABS.FOLLOWED_GAMES);
+        }
+        break;
+      case 'home-my-games':
+        if (activeTab !== TABS.FOLLOW_GAMES) {
+          setActiveTab(TABS.FOLLOW_GAMES);
+        }
+        if (activeFollowTab !== FOLLOW_GAME_TABS.MY_GAMES) {
+          setActiveFollowTab(FOLLOW_GAME_TABS.MY_GAMES);
+        }
+        break;
+      case 'home-wishlist':
+        if (activeTab !== TABS.FOLLOW_GAMES) {
+          setActiveTab(TABS.FOLLOW_GAMES);
+        }
+        if (activeFollowTab !== FOLLOW_GAME_TABS.WISHLIST) {
+          setActiveFollowTab(FOLLOW_GAME_TABS.WISHLIST);
+        }
+        break;
+      case 'home-search':
+        if (activeTab !== TABS.FOLLOW_GAMES) {
+          setActiveTab(TABS.FOLLOW_GAMES);
+        }
+        if (activeFollowTab !== FOLLOW_GAME_TABS.SEARCH) {
+          setActiveFollowTab(FOLLOW_GAME_TABS.SEARCH);
+        }
+        break;
+      default:
+        break;
+    }
+  }, [
+    activeFollowTab,
+    activeNewsTab,
+    activeTab,
+    tutorialStatus,
+    tutorialStepIndex,
+  ]);
   const isNewsTab = activeTab === TABS.NEWS;
   const isFollowGamesTab = activeTab === TABS.FOLLOW_GAMES;
   const isFeedTab = activeNewsTab === NEWS_TABS.FEED;
@@ -403,6 +475,12 @@ const HomeScreen = () => {
   const isFirstRender = useRef(true);
   const hasFetchedWishlistRef = useRef(false);
   const followedGamesExternalHandlerRef = useRef(null);
+  useEffect(() => {
+    if (steamId) {
+      startTutorialIfNeeded();
+    }
+  }, [steamId, startTutorialIfNeeded]);
+
 
   const registerFollowedGamesExternalHandler = useCallback(handler => {
     followedGamesExternalHandlerRef.current = handler;
@@ -854,11 +932,13 @@ const HomeScreen = () => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>Steam Actu</Text>
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => navigation.navigate('Settings')}>
-          <Text style={styles.headerButtonText}>⚙️</Text>
-        </TouchableOpacity>
+        <TutorialTarget id="home-settings-button">
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => navigation.navigate('Settings')}>
+            <Text style={styles.headerButtonText}>⚙️</Text>
+          </TouchableOpacity>
+        </TutorialTarget>
       </View>
 
       <PanGestureHandler
@@ -867,7 +947,7 @@ const HomeScreen = () => {
         onGestureEvent={onGestureEvent}
         onEnded={handleGestureEnd}>
         <View style={styles.gestureRoot}>
-          <View style={styles.tabsContainer}>
+          <TutorialTarget id="home-tabs" style={styles.tabsContainer}>
             {TAB_ITEMS.map(tab => (
               <TouchableOpacity
                 key={tab.key}
@@ -885,7 +965,7 @@ const HomeScreen = () => {
                 </Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </TutorialTarget>
 
           {isNewsTab && (
             <View style={styles.subTabsContainer}>

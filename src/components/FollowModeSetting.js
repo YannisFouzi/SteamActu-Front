@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { COLORS, TEXT_STYLES } from '../constants';
+import TutorialTarget from '../tutorial/TutorialTarget';
 
 const FollowModeSetting = ({
   label,
@@ -9,7 +10,47 @@ const FollowModeSetting = ({
   options,
   onChange,
   disabled = false,
+  tutorialTargetId,
 }) => {
+  const optionsContent = (
+    <View style={styles.optionsContainer}>
+      {options.map(option => {
+        const isActive = option.value === value;
+        return (
+          <TouchableOpacity
+            key={option.value}
+            style={[
+              styles.optionRow,
+              isActive && styles.optionRowActive,
+              disabled && styles.optionRowDisabled,
+            ]}
+            onPress={() => {
+              if (!disabled && option.value !== value && typeof onChange === 'function') {
+                onChange(option.value);
+              }
+            }}
+            activeOpacity={disabled ? 1 : 0.9}>
+            <View
+              style={[
+                styles.radioOuter,
+                isActive && styles.radioOuterActive,
+                disabled && styles.radioOuterDisabled,
+              ]}>
+              {isActive ? <View style={styles.radioInner} /> : null}
+            </View>
+
+            <View style={styles.optionContent}>
+              <Text style={styles.optionTitle}>{option.title}</Text>
+              {option.subtitle ? (
+                <Text style={styles.optionSubtitle}>{option.subtitle}</Text>
+              ) : null}
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+
   return (
     <View style={styles.section}>
       <Text style={styles.settingLabel}>{label}</Text>
@@ -17,42 +58,11 @@ const FollowModeSetting = ({
         <Text style={styles.settingDescription}>{description}</Text>
       ) : null}
 
-      <View style={styles.optionsContainer}>
-        {options.map(option => {
-          const isActive = option.value === value;
-          return (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.optionRow,
-                isActive && styles.optionRowActive,
-                disabled && styles.optionRowDisabled,
-              ]}
-              onPress={() => {
-                if (!disabled && option.value !== value && typeof onChange === 'function') {
-                  onChange(option.value);
-                }
-              }}
-              activeOpacity={disabled ? 1 : 0.9}>
-              <View
-                style={[
-                  styles.radioOuter,
-                  isActive && styles.radioOuterActive,
-                  disabled && styles.radioOuterDisabled,
-                ]}>
-                {isActive ? <View style={styles.radioInner} /> : null}
-              </View>
-
-              <View style={styles.optionContent}>
-                <Text style={styles.optionTitle}>{option.title}</Text>
-                {option.subtitle ? (
-                  <Text style={styles.optionSubtitle}>{option.subtitle}</Text>
-                ) : null}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {tutorialTargetId ? (
+        <TutorialTarget id={tutorialTargetId}>{optionsContent}</TutorialTarget>
+      ) : (
+        optionsContent
+      )}
     </View>
   );
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 import { COLORS, TEXT_STYLES } from '../constants';
+import TutorialTarget from '../tutorial/TutorialTarget';
 
 /**
  * Composant réutilisable pour une section de paramètres avec Switch
@@ -12,19 +13,28 @@ const SettingSection = ({
   value,
   onValueChange,
   disabled = false,
+  tutorialTargetId,
 }) => {
+  const settingRow = (
+    <View style={styles.settingRow}>
+      <Text style={styles.settingLabel}>{label}</Text>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{false: COLORS.STEAM_TEXT_GRAY, true: COLORS.STEAM_GRAY}}
+        thumbColor={value ? COLORS.STEAM_BLUE : '#f4f3f4'}
+        disabled={disabled}
+      />
+    </View>
+  );
+
   return (
     <View style={styles.section}>
-      <View style={styles.settingRow}>
-        <Text style={styles.settingLabel}>{label}</Text>
-        <Switch
-          value={value}
-          onValueChange={onValueChange}
-          trackColor={{false: COLORS.STEAM_TEXT_GRAY, true: COLORS.STEAM_GRAY}}
-          thumbColor={value ? COLORS.STEAM_BLUE : '#f4f3f4'}
-          disabled={disabled}
-        />
-      </View>
+      {tutorialTargetId ? (
+        <TutorialTarget id={tutorialTargetId}>{settingRow}</TutorialTarget>
+      ) : (
+        settingRow
+      )}
 
       {description && (
         <Text style={styles.settingDescription}>{description}</Text>

@@ -1,4 +1,4 @@
-﻿import { NavigationContainer } from '@react-navigation/native';
+﻿import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React from 'react';
 import { APP_CONFIG } from '../config/env';
@@ -14,6 +14,7 @@ import LoginScreen from '../screens/LoginScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
+import { useTutorial } from '../tutorial/useTutorial';
 
 const Stack = createStackNavigator();
 
@@ -33,12 +34,28 @@ const linking = {
 
 const AppNavigator = () => {
   const {steamId, user} = useAppContext();
+  const navigationRef = useNavigationContainerRef();
+  const {registerNavigationRef, startTutorialIfNeeded, state: tutorialState} =
+    useTutorial();
   const isAuthenticated = Boolean(steamId && user);
   const navigatorKey = isAuthenticated ? 'auth-stack' : 'guest-stack';
   const initialRouteName = isAuthenticated ? 'Home' : 'Login';
 
+  React.useEffect(() => {
+    registerNavigationRef(navigationRef);
+  }, [navigationRef, registerNavigationRef]);
+
+  React.useEffect(() => {
+    if (isAuthenticated && tutorialState.status !== 'running') {
+      startTutorialIfNeeded();
+    }
+  }, [isAuthenticated, startTutorialIfNeeded, tutorialState.status]);
+
   return (
-    <NavigationContainer theme={NAVIGATION_THEME} linking={linking}>
+    <NavigationContainer
+      ref={navigationRef}
+      theme={NAVIGATION_THEME}
+      linking={linking}>
       <Stack.Navigator
         key={navigatorKey}
         initialRouteName={initialRouteName}
