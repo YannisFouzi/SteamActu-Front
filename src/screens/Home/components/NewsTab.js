@@ -10,10 +10,10 @@ import {
 } from 'react-native';
 import LoadingContainer from '../../../components/LoadingContainer';
 import { COLORS } from '../../../constants';
+import { debugError } from '../../../hooks/hooksLogger';
 import { formatRelativeDate } from '../../../utils';
 import styles from '../styles';
 import EmptyStateMessage from './EmptyStateMessage';
-import { debugError } from '../../../hooks/hooksLogger';
 
 /**
  * Composant pour l'onglet News
@@ -124,7 +124,7 @@ const NewsTab = ({steamId, newsState, fetchNews}) => {
       ) : null}
 
       {activeNewsState?.loading ? (
-        <LoadingContainer text="Chargement du fil d'actualitÃ©s..." />
+        <LoadingContainer text="Chargement du fil d'actualités..." />
       ) : (
         <FlatList
           data={activeNewsState?.items || []}
