@@ -13,11 +13,16 @@ const inferEnvironment = () => {
 };
 
 const ENVIRONMENT = getEnvVar('APP_ENV', inferEnvironment());
+const isDevelopment = ENVIRONMENT === 'development';
 
-// Base API par défaut : prod Railway (même en dev) pour tester l’app sur l’infra distante
+// Switch automatique entre local et prod
+// LOCAL (dev) : Backend sur ton PC (Android Emulator utilise 10.0.2.2 pour localhost)
+// PROD (APK) : Backend sur Railway (à configurer après déploiement)
 const API_BASE_URL = getEnvVar(
   'API_BASE_URL',
-  'https://steamactu-back-production.up.railway.app/api',
+  isDevelopment
+    ? 'http://192.168.50.42:5000/api' // Android Emulator → localhost:5000
+    : 'https://steamactu-back-production.up.railway.app/api', // Production Railway
 );
 
 const STEAM_MEDIA_CDN = getEnvVar(
