@@ -25,13 +25,38 @@ const ACTION_FOLLOW_GAME = 'follow-game';
 
 let androidChannelInitialized = false;
 let iosCategoriesInitialized = false;
+const processedNotificationIds = new Set();
 const appInstance = getApp();
 const messagingInstance = getMessaging(appInstance);
 
 const backgroundEventHandlers = new Set();
 
 notifee.onBackgroundEvent(async event => {
-  for (const handler of Array.from(backgroundEventHandlers)) {
+  const handlers = Array.from(backgroundEventHandlers);
+
+  if (handlers.length === 0) {
+    try {
+      if (
+        (event.type === EventType.PRESS ||
+          event.type === EventType.ACTION_PRESS) &&
+        event.detail?.pressAction?.id === ACTION_OPEN_NEWS
+      ) {
+        const url = event.detail?.notification?.data?.url;
+        if (url) {
+          await openUrlSafely(url);
+          const processedId = event.detail?.notification?.id;
+          if (processedId) {
+            processedNotificationIds.add(processedId);
+          }
+        }
+      }
+    } catch (error) {
+      debugError('[FCM] Erreur fallback background Notifee:', error);
+    }
+    return;
+  }
+
+  for (const handler of handlers) {
     try {
       await handler(event);
     } catch (error) {
@@ -268,10 +293,28 @@ export async function displayRemoteNotification(remoteMessage) {
     await ensureAndroidNotificationChannel();
     await ensureIosNotificationCategories();
 
-    const canUnfollow =
-      payload.allowUnfollow &&
-      payload.data?.appId &&
-      payload.type !== 'follow_prompt';
+    // Validation robuste pour l'affichage du bouton "Ne plus suivre ce jeu"
+    // Conditions requises :
+    // 1. allowUnfollow est activé dans le payload
+    // 2. appId existe et est valide (non vide, numérique)
+    // 3. Type de notification est dans la whitelist (news uniquement)
+    const appId = payload.data?.appId;
+    const isValidAppId =
+      appId && String(appId).trim() !== '' && !isNaN(parseInt(appId, 10));
+    const isAllowedType = payload.type === 'news'; // Whitelist: seulement les news
+
+    const canUnfollow = payload.allowUnfollow && isValidAppId && isAllowedType;
+
+    // Debug logs pour troubleshooting
+    if (payload.allowUnfollow && !canUnfollow) {
+      debugLog(
+        `[FCM] Bouton unfollow non affiché - appId:${appId} valid:${isValidAppId} type:${payload.type} allowed:${isAllowedType}`,
+      );
+    } else if (canUnfollow) {
+      debugLog(
+        `[FCM] ✅ Bouton unfollow activé - appId:${appId} type:${payload.type} platform:${Platform.OS}`,
+      );
+    }
 
     const actions =
       Platform.OS === 'android' && canUnfollow
@@ -496,13 +539,46 @@ export function setupNotificationHandlers(steamId, options = {}) {
       if (remoteMessage) {
         debugLog('[FCM] App ouverte depuis notification (initiale):', remoteMessage);
         const payload = extractNotificationPayload(remoteMessage);
+        if (payload?.id && processedNotificationIds.has(payload.id)) {
+          processedNotificationIds.delete(payload.id);
+          return;
+        }
         if (payload?.data?.url) {
           await openUrlSafely(payload.data.url);
+          if (payload?.id) {
+            processedNotificationIds.add(payload.id);
+          }
         }
       }
     })
     .catch(err => {
       debugError('[FCM] Erreur getInitialNotification:', err);
+    });
+
+  notifee
+    .getInitialNotification()
+    .then(async initialNotification => {
+      if (initialNotification) {
+        debugLog(
+          '[FCM] Notifee initial notification détectée:',
+          initialNotification,
+        );
+        const notificationId = initialNotification.notification?.id;
+        if (notificationId && processedNotificationIds.has(notificationId)) {
+          processedNotificationIds.delete(notificationId);
+          return;
+        }
+        await handleNotificationEvent({
+          type: EventType.PRESS,
+          detail: initialNotification,
+        });
+        if (notificationId) {
+          processedNotificationIds.add(notificationId);
+        }
+      }
+    })
+    .catch(error => {
+      debugError('[FCM] Erreur notifee.getInitialNotification:', error);
     });
 
   // Retourner les fonctions de nettoyage
