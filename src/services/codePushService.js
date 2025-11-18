@@ -452,8 +452,9 @@ export const getGitHubCodePushOptions = (options = {}) => {
     // Custom releaseHistoryFetcher pour GitHub
     releaseHistoryFetcher: async updateRequest => {
       try {
-        // app_version peut ne pas exister, utiliser une valeur par défaut
-        const app_version = updateRequest?.app_version || updateRequest?.appVersion || '1.0.0';
+        // Récupérer la version de l'app depuis updateRequest (CodePush la fournit automatiquement)
+        // Si absente, utiliser '1.0' pour correspondre à versionName dans build.gradle
+        const app_version = updateRequest?.app_version || updateRequest?.appVersion || '1.0';
         
         // Récupérer APP_CONFIG de manière sécurisée
         // Utiliser import dynamique pour éviter les problèmes de timing au démarrage
@@ -518,22 +519,40 @@ export const getGitHubCodePushOptions = (options = {}) => {
           throw new Error('Aucun bundle Android trouvé dans le release');
         }
 
-        // Générer un packageHash unique à partir du tag ou de l'ID de la release
-        const packageHash = release.tag_name.replace(/^v/, '') || release.id.toString();
+        // Générer un packageHash unique à partir du SHA du commit ou du tag
+        // CodePush utilise le packageHash pour identifier de manière unique chaque release
+        const packageHash = release.tag_name.replace(/^v/, '').substring(0, 40) || release.id.toString();
+        
+        // Extraire ou générer un label de version sémantique
+        // Si le tag contient un numéro (ex: v2-xxx), utiliser "1.0.X" où X est le numéro
+        // Sinon, utiliser le tag tel quel
+        let label = release.tag_name;
+        const versionMatch = release.tag_name.match(/v?(\d+)/);
+        if (versionMatch) {
+          const runNumber = versionMatch[1];
+          // Générer une version sémantique basée sur le numéro de run
+          // Ex: v2-xxx -> 1.0.2, v1-xxx -> 1.0.1
+          label = `1.0.${runNumber}`;
+        } else {
+          // Si pas de numéro, utiliser le tag sans le préfixe 'v'
+          label = release.tag_name.replace(/^v/, '');
+        }
 
         debugLog('[CodePush] ✅ Release trouvé:', release.tag_name);
+        debugLog('[CodePush] 📦 Version app:', app_version, 'Label release:', label);
 
         // CodePush attend un format avec releaseHistory (tableau)
-        // Il va ensuite chercher la "latest release" dans ce tableau
+        // IMPORTANT: Le appVersion doit correspondre à la versionName de l'app dans build.gradle
+        // CodePush compare appVersion pour déterminer si la release est compatible
         return {
           releaseHistory: [
             {
               downloadURL: bundleAsset.browser_download_url,
               packageHash: packageHash,
-              label: release.tag_name,
+              label: label,
               packageSize: bundleAsset.size,
               isMandatory: false,
-              appVersion: app_version,
+              appVersion: app_version, // Doit correspondre à versionName dans build.gradle
               description: release.body || release.name || '',
             },
           ],
