@@ -51,6 +51,12 @@ const deriveReturnUrl = baseUrl => {
 
 const APP_SCHEME = getEnvVar('APP_SCHEME', 'steamnotif://');
 
+// Configuration GitHub pour CodePush (optionnel)
+// Format: 'username/repository' (ex: 'yanni/steam-actu')
+const GITHUB_REPO = getEnvVar('GITHUB_REPO', 'YannisFouzi/SteamActu-Front');
+// Token GitHub pour repos privés (optionnel)
+const GITHUB_TOKEN = getEnvVar('GITHUB_TOKEN', null);
+
 export const APP_CONFIG = {
   ENVIRONMENT,
   API_BASE_URL,
@@ -60,6 +66,9 @@ export const APP_CONFIG = {
   ),
   APP_SCHEME,
   STEAM_MEDIA_CDN,
+  // Configuration CodePush GitHub
+  GITHUB_REPO,
+  GITHUB_TOKEN,
 };
 
 export const getEnvValue = (key, fallback) => getEnvVar(key, fallback);
