@@ -15,7 +15,7 @@ import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.soloader.OpenSourceMergedSoMapping
 import com.facebook.soloader.SoLoader
-import com.microsoft.codepush.react.CodePush
+// import com.microsoft.codepush.react.CodePush
 
 class MainApplication : Application(), ReactApplication {
 
@@ -35,9 +35,10 @@ class MainApplication : Application(), ReactApplication {
         override val isHermesEnabled: Boolean = BuildConfig.IS_HERMES_ENABLED
 
         // ⚠️ CODE PUSH : Override pour charger le bundle CodePush
-        override fun getJSBundleFile(): String {
-          return CodePush.getJSBundleFile()
-        }
+        // Temporairement désactivé - le package sera lié automatiquement par autolinking
+        // override fun getJSBundleFile(): String {
+        //   return CodePush.getJSBundleFile()
+        // }
       }
 
   override val reactHost: ReactHost
