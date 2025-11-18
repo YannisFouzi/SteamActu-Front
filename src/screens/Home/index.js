@@ -824,6 +824,7 @@ const HomeScreen = () => {
                     item.appid ? item.appid.toString() : `wishlist-${index}`
                   }
                   contentContainerStyle={styles.wishlistList}
+                  keyboardShouldPersistTaps="handled"
                   ListEmptyComponent={wishlistEmptyComponent}
                   refreshControl={
                   <RefreshControl

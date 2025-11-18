@@ -102,6 +102,7 @@ const SearchGameTab = ({styles}) => {
         renderItem={renderGameItem}
         keyExtractor={item => item.appid.toString()}
         contentContainerStyle={styles.searchResultsList}
+        keyboardShouldPersistTaps="handled"
       />
     );
   };
