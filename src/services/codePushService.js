@@ -9,7 +9,9 @@ import CodePush, {
     InstallMode,
     SyncStatus,
 } from '@bravemobile/react-native-code-push';
+import { Platform } from 'react-native';
 import { debugError, debugLog, showAlert } from '../hooks/hooksLogger';
+import { APP_CONFIG } from '../config/env';
 
 /**
  * État global pour l'écran de mise à jour
@@ -424,11 +426,58 @@ export const getGitHubCodePushOptions = (options = {}) => {
     // Custom releaseHistoryFetcher pour GitHub
     releaseHistoryFetcher: async updateRequest => {
       try {
-        const { app_version } = updateRequest;
-        const { GITHUB_REPO, GITHUB_TOKEN } = APP_CONFIG;
+        // app_version peut ne pas exister, utiliser une valeur par défaut
+        const app_version = updateRequest?.app_version || updateRequest?.appVersion || '1.0.0';
+        
+        // Récupérer APP_CONFIG de manière sécurisée
+        // Utiliser import dynamique pour éviter les problèmes de timing au démarrage
+        let config;
+        try {
+          // Essayer d'abord l'import statique
+          if (typeof APP_CONFIG !== 'undefined' && APP_CONFIG) {
+            config = APP_CONFIG;
+          } else {
+            // Fallback : import dynamique
+            const envModule = await import('../config/env');
+            config = envModule.APP_CONFIG;
+          }
+        } catch (e) {
+          // Si les deux échouent, utiliser import dynamique
+          const envModule = await import('../config/env');
+          config = envModule.APP_CONFIG;
+        }
+        
+        if (!config) {
+          debugError('[CodePush] ⚠️ APP_CONFIG non disponible');
+          return {
+            updateInfo: {
+              downloadURL: '',
+              packageHash: '',
+              label: '',
+              packageSize: 0,
+              isMandatory: false,
+              appVersion: app_version,
+              description: '',
+            },
+          };
+        }
+        
+        const { GITHUB_REPO, GITHUB_TOKEN } = config;
 
         if (!GITHUB_REPO) {
-          throw new Error('GITHUB_REPO non configuré dans env.js');
+          debugError('[CodePush] ⚠️ GITHUB_REPO non configuré, pas de mise à jour disponible');
+          // Retourner un objet vide pour indiquer qu'il n'y a pas de mise à jour
+          return {
+            updateInfo: {
+              downloadURL: '',
+              packageHash: '',
+              label: '',
+              packageSize: 0,
+              isMandatory: false,
+              appVersion: app_version,
+              description: '',
+            },
+          };
         }
 
         const url = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
@@ -471,6 +520,7 @@ export const getGitHubCodePushOptions = (options = {}) => {
         debugError('[CodePush] ❌ Erreur fetch GitHub Release:', error);
         // En cas d'erreur, retourner un objet avec updateInfo vide
         // CodePush considérera qu'il n'y a pas de mise à jour disponible
+        const app_version = updateRequest?.app_version || updateRequest?.appVersion || '1.0.0';
         return {
           updateInfo: {
             downloadURL: '',
