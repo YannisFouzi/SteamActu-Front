@@ -538,10 +538,14 @@ export const getGitHubCodePushOptions = (options = {}) => {
           label = release.tag_name.replace(/^v/, '');
         }
 
+        // Logs de débogage AVANT le return
+        console.log('[CodePush] ✅ Release trouvé:', release.tag_name);
+        console.log('[CodePush] 📦 Version app:', app_version, 'Label release:', label);
+        console.log('[CodePush] 🔗 Download URL:', bundleAsset.browser_download_url);
+        console.log('[CodePush] 🔑 PackageHash:', packageHash);
+        
         debugLog('[CodePush] ✅ Release trouvé:', release.tag_name);
         debugLog('[CodePush] 📦 Version app:', app_version, 'Label release:', label);
-        debugLog('[CodePush] 🔗 Download URL:', bundleAsset.browser_download_url);
-        debugLog('[CodePush] 🔑 PackageHash:', packageHash);
 
         // CodePush attend un format avec releaseHistory (tableau)
         // IMPORTANT: Le appVersion doit correspondre à la versionName de l'app dans build.gradle
@@ -560,6 +564,7 @@ export const getGitHubCodePushOptions = (options = {}) => {
           ],
         };
         
+        console.log('[CodePush] 📤 Retour releaseHistory:', JSON.stringify(releaseData, null, 2));
         debugLog('[CodePush] 📤 Retour releaseHistory:', JSON.stringify(releaseData, null, 2));
         return releaseData;
       } catch (error) {
