@@ -489,6 +489,23 @@ export const getGitHubCodePushOptions = (options = {}) => {
 
         const response = await fetch(url, { headers });
         if (!response.ok) {
+          // Si 404, le repo n'existe pas ou n'a pas de releases - ce n'est pas une erreur critique
+          if (response.status === 404) {
+            debugLog('[CodePush] ℹ️ Aucune release GitHub trouvée (repo inexistant ou sans releases)');
+            // Retourner un objet vide pour indiquer qu'il n'y a pas de mise à jour
+            const app_version = updateRequest?.app_version || updateRequest?.appVersion || '1.0.0';
+            return {
+              updateInfo: {
+                downloadURL: '',
+                packageHash: '',
+                label: '',
+                packageSize: 0,
+                isMandatory: false,
+                appVersion: app_version,
+                description: '',
+              },
+            };
+          }
           throw new Error(`GitHub API error: ${response.status}`);
         }
 
@@ -498,7 +515,20 @@ export const getGitHubCodePushOptions = (options = {}) => {
         );
 
         if (!bundleAsset) {
-          throw new Error('Aucun bundle Android trouvé dans le release');
+          debugLog('[CodePush] ℹ️ Aucun bundle Android trouvé dans le release');
+          // Retourner un objet vide au lieu de throw
+          const app_version = updateRequest?.app_version || updateRequest?.appVersion || '1.0.0';
+          return {
+            updateInfo: {
+              downloadURL: '',
+              packageHash: '',
+              label: '',
+              packageSize: 0,
+              isMandatory: false,
+              appVersion: app_version,
+              description: '',
+            },
+          };
         }
 
         const packageHash = release.tag_name.replace('v', '');
@@ -517,7 +547,12 @@ export const getGitHubCodePushOptions = (options = {}) => {
           },
         };
       } catch (error) {
-        debugError('[CodePush] ❌ Erreur fetch GitHub Release:', error);
+        // Ne pas logger comme erreur critique si c'est juste un repo inexistant
+        if (error.message && error.message.includes('404')) {
+          debugLog('[CodePush] ℹ️ Repository GitHub non trouvé ou sans releases - CodePush désactivé');
+        } else {
+          debugError('[CodePush] ❌ Erreur fetch GitHub Release:', error);
+        }
         // En cas d'erreur, retourner un objet avec updateInfo vide
         // CodePush considérera qu'il n'y a pas de mise à jour disponible
         const app_version = updateRequest?.app_version || updateRequest?.appVersion || '1.0.0';
