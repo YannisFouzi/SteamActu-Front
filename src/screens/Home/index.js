@@ -40,7 +40,7 @@ const TABS = {
 };
 
 const TAB_ITEMS = [
-  {key: TABS.NEWS, label: 'Actualités'},
+  {key: TABS.NEWS, label: 'Actu'},
   {key: TABS.FOLLOW_GAMES, label: 'Suivre un jeu'},
 ];
 
