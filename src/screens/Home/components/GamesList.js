@@ -34,6 +34,7 @@ const GamesList = () => {
         return appId ? `${appId}-${index}` : `game-${index}`;
       }}
       contentContainerStyle={styles.gamesList}
+      keyboardShouldPersistTaps="handled"
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
