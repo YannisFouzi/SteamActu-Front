@@ -518,20 +518,25 @@ export const getGitHubCodePushOptions = (options = {}) => {
           throw new Error('Aucun bundle Android trouvé dans le release');
         }
 
-        const packageHash = release.tag_name.replace('v', '');
+        // Générer un packageHash unique à partir du tag ou de l'ID de la release
+        const packageHash = release.tag_name.replace(/^v/, '') || release.id.toString();
 
         debugLog('[CodePush] ✅ Release trouvé:', release.tag_name);
 
+        // CodePush attend un format avec releaseHistory (tableau)
+        // Il va ensuite chercher la "latest release" dans ce tableau
         return {
-          updateInfo: {
-            downloadURL: bundleAsset.browser_download_url,
-            packageHash,
-            label: release.tag_name,
-            packageSize: bundleAsset.size,
-            isMandatory: false,
-            appVersion: app_version,
-            description: release.body || release.name || '',
-          },
+          releaseHistory: [
+            {
+              downloadURL: bundleAsset.browser_download_url,
+              packageHash: packageHash,
+              label: release.tag_name,
+              packageSize: bundleAsset.size,
+              isMandatory: false,
+              appVersion: app_version,
+              description: release.body || release.name || '',
+            },
+          ],
         };
       } catch (error) {
         // Ne pas logger comme erreur critique - ce sont des cas normaux (repo inexistant, pas de bundle, etc.)
@@ -545,19 +550,10 @@ export const getGitHubCodePushOptions = (options = {}) => {
         } else {
           debugError('[CodePush] ❌ Erreur fetch GitHub Release:', error);
         }
-        // Retourner un objet avec updateInfo vide pour indiquer qu'il n'y a pas de mise à jour
+        // Retourner un tableau vide pour indiquer qu'il n'y a pas de mise à jour
         // CodePush considérera qu'il n'y a pas de mise à jour disponible sans lancer d'erreur
-        const app_version = updateRequest?.app_version || updateRequest?.appVersion || '1.0.0';
         return {
-          updateInfo: {
-            downloadURL: '',
-            packageHash: '',
-            label: '',
-            packageSize: 0,
-            isMandatory: false,
-            appVersion: app_version,
-            description: '',
-          },
+          releaseHistory: [],
         };
       }
     },
