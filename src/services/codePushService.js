@@ -540,11 +540,13 @@ export const getGitHubCodePushOptions = (options = {}) => {
 
         debugLog('[CodePush] ✅ Release trouvé:', release.tag_name);
         debugLog('[CodePush] 📦 Version app:', app_version, 'Label release:', label);
+        debugLog('[CodePush] 🔗 Download URL:', bundleAsset.browser_download_url);
+        debugLog('[CodePush] 🔑 PackageHash:', packageHash);
 
         // CodePush attend un format avec releaseHistory (tableau)
         // IMPORTANT: Le appVersion doit correspondre à la versionName de l'app dans build.gradle
         // CodePush compare appVersion pour déterminer si la release est compatible
-        return {
+        const releaseData = {
           releaseHistory: [
             {
               downloadURL: bundleAsset.browser_download_url,
@@ -557,6 +559,9 @@ export const getGitHubCodePushOptions = (options = {}) => {
             },
           ],
         };
+        
+        debugLog('[CodePush] 📤 Retour releaseHistory:', JSON.stringify(releaseData, null, 2));
+        return releaseData;
       } catch (error) {
         // Ne pas logger comme erreur critique - ce sont des cas normaux (repo inexistant, pas de bundle, etc.)
         if (error.message && (
