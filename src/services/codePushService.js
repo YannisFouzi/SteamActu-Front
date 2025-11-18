@@ -538,33 +538,22 @@ export const getGitHubCodePushOptions = (options = {}) => {
           label = release.tag_name.replace(/^v/, '');
         }
 
-        // Logs de débogage AVANT le return
-        console.log('[CodePush] ✅ Release trouvé:', release.tag_name);
-        console.log('[CodePush] 📦 Version app:', app_version, 'Label release:', label);
-        console.log('[CodePush] 🔗 Download URL:', bundleAsset.browser_download_url);
-        console.log('[CodePush] 🔑 PackageHash:', packageHash);
-        
         debugLog('[CodePush] ✅ Release trouvé:', release.tag_name);
         debugLog('[CodePush] 📦 Version app:', app_version, 'Label release:', label);
 
-        // CodePush attend un format avec releaseHistory (tableau)
-        // IMPORTANT: Le appVersion doit correspondre à la versionName de l'app dans build.gradle
-        // CodePush compare appVersion pour déterminer si la release est compatible
+        // CodePush attend un Record (objet) où les clés sont les labels de version
+        // Format: { "v1": { enabled, mandatory, downloadUrl, packageHash }, "v2": {...} }
+        // IMPORTANT: downloadUrl (pas downloadURL), enabled et mandatory (pas isMandatory)
         const releaseData = {
-          releaseHistory: [
-            {
-              downloadURL: bundleAsset.browser_download_url,
-              packageHash: packageHash,
-              label: label,
-              packageSize: bundleAsset.size,
-              isMandatory: false,
-              appVersion: app_version, // Doit correspondre à versionName dans build.gradle
-              description: release.body || release.name || '',
-            },
-          ],
+          [label]: {
+            enabled: true,
+            mandatory: false,
+            downloadUrl: bundleAsset.browser_download_url, // downloadUrl (pas downloadURL)
+            packageHash: packageHash,
+            rollout: 100, // 100% de rollout par défaut
+          },
         };
         
-        console.log('[CodePush] 📤 Retour releaseHistory:', JSON.stringify(releaseData, null, 2));
         debugLog('[CodePush] 📤 Retour releaseHistory:', JSON.stringify(releaseData, null, 2));
         return releaseData;
       } catch (error) {
@@ -579,11 +568,9 @@ export const getGitHubCodePushOptions = (options = {}) => {
         } else {
           debugError('[CodePush] ❌ Erreur fetch GitHub Release:', error);
         }
-        // Retourner un tableau vide pour indiquer qu'il n'y a pas de mise à jour
+        // Retourner un objet vide pour indiquer qu'il n'y a pas de mise à jour
         // CodePush considérera qu'il n'y a pas de mise à jour disponible sans lancer d'erreur
-        return {
-          releaseHistory: [],
-        };
+        return {};
       }
     },
   };
