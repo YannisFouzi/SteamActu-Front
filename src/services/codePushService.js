@@ -523,37 +523,49 @@ export const getGitHubCodePushOptions = (options = {}) => {
         // CodePush utilise le packageHash pour identifier de manière unique chaque release
         const packageHash = release.tag_name.replace(/^v/, '').substring(0, 40) || release.id.toString();
         
-        // Extraire ou générer un label de version sémantique
+        // Extraire ou générer un label de version sémantique VALIDE
+        // CodePush utilise SemverVersioning qui nécessite un format sémantique strict (X.Y.Z)
         // Si le tag contient un numéro (ex: v2-xxx), utiliser "1.0.X" où X est le numéro
-        // Sinon, utiliser le tag tel quel
-        let label = release.tag_name;
+        let label = '1.0.0'; // Par défaut
         const versionMatch = release.tag_name.match(/v?(\d+)/);
         if (versionMatch) {
-          const runNumber = versionMatch[1];
+          const runNumber = parseInt(versionMatch[1], 10);
           // Générer une version sémantique basée sur le numéro de run
-          // Ex: v2-xxx -> 1.0.2, v1-xxx -> 1.0.1
+          // Ex: v2-xxx -> 1.0.2, v1-xxx -> 1.0.1, v6-xxx -> 1.0.6
           label = `1.0.${runNumber}`;
         } else {
-          // Si pas de numéro, utiliser le tag sans le préfixe 'v'
-          label = release.tag_name.replace(/^v/, '');
+          // Si pas de numéro, essayer d'extraire une version du tag
+          // Sinon, utiliser 1.0.0 par défaut
+          const semverMatch = release.tag_name.match(/(\d+)\.(\d+)\.(\d+)/);
+          if (semverMatch) {
+            label = semverMatch[0];
+          } else {
+            label = '1.0.0';
+          }
         }
 
         debugLog('[CodePush] ✅ Release trouvé:', release.tag_name);
         debugLog('[CodePush] 📦 Version app:', app_version, 'Label release:', label);
+        debugLog('[CodePush] 🔗 Download URL:', bundleAsset.browser_download_url);
+        debugLog('[CodePush] 🔑 PackageHash:', packageHash);
 
         // CodePush attend un Record (objet) où les clés sont les labels de version
-        // Format: { "v1": { enabled, mandatory, downloadUrl, packageHash }, "v2": {...} }
-        // IMPORTANT: downloadUrl (pas downloadURL), enabled et mandatory (pas isMandatory)
+        // Format: { "1.0.6": { enabled, mandatory, downloadUrl, packageHash } }
+        // IMPORTANT: 
+        // - downloadUrl (pas downloadURL)
+        // - enabled et mandatory (pas isMandatory)
+        // - Le label DOIT être une version sémantique valide (X.Y.Z)
         const releaseData = {
           [label]: {
             enabled: true,
             mandatory: false,
-            downloadUrl: bundleAsset.browser_download_url, // downloadUrl (pas downloadURL)
+            downloadUrl: bundleAsset.browser_download_url,
             packageHash: packageHash,
             rollout: 100, // 100% de rollout par défaut
           },
         };
         
+        console.log('[CodePush] 📤 Retour releaseHistory:', JSON.stringify(releaseData, null, 2));
         debugLog('[CodePush] 📤 Retour releaseHistory:', JSON.stringify(releaseData, null, 2));
         return releaseData;
       } catch (error) {
