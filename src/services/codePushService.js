@@ -111,7 +111,16 @@ export const getCodePushOptions = (options = {}) => {
     },
 
     onSyncError: error => {
-      debugError('[CodePush] ❌ Erreur de synchronisation:', error);
+      // Ne pas logger comme erreur critique si c'est juste un repo inexistant ou pas de mise à jour
+      const errorMessage = error?.message || String(error);
+      if (errorMessage.includes('no latest release') || 
+          errorMessage.includes('non trouvé') || 
+          errorMessage.includes('non configuré') ||
+          errorMessage.includes('404')) {
+        debugLog('[CodePush] ℹ️ Aucune mise à jour disponible');
+      } else {
+        debugError('[CodePush] ❌ Erreur de synchronisation:', error);
+      }
       // Masquer le modal en cas d'erreur
       updateModalState({
         visible: false,
@@ -416,6 +425,23 @@ function getStatusLabel(status) {
 }
 
 /**
+ * Vérifie si le repository GitHub existe et a des releases
+ * @param {string} repo - Repository au format 'username/repo'
+ * @param {string} token - Token GitHub optionnel
+ * @returns {Promise<boolean>} true si le repo existe et a des releases
+ */
+export async function checkGitHubRepoExists(repo, token = null) {
+  try {
+    const url = `https://api.github.com/repos/${repo}/releases/latest`;
+    const headers = token ? { Authorization: `token ${token}` } : {};
+    const response = await fetch(url, { headers });
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
  * Configuration pour GitHub Releases (si tu utilises la solution GitHub)
  * 
  * @param {Object} options - Options de configuration (même que getCodePushOptions)
@@ -448,36 +474,18 @@ export const getGitHubCodePushOptions = (options = {}) => {
         }
         
         if (!config) {
-          debugError('[CodePush] ⚠️ APP_CONFIG non disponible');
-          return {
-            updateInfo: {
-              downloadURL: '',
-              packageHash: '',
-              label: '',
-              packageSize: 0,
-              isMandatory: false,
-              appVersion: app_version,
-              description: '',
-            },
-          };
+          debugLog('[CodePush] ℹ️ APP_CONFIG non disponible');
+          // Retourner un objet vide pour indiquer qu'il n'y a pas de mise à jour
+          // CodePush considérera qu'il n'y a pas de mise à jour disponible
+          throw new Error('APP_CONFIG non disponible');
         }
         
         const { GITHUB_REPO, GITHUB_TOKEN } = config;
 
-        if (!GITHUB_REPO) {
-          debugError('[CodePush] ⚠️ GITHUB_REPO non configuré, pas de mise à jour disponible');
-          // Retourner un objet vide pour indiquer qu'il n'y a pas de mise à jour
-          return {
-            updateInfo: {
-              downloadURL: '',
-              packageHash: '',
-              label: '',
-              packageSize: 0,
-              isMandatory: false,
-              appVersion: app_version,
-              description: '',
-            },
-          };
+        if (!GITHUB_REPO || GITHUB_REPO.trim() === '') {
+          debugLog('[CodePush] ℹ️ GITHUB_REPO non configuré');
+          // Retourner une erreur pour que CodePush sache qu'il n'y a pas de mise à jour
+          throw new Error('GITHUB_REPO non configuré');
         }
 
         const url = `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`;
@@ -489,22 +497,12 @@ export const getGitHubCodePushOptions = (options = {}) => {
 
         const response = await fetch(url, { headers });
         if (!response.ok) {
-          // Si 404, le repo n'existe pas ou n'a pas de releases - ce n'est pas une erreur critique
+          // Si 404, le repo n'existe pas ou n'a pas de releases
           if (response.status === 404) {
-            debugLog('[CodePush] ℹ️ Aucune release GitHub trouvée (repo inexistant ou sans releases)');
-            // Retourner un objet vide pour indiquer qu'il n'y a pas de mise à jour
-            const app_version = updateRequest?.app_version || updateRequest?.appVersion || '1.0.0';
-            return {
-              updateInfo: {
-                downloadURL: '',
-                packageHash: '',
-                label: '',
-                packageSize: 0,
-                isMandatory: false,
-                appVersion: app_version,
-                description: '',
-              },
-            };
+            debugLog('[CodePush] ℹ️ Repository GitHub non trouvé ou sans releases');
+            // Lancer une erreur pour que CodePush sache qu'il n'y a pas de mise à jour disponible
+            // Cette erreur sera catchée et gérée silencieusement
+            throw new Error('Repository GitHub non trouvé ou sans releases');
           }
           throw new Error(`GitHub API error: ${response.status}`);
         }
@@ -516,19 +514,8 @@ export const getGitHubCodePushOptions = (options = {}) => {
 
         if (!bundleAsset) {
           debugLog('[CodePush] ℹ️ Aucun bundle Android trouvé dans le release');
-          // Retourner un objet vide au lieu de throw
-          const app_version = updateRequest?.app_version || updateRequest?.appVersion || '1.0.0';
-          return {
-            updateInfo: {
-              downloadURL: '',
-              packageHash: '',
-              label: '',
-              packageSize: 0,
-              isMandatory: false,
-              appVersion: app_version,
-              description: '',
-            },
-          };
+          // Lancer une erreur pour indiquer qu'il n'y a pas de mise à jour disponible
+          throw new Error('Aucun bundle Android trouvé dans le release');
         }
 
         const packageHash = release.tag_name.replace('v', '');
@@ -547,14 +534,19 @@ export const getGitHubCodePushOptions = (options = {}) => {
           },
         };
       } catch (error) {
-        // Ne pas logger comme erreur critique si c'est juste un repo inexistant
-        if (error.message && error.message.includes('404')) {
-          debugLog('[CodePush] ℹ️ Repository GitHub non trouvé ou sans releases - CodePush désactivé');
+        // Ne pas logger comme erreur critique - ce sont des cas normaux (repo inexistant, pas de bundle, etc.)
+        if (error.message && (
+          error.message.includes('404') || 
+          error.message.includes('non trouvé') || 
+          error.message.includes('non configuré') ||
+          error.message.includes('Aucun bundle')
+        )) {
+          debugLog('[CodePush] ℹ️', error.message);
         } else {
           debugError('[CodePush] ❌ Erreur fetch GitHub Release:', error);
         }
-        // En cas d'erreur, retourner un objet avec updateInfo vide
-        // CodePush considérera qu'il n'y a pas de mise à jour disponible
+        // Retourner un objet avec updateInfo vide pour indiquer qu'il n'y a pas de mise à jour
+        // CodePush considérera qu'il n'y a pas de mise à jour disponible sans lancer d'erreur
         const app_version = updateRequest?.app_version || updateRequest?.appVersion || '1.0.0';
         return {
           updateInfo: {

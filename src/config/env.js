@@ -53,7 +53,8 @@ const APP_SCHEME = getEnvVar('APP_SCHEME', 'steamnotif://');
 
 // Configuration GitHub pour CodePush (optionnel)
 // Format: 'username/repository' (ex: 'yanni/steam-actu')
-const GITHUB_REPO = getEnvVar('GITHUB_REPO', 'YannisFouzi/SteamActu-Front');
+// Mettre à null ou '' pour désactiver CodePush si le repo n'existe pas
+const GITHUB_REPO = getEnvVar('GITHUB_REPO', null); // Désactivé par défaut - mettre votre repo ici si vous en avez un
 // Token GitHub pour repos privés (optionnel)
 const GITHUB_TOKEN = getEnvVar('GITHUB_TOKEN', null);
 

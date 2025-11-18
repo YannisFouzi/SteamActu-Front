@@ -17,6 +17,7 @@ import {
   setUpdateModalStateSetter,
   notifyAppReady,
   getUpdateModalState,
+  checkGitHubRepoExists,
 } from './src/services/codePushService';
 
 // Type pour l'état du modal de mise à jour
@@ -70,11 +71,28 @@ function App(): React.JSX.Element {
 }
 
 // Configuration CodePush avec GitHub Releases
-// Redémarrage immédiat activé par défaut pour compatibilité backend
-const codePushOptions = getGitHubCodePushOptions({
-  forceImmediateRestart: true, // Redémarrage immédiat (sécurité backend)
-});
+// CodePush sera désactivé si le repo n'existe pas (géré dans releaseHistoryFetcher)
+const { APP_CONFIG } = require('./src/config/env');
 
-// Wrapper CodePush autour de l'app
-// @ts-expect-error - releaseHistoryFetcher retourne un format compatible mais TypeScript ne le reconnaît pas
-export default CodePush(codePushOptions)(App);
+let AppWithCodePush = App;
+
+// Activer CodePush seulement si GITHUB_REPO est configuré
+if (APP_CONFIG && APP_CONFIG.GITHUB_REPO && APP_CONFIG.GITHUB_REPO.trim() !== '') {
+  try {
+    const codePushOptions = getGitHubCodePushOptions({
+      forceImmediateRestart: true, // Redémarrage immédiat (sécurité backend)
+    });
+    
+    // Wrapper CodePush autour de l'app
+    // Le releaseHistoryFetcher gérera le cas où le repo n'existe pas
+    // @ts-expect-error - releaseHistoryFetcher retourne un format compatible mais TypeScript ne le reconnaît pas
+    AppWithCodePush = CodePush(codePushOptions)(App);
+  } catch (error) {
+    console.warn('[CodePush] Configuration échouée, CodePush désactivé:', error);
+    AppWithCodePush = App;
+  }
+} else {
+  console.log('[CodePush] GITHUB_REPO non configuré - CodePush désactivé');
+}
+
+export default AppWithCodePush;
