@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import {
     ActivityIndicator,
     FlatList,
@@ -7,41 +7,16 @@ import {
 import GameCard from '../../../components/GameCard';
 import { COLORS } from '../../../constants';
 import { useAppContext } from '../../../context/AppContext';
-import { debugError } from '../../../hooks/hooksLogger';
-import { userService } from '../../../services/api';
+import { useFollowedGames } from '../../../hooks/useFollowedGames';
 import EmptyStateMessage from './EmptyStateMessage';
 
-const FollowedGamesTab = ({
+const FollowedGamesTab = React.memo(({
   styles,
   onToggleFollowState,
   registerExternalUnfollowHandler,
 }) => {
   const {steamId} = useAppContext();
-  const [followedGames, setFollowedGames] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const fetchFollowedGames = useCallback(async () => {
-    if (!steamId) {
-      setFollowedGames([]);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await userService.getFollowedGamesDetails(steamId);
-      setFollowedGames(response.data.followedGames || []);
-    } catch (error) {
-      debugError('Erreur récupération jeux suivis:', error);
-      setFollowedGames([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [steamId]);
-
-  useEffect(() => {
-    fetchFollowedGames();
-  }, [fetchFollowedGames]);
+  const {followedGames, loading, removeFollowedGame} = useFollowedGames(steamId);
 
   useEffect(() => {
     if (typeof registerExternalUnfollowHandler !== 'function') {
@@ -52,15 +27,13 @@ const FollowedGamesTab = ({
       if (!appId) {
         return;
       }
-      setFollowedGames(prev =>
-        prev.filter(game => game.appId?.toString() !== appId.toString()),
-      );
+      removeFollowedGame(appId);
     });
 
     return unregister;
-  }, [registerExternalUnfollowHandler]);
+  }, [registerExternalUnfollowHandler, removeFollowedGame]);
 
-  const renderGameItem = ({item}) => {
+  const renderGameItem = useCallback(({item}) => {
     const appId = item.appId?.toString();
     const imageUrl =
       item.imageUrl ||
@@ -79,9 +52,7 @@ const FollowedGamesTab = ({
           isFollowed: true,
           onToggle: ({nextIsFollowed}) => {
             if (!nextIsFollowed && appId) {
-              setFollowedGames(prev =>
-                prev.filter(game => game.appId?.toString() !== appId),
-              );
+              removeFollowedGame(appId);
             }
             if (typeof onToggleFollowState === 'function' && appId) {
               onToggleFollowState(appId, nextIsFollowed);
@@ -90,7 +61,7 @@ const FollowedGamesTab = ({
         }}
       />
     );
-  };
+  }, [onToggleFollowState, removeFollowedGame]);
 
   if (loading) {
     return (
@@ -121,6 +92,8 @@ const FollowedGamesTab = ({
       contentContainerStyle={styles.followedGamesList}
     />
   );
-};
+});
+
+FollowedGamesTab.displayName = 'FollowedGamesTab';
 
 export default FollowedGamesTab;

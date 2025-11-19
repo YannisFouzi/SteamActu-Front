@@ -40,7 +40,6 @@ const SettingsScreen = () => {
 
   // Hook personnalisé pour la gestion des paramètres
   const {
-    loading,
     saving,
     newsNotifications,
     libraryFollowMode,

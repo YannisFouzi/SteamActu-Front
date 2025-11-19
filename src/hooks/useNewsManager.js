@@ -1,10 +1,17 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { newsService } from '../services/api';
 import { debugError, debugLog, maskSteamId } from './hooksLogger';
+import {
+  buildStorageKey,
+  getJSONItem,
+  setJSONItem,
+} from './useAsyncStorage';
 
 /**
  * Hook personnalisé pour la gestion des actualités
  * Extrait la logique complexe de gestion des news du HomeScreen
+ * Inclut un système de cache pour afficher instantanément les news
  */
 export const useNewsManager = steamId => {
   // Factory pour créer l'état initial des news
@@ -24,6 +31,7 @@ export const useNewsManager = steamId => {
   });
   const isMountedRef = useRef(true);
   const requestIdRef = useRef(0);
+  const newsHydratedFromCacheRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -43,6 +51,18 @@ export const useNewsManager = steamId => {
 
     setNewsState(updater);
   }, []);
+
+  const persistNewsCache = useCallback(
+    async (items, targetSteamId = steamId) => {
+      const cacheKey = buildStorageKey('newsFeed', targetSteamId);
+      if (!cacheKey) {
+        return;
+      }
+      await setJSONItem(cacheKey, items);
+      debugLog('[NEWS] Cache sauvegardé', { count: items.length });
+    },
+    [steamId],
+  );
 
   // Fonction pour récupérer les actualités
   const fetchNews = useCallback(
@@ -101,6 +121,9 @@ export const useNewsManager = steamId => {
         debugLog('📰 [NEWS] ✅ News récupérées:', items.length, 'items');
         debugLog('📰 [NEWS] ✅ Chargement terminé\n');
 
+        // Persister dans le cache
+        await persistNewsCache(items);
+
         safeSetNewsState(prev => {
           const previous = prev.news || createInitialNewsState();
           return {
@@ -137,8 +160,44 @@ export const useNewsManager = steamId => {
         });
       }
     },
-    [createInitialNewsState, safeSetNewsState, steamId],
+    [createInitialNewsState, safeSetNewsState, steamId, persistNewsCache],
   );
+
+  // Hydratation depuis le cache au montage
+  useEffect(() => {
+    const hydrateFromCache = async () => {
+      if (!steamId || newsHydratedFromCacheRef.current) {
+        return;
+      }
+
+      const cacheKey = buildStorageKey('newsFeed', steamId);
+      if (!cacheKey) {
+        return;
+      }
+
+      try {
+        const cachedNews = await getJSONItem(cacheKey, null);
+        if (Array.isArray(cachedNews) && cachedNews.length > 0) {
+          newsHydratedFromCacheRef.current = true;
+          safeSetNewsState(prev => ({
+            ...prev,
+            news: {
+              ...createInitialNewsState(),
+              items: cachedNews,
+              initialized: true,
+            },
+          }));
+          debugLog('[NEWS] Hydraté depuis le cache', {
+            count: cachedNews.length,
+          });
+        }
+      } catch (err) {
+        debugError('[NEWS] Erreur hydratation cache:', err);
+      }
+    };
+
+    hydrateFromCache();
+  }, [steamId, safeSetNewsState, createInitialNewsState]);
 
   // Fonction pour mettre à jour le statut de suivi d'un jeu dans les news
   const updateNewsFollowStatus = useCallback(

@@ -340,7 +340,8 @@ const HomeScreen = () => {
       }
 
       if (!pendingTransitionRef.current) {
-        if (Math.abs(clampedX) > 12) {
+        // Threshold augmenté de 12px à 40px pour éviter les détections accidentelles
+        if (Math.abs(clampedX) > 40) {
           const direction = clampedX > 0 ? 'right' : 'left';
           const transition = resolveTransition(direction);
           if (transition) {
@@ -351,9 +352,10 @@ const HomeScreen = () => {
         }
       } else {
         const expectedDirection = pendingTransitionRef.current.direction;
+        // Threshold d'annulation augmenté de 4px à 20px pour plus de stabilité
         if (
-          (expectedDirection === 'left' && clampedX > 4) ||
-          (expectedDirection === 'right' && clampedX < -4)
+          (expectedDirection === 'left' && clampedX > 20) ||
+          (expectedDirection === 'right' && clampedX < -20)
         ) {
           pendingTransitionRef.current = null;
           setPendingTransition(null);
@@ -385,7 +387,7 @@ const HomeScreen = () => {
           toValue: 0,
           damping: 18,
           stiffness: 220,
-          useNativeDriver: false,
+          useNativeDriver: true,
         }).start(() => {
           gestureTranslationX.setValue(0);
           gestureTranslationY.setValue(0);
@@ -411,7 +413,7 @@ const HomeScreen = () => {
         toValue: slideOutTarget,
         duration: 200,
         easing: Easing.out(Easing.cubic),
-        useNativeDriver: false,
+        useNativeDriver: true,
       }).start(() => {
         applyTransition(transition);
         gestureTranslationY.setValue(0);

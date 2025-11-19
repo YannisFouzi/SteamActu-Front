@@ -8,8 +8,8 @@ import EmptyStateMessage from './EmptyStateMessage';
 import GameItemAlt from './GameItemAlt';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
 
-const GamesList = () => {
-  const {filteredGames, refreshing, handleRefresh, searchQuery, sortOption} =
+const GamesList = React.memo(() => {
+  const {filteredGames, refreshing, handleRefresh, searchQuery} =
     useAppContext();
 
   const renderEmptyList = () =>
@@ -27,7 +27,6 @@ const GamesList = () => {
 
   return (
     <FlatList
-      key={sortOption}
       data={filteredGames}
       renderItem={({item}) => <GameItemAlt game={item} />}
       keyExtractor={(item, index) => {
@@ -47,6 +46,8 @@ const GamesList = () => {
       ListEmptyComponent={renderEmptyList}
     />
   );
-};
+});
+
+GamesList.displayName = 'GamesList';
 
 export default GamesList;
