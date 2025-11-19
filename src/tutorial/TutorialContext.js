@@ -105,14 +105,44 @@ const TutorialProvider = ({ children }) => {
     if (!ref) {
       return;
     }
-    const currentRoute = ref.getCurrentRoute();
-    if (!currentRoute || currentRoute.name !== step.screen) {
+
+    const navigateToNested = (tabName, nestedScreen) => {
       try {
-        ref.navigate(step.screen);
+        ref.navigate('Home', {
+          screen: tabName,
+          params: nestedScreen ? {screen: nestedScreen} : undefined,
+        });
       } catch (error) {
         // eslint-disable-next-line no-console
         console.warn('[Tutorial] navigation error', error);
       }
+    };
+
+    if (step.screen === 'Actu') {
+      navigateToNested('Actu', step.targetTab || 'Fil');
+      return;
+    }
+
+    if (step.screen === 'SuivreUnJeu') {
+      navigateToNested('SuivreUnJeu', step.targetTab || 'MesJeux');
+      return;
+    }
+
+    if (step.screen === 'MonCompte') {
+      navigateToNested('MonCompte', 'Settings');
+      return;
+    }
+
+    if (step.screen === 'Settings') {
+      navigateToNested('MonCompte', 'Settings');
+      return;
+    }
+
+    try {
+      ref.navigate(step.screen);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn('[Tutorial] navigation error', error);
     }
   }, []);
 

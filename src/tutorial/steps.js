@@ -1,31 +1,34 @@
 export const TUTORIAL_STEPS = [
   {
     id: 'home-intro',
-    screen: 'Home',
+    screen: 'Actu',
+    targetTab: 'Fil',
     targetId: null,
     title: 'Premier pas',
     description:
-      'Ici, vous retrouvez les actualités correspondant aux jeux que vous allez suivre.',
+      'Ici, vous retrouvez les actualites correspondant aux jeux que vous allez suivre.',
   },
   {
     id: 'home-news-followed',
-    screen: 'Home',
+    screen: 'Actu',
+    targetTab: 'JeuxSuivis',
     targetId: null,
     title: 'Jeux suivis',
-    description:
-      'Ici, vous aurez la liste des jeux que vous suivez.',
+    description: 'Ici, vous aurez la liste des jeux que vous suivez.',
   },
   {
     id: 'home-my-games',
-    screen: 'Home',
+    screen: 'SuivreUnJeu',
+    targetTab: 'MesJeux',
     targetId: null,
     title: 'Mes jeux',
     description:
-      'Retrouvez la liste des jeux déjà présents dans votre bibliothèque et gérez leur suivi.',
+      'Retrouvez la liste des jeux deja presents dans votre bibliotheque et gerez leur suivi.',
   },
   {
     id: 'home-wishlist',
-    screen: 'Home',
+    screen: 'SuivreUnJeu',
+    targetTab: 'Wishlist',
     targetId: null,
     title: 'Wishlist',
     description:
@@ -33,25 +36,27 @@ export const TUTORIAL_STEPS = [
   },
   {
     id: 'home-search',
-    screen: 'Home',
+    screen: 'SuivreUnJeu',
+    targetTab: 'Rechercher',
     targetId: null,
     title: 'Chercher un jeu',
     description:
-      'Utilisez la recherche Steam pour ajouter de nouveaux jeux à votre suivi.',
+      'Utilisez la recherche Steam pour ajouter de nouveaux jeux a votre suivi.',
   },
   {
     id: 'home-settings',
-    screen: 'Home',
-    targetId: 'home-settings-button',
-    title: 'Accéder aux paramètres',
+    screen: 'MonCompte',
+    targetTab: 'Settings',
+    targetId: null,
+    title: 'Acceder aux parametres',
     description:
-      'Appuyez ici pour régler vos notifications et vos préférences de suivi.',
+      'Appuyez ici pour regler vos notifications et vos preferences de suivi.',
   },
   {
     id: 'settings-notifications',
     screen: 'Settings',
     targetId: 'settings-notifications',
-    title: 'Notifications d\'actualités',
+    title: "Notifications d'actualites",
     description:
       'Activez ce bouton pour recevoir les news des jeux que vous suivez.',
   },
@@ -59,9 +64,9 @@ export const TUTORIAL_STEPS = [
     id: 'settings-library',
     screen: 'Settings',
     targetId: 'settings-library',
-    title: 'Jeux achetés',
+    title: 'Jeux achetes',
     description:
-      'Choisissez si les nouveaux jeux détectés dans votre bibliothèque sont ajoutés dans votre liste de jeux suivis automatiquement ou sur confirmation.',
+      'Choisissez si les nouveaux jeux detectes dans votre bibliotheque sont ajoutes dans votre liste de jeux suivis automatiquement ou sur confirmation.',
   },
   {
     id: 'settings-wishlist',
@@ -69,18 +74,17 @@ export const TUTORIAL_STEPS = [
     targetId: 'settings-wishlist',
     title: 'Wishlist Steam',
     description:
-      'Même principe pour les jeux ajoutés à votre wishlist : suivi automatique ou via une notification de confirmation.',
+      'Meme principe pour les jeux ajoutes a votre wishlist : suivi automatique ou via une notification de confirmation.',
   },
   {
     id: 'settings-summary',
     screen: 'Settings',
     targetId: null,
-    title: 'C\'est tout bon !',
+    title: "C'est tout bon !",
     description:
-      'Vous pouvez modifier ces options à tout moment depuis les paramètres.',
+      'Vous pouvez modifier ces options a tout moment depuis les parametres.',
     isSummary: true,
   },
 ];
 
 export const SUMMARY_STEP_INDEX = TUTORIAL_STEPS.length - 1;
-

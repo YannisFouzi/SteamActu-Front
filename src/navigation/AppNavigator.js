@@ -8,12 +8,8 @@ import {
   SCREEN_CONFIGS,
 } from '../constants';
 import { useAppContext } from '../context/AppContext';
-import ContactScreen from '../screens/ContactScreen';
-import HomeScreen from '../screens/Home';
+import MainTabNavigator from './MainTabNavigator';
 import LoginScreen from '../screens/LoginScreen';
-import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
-import SettingsScreen from '../screens/SettingsScreen';
-import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
 import { useTutorial } from '../tutorial/useTutorial';
 
 const Stack = createStackNavigator();
@@ -23,11 +19,35 @@ const linking = {
   config: {
     screens: {
       Login: 'auth',
-      Home: 'home',
-      Settings: 'settings',
-      Contact: 'contact',
-      TermsOfService: 'terms',
-      PrivacyPolicy: 'privacy',
+      Home: {
+        path: 'home',
+        screens: {
+          Actu: {
+            path: 'actu',
+            screens: {
+              Fil: 'fil',
+              JeuxSuivis: 'jeux-suivis',
+            },
+          },
+          SuivreUnJeu: {
+            path: 'suivre',
+            screens: {
+              MesJeux: 'mes-jeux',
+              Wishlist: 'wishlist',
+              Rechercher: 'rechercher',
+            },
+          },
+          MonCompte: {
+            path: 'compte',
+            screens: {
+              Settings: 'settings',
+              Contact: 'contact',
+              TermsOfService: 'terms',
+              PrivacyPolicy: 'privacy',
+            },
+          },
+        },
+      },
     },
   },
 };
@@ -67,28 +87,8 @@ const AppNavigator = () => {
         />
         <Stack.Screen
           name="Home"
-          component={HomeScreen}
+          component={MainTabNavigator}
           options={SCREEN_CONFIGS.Home}
-        />
-        <Stack.Screen
-          name="Settings"
-          component={SettingsScreen}
-          options={SCREEN_CONFIGS.Settings}
-        />
-        <Stack.Screen
-          name="Contact"
-          component={ContactScreen}
-          options={SCREEN_CONFIGS.Contact}
-        />
-        <Stack.Screen
-          name="TermsOfService"
-          component={TermsOfServiceScreen}
-          options={SCREEN_CONFIGS.TermsOfService}
-        />
-        <Stack.Screen
-          name="PrivacyPolicy"
-          component={PrivacyPolicyScreen}
-          options={SCREEN_CONFIGS.PrivacyPolicy}
         />
       </Stack.Navigator>
     </NavigationContainer>
