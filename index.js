@@ -21,5 +21,4 @@ messaging().setBackgroundMessageHandler(async remoteMessage => {
   await displayRemoteNotification(remoteMessage);
 });
 
-// Enregistrer le composant App (CodePush wrapper est déjà appliqué dans App.tsx)
 AppRegistry.registerComponent(appName, () => App);

@@ -2,8 +2,6 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
-// ⚠️ CODE PUSH : Auto-linking gère l'intégration (pas besoin de script codepush.gradle)
-
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -121,88 +119,3 @@ dependencies {
 }
 
 apply plugin: 'com.google.gms.google-services'
-
-// Fix autolinking CMake file to handle missing codegen directories
-project.afterEvaluate {
-    def autolinkingTask = tasks.findByName("generateAutolinkingNewArchitectureFiles")
-    if (autolinkingTask != null) {
-        autolinkingTask.doLast {
-            def cmakeFile = file("${buildDir}/generated/autolinking/src/main/jni/Android-autolinking.cmake")
-            if (cmakeFile.exists()) {
-                def content = cmakeFile.text
-                def modified = false
-                
-                // Check if async-storage codegen CMakeLists.txt exists
-                def asyncStorageCodegenCmake = file("${project.rootDir}/../node_modules/@react-native-async-storage/async-storage/android/build/generated/source/codegen/jni/CMakeLists.txt")
-                def hasAsyncStorageCodegen = asyncStorageCodegenCmake.exists()
-                
-                // Check if gesture-handler codegen CMakeLists.txt exists
-                def gestureHandlerCodegenCmake = file("${project.rootDir}/../node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt")
-                def hasGestureHandlerCodegen = gestureHandlerCodegenCmake.exists()
-                
-                // Remove add_subdirectory calls and library references if codegen doesn't exist
-                if (!hasAsyncStorageCodegen) {
-                    // Remove the add_subdirectory line (with or without if/endif wrapper)
-                    content = content.replaceAll(/(?m)^if\(EXISTS[^\n]*async-storage[^\n]*\)\s*\n\s*add_subdirectory\([^\n]*rnasyncstorage_autolinked_build\)\s*\nendif\(\)\s*\n?/, '')
-                    content = content.replaceAll(/(?m)^add_subdirectory\([^\n]*async-storage[^\n]*rnasyncstorage_autolinked_build\)\s*\n?/, '')
-                    // Remove from AUTOLINKED_LIBRARIES
-                    content = content.replaceAll(/\s+react_codegen_rnasyncstorage\s+/, ' ')
-                    content = content.replaceAll(/\s+react_codegen_rnasyncstorage\n/, '\n')
-                    modified = true
-                }
-                
-                if (!hasGestureHandlerCodegen) {
-                    // Remove the add_subdirectory line (with or without if/endif wrapper)
-                    content = content.replaceAll(/(?m)^if\(EXISTS[^\n]*gesture-handler[^\n]*\)\s*\n\s*add_subdirectory\([^\n]*rngesturehandler_codegen_autolinked_build\)\s*\nendif\(\)\s*\n?/, '')
-                    content = content.replaceAll(/(?m)^add_subdirectory\([^\n]*gesture-handler[^\n]*rngesturehandler_codegen_autolinked_build\)\s*\n?/, '')
-                    // Remove from AUTOLINKED_LIBRARIES
-                    content = content.replaceAll(/\s+react_codegen_rngesturehandler_codegen\s+/, ' ')
-                    content = content.replaceAll(/\s+react_codegen_rngesturehandler_codegen\n/, '\n')
-                    modified = true
-                }
-                
-                if (modified) {
-                    cmakeFile.text = content
-                }
-            }
-            
-            // Also clean up autolinking.cpp file
-            def autolinkingCppFile = file("${buildDir}/generated/autolinking/src/main/jni/autolinking.cpp")
-            if (autolinkingCppFile.exists()) {
-                def cppContent = autolinkingCppFile.text
-                def cppModified = false
-                
-                // Check if async-storage codegen CMakeLists.txt exists
-                def asyncStorageCodegenCmake = file("${project.rootDir}/../node_modules/@react-native-async-storage/async-storage/android/build/generated/source/codegen/jni/CMakeLists.txt")
-                def hasAsyncStorageCodegen = asyncStorageCodegenCmake.exists()
-                
-                // Check if gesture-handler codegen CMakeLists.txt exists
-                def gestureHandlerCodegenCmake = file("${project.rootDir}/../node_modules/react-native-gesture-handler/android/build/generated/source/codegen/jni/CMakeLists.txt")
-                def hasGestureHandlerCodegen = gestureHandlerCodegenCmake.exists()
-                
-                // Remove includes and registrations for missing codegen
-                if (!hasAsyncStorageCodegen) {
-                    cppContent = cppContent.replaceAll(/#include\s+<rnasyncstorage\.h>\s*\n/, '')
-                    // Remove module provider block for async-storage
-                    cppContent = cppContent.replaceAll(/(?m)auto\s+module_rnasyncstorage\s*=\s*rnasyncstorage_ModuleProvider\([^)]+\);\s*\nif\s*\([^)]+\)\s*\{\s*\nreturn\s+module_rnasyncstorage;\s*\n\}\s*\n/, '')
-                    cppModified = true
-                }
-                
-                if (!hasGestureHandlerCodegen) {
-                    cppContent = cppContent.replaceAll(/#include\s+<rngesturehandler_codegen\.h>\s*\n/, '')
-                    cppContent = cppContent.replaceAll(/#include\s+<react\/renderer\/components\/rngesturehandler_codegen\/ComponentDescriptors\.h>\s*\n/, '')
-                    // Remove module provider block for gesture-handler
-                    cppContent = cppContent.replaceAll(/(?m)auto\s+module_rngesturehandler_codegen\s*=\s*rngesturehandler_codegen_ModuleProvider\([^)]+\);\s*\nif\s*\([^)]+\)\s*\{\s*\nreturn\s+module_rngesturehandler_codegen;\s*\n\}\s*\n/, '')
-                    // Remove component descriptor registrations
-                    cppContent = cppContent.replaceAll(/providerRegistry->add\(concreteComponentDescriptorProvider<RNGestureHandlerButtonComponentDescriptor>\(\)\);\s*\n/, '')
-                    cppContent = cppContent.replaceAll(/providerRegistry->add\(concreteComponentDescriptorProvider<RNGestureHandlerRootViewComponentDescriptor>\(\)\);\s*\n/, '')
-                    cppModified = true
-                }
-                
-                if (cppModified) {
-                    autolinkingCppFile.text = cppContent
-                }
-            }
-        }
-    }
-}
