@@ -1,7 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -161,14 +160,8 @@ const SettingsScreen = () => {
     },
   ];
 
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator color={COLORS.STEAM_BLUE} size="large" />
-        <Text style={styles.loadingText}>Chargement des paramètres…</Text>
-      </View>
-    );
-  }
+  // Loader bloquant supprimé : l'UI s'affiche immédiatement avec les valeurs AsyncStorage
+  // La synchronisation serveur se fait en arrière-plan de manière transparente
 
   return (
     <ScrollView style={styles.container}>
@@ -294,14 +287,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.STEAM_DARK,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    color: COLORS.STEAM_TEXT_GRAY,
   },
   section: {
     padding: 16,

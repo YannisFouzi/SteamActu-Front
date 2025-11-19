@@ -60,6 +60,7 @@ export const useUserSettings = () => {
   const [libraryFollowMode, setLibraryFollowMode] = useState('off');
   const [wishlistFollowMode, setWishlistFollowMode] = useState('off');
   const isMountedRef = useRef(true);
+  const lastLocalModificationRef = useRef(0);
 
   const safeSetState = useCallback((setter, value) => {
     if (isMountedRef.current) {
@@ -132,6 +133,9 @@ export const useUserSettings = () => {
       }
 
       try {
+        // Marquer qu'une modification locale vient d'avoir lieu
+        lastLocalModificationRef.current = Date.now();
+
         safeSetState(setSaving, true);
 
         const followPromptNotifications = shouldEnablePrompts(
@@ -180,109 +184,157 @@ export const useUserSettings = () => {
     [safeSetState, steamId],
   );
 
-  // Charger les paramètres de l'utilisateur depuis AsyncStorage / backend
+  /**
+   * Charger les paramètres utilisateur avec optimisation UX
+   *
+   * Stratégie en 2 phases :
+   * 1. Phase instantanée : Charger depuis AsyncStorage et afficher immédiatement
+   * 2. Phase background : Synchroniser avec le serveur et mettre à jour si nécessaire
+   *
+   * Cette approche élimine le loader bloquant et améliore la perception de performance
+   */
   const loadUserSettings = useCallback(async () => {
-    safeSetState(setLoading, true);
-
     try {
+      // Récupérer le steamId (nécessaire pour toutes les opérations)
       const savedSteamId = await AsyncStorage.getItem('steamId');
 
       if (!savedSteamId) {
         showAlert('Erreur', 'Utilisateur non connecté');
+        safeSetState(setLoading, false);
         return false;
       }
 
       safeSetState(setSteamId, savedSteamId);
 
-      let serverSettings = null;
+      // ===== PHASE 1 : CHARGEMENT INSTANTANÉ DEPUIS ASYNCSTORAGE =====
+      // Charger toutes les valeurs locales en parallèle (rapide : <10ms)
+      const [
+        storedNews,
+        storedLibraryMode,
+        storedWishlistMode,
+        legacyLibraryMode,
+        legacyWishlistMode,
+      ] = await AsyncStorage.multiGet([
+        'newsNotifications',
+        'libraryFollowMode',
+        'wishlistFollowMode',
+        'autoFollowEnabled', // Legacy
+        'autoFollowWishlistEnabled', // Legacy
+      ]);
+
+      // Parser et normaliser les valeurs locales
+      const localNews =
+        storedNews[1] !== null ? JSON.parse(storedNews[1]) : false;
+      const localLibraryMode = normalizeFollowMode(
+        storedLibraryMode[1],
+        legacyLibraryMode[1],
+      );
+      const localWishlistMode = normalizeFollowMode(
+        storedWishlistMode[1],
+        legacyWishlistMode[1],
+      );
+
+      // Mettre à jour l'UI immédiatement avec les valeurs locales
+      safeSetState(setNewsNotifications, localNews);
+      safeSetState(setLibraryFollowMode, localLibraryMode);
+      safeSetState(setWishlistFollowMode, localWishlistMode);
+
+      // Débloquer l'UI immédiatement (pas de loader bloquant)
+      safeSetState(setLoading, false);
+
+      // ===== PHASE 2 : SYNCHRONISATION EN ARRIÈRE-PLAN =====
+      // Appeler l'API en arrière-plan sans bloquer l'UI
       try {
         const response = await userService.getUser(savedSteamId);
-        serverSettings = response?.data?.notificationSettings || null;
-      } catch (apiError) {
-        debugError(
-          'Erreur lors de la récupération des paramètres utilisateur:',
-          apiError,
-        );
-      }
+        const serverSettings = response?.data?.notificationSettings;
 
-      if (serverSettings) {
-        const {
-          newsNotifications: serverNews,
-          followPromptNotifications,
-          enabled, // legacy
-          libraryFollowMode: serverLibraryMode,
-          wishlistFollowMode: serverWishlistMode,
-          autoFollowNewGames,
-          autoFollowWishlistGames,
-        } = serverSettings;
+        if (serverSettings) {
+          const {
+            newsNotifications: serverNews,
+            followPromptNotifications,
+            enabled, // legacy
+            libraryFollowMode: serverLibraryMode,
+            wishlistFollowMode: serverWishlistMode,
+            autoFollowNewGames,
+            autoFollowWishlistGames,
+          } = serverSettings;
 
-        const resolvedLibraryMode = normalizeFollowMode(
-          serverLibraryMode,
-          autoFollowNewGames,
-        );
-        const resolvedWishlistMode = normalizeFollowMode(
-          serverWishlistMode,
-          autoFollowWishlistGames,
-        );
+          // Normaliser les valeurs serveur
+          const resolvedLibraryMode = normalizeFollowMode(
+            serverLibraryMode,
+            autoFollowNewGames,
+          );
+          const resolvedWishlistMode = normalizeFollowMode(
+            serverWishlistMode,
+            autoFollowWishlistGames,
+          );
+          const resolvedNews =
+            typeof serverNews === 'boolean'
+              ? serverNews
+              : typeof enabled === 'boolean'
+              ? enabled
+              : false;
 
-        const resolvedNews =
-          typeof serverNews === 'boolean'
-            ? serverNews
-            : typeof enabled === 'boolean'
-            ? enabled
-            : false;
+          // Vérifier si les valeurs serveur diffèrent des valeurs locales
+          const hasChanged =
+            resolvedNews !== localNews ||
+            resolvedLibraryMode !== localLibraryMode ||
+            resolvedWishlistMode !== localWishlistMode;
 
-        // Si legacy followPrompt true mais modes différents, on l’ignore
-        const shouldEnable =
-          followPromptNotifications ||
-          shouldEnablePrompts(resolvedLibraryMode, resolvedWishlistMode);
+          // Mettre à jour seulement si :
+          // 1. Les valeurs ont changé
+          // 2. Aucune modification locale n'a été faite récemment (évite les race conditions)
+          const timeSinceLastLocalMod =
+            Date.now() - lastLocalModificationRef.current;
+          if (hasChanged && timeSinceLastLocalMod > 1000) {
+            // Mettre à jour les states avec les valeurs serveur
+            safeSetState(setNewsNotifications, resolvedNews);
+            safeSetState(setLibraryFollowMode, resolvedLibraryMode);
+            safeSetState(setWishlistFollowMode, resolvedWishlistMode);
 
-        safeSetState(setNewsNotifications, resolvedNews);
-        safeSetState(setLibraryFollowMode, resolvedLibraryMode);
-        safeSetState(setWishlistFollowMode, resolvedWishlistMode);
+            // Persister les valeurs serveur dans AsyncStorage
+            await AsyncStorage.multiSet([
+              ['newsNotifications', JSON.stringify(resolvedNews)],
+              ['libraryFollowMode', resolvedLibraryMode],
+              ['wishlistFollowMode', resolvedWishlistMode],
+            ]);
 
-        await AsyncStorage.multiSet([
-          ['newsNotifications', JSON.stringify(resolvedNews)],
-          ['libraryFollowMode', resolvedLibraryMode],
-          ['wishlistFollowMode', resolvedWishlistMode],
-        ]);
+            // Nettoyer les anciennes clés legacy si elles existent
+            await AsyncStorage.multiRemove([
+              'notificationsEnabled',
+              'autoFollowEnabled',
+              'autoFollowWishlistEnabled',
+            ]);
 
-        if (!shouldEnable) {
-          await unregisterFCMToken(savedSteamId);
+            // Gérer l'état des notifications
+            const shouldEnable =
+              followPromptNotifications ||
+              shouldEnablePrompts(resolvedLibraryMode, resolvedWishlistMode);
+
+            if (!shouldEnable) {
+              await unregisterFCMToken(savedSteamId);
+            }
+          }
         }
-      } else {
-        const storedNews = await AsyncStorage.getItem('newsNotifications');
-        const storedLibraryMode = await AsyncStorage.getItem('libraryFollowMode');
-        const legacyLibraryMode = await AsyncStorage.getItem('autoFollowEnabled');
-        const storedWishlistMode = await AsyncStorage.getItem('wishlistFollowMode');
-        const legacyWishlistMode = await AsyncStorage.getItem(
-          'autoFollowWishlistEnabled',
-        );
-
-        safeSetState(
-          setNewsNotifications,
-          storedNews !== null ? JSON.parse(storedNews) : false,
-        );
-        safeSetState(
-          setLibraryFollowMode,
-          normalizeFollowMode(storedLibraryMode, legacyLibraryMode),
-        );
-        safeSetState(
-          setWishlistFollowMode,
-          normalizeFollowMode(storedWishlistMode, legacyWishlistMode),
+      } catch (apiError) {
+        // Erreur API silencieuse en arrière-plan
+        // L'utilisateur voit déjà ses paramètres locaux, pas besoin de l'alerter
+        debugError(
+          'Synchronisation en arrière-plan échouée (utilisation des valeurs locales):',
+          apiError,
         );
       }
 
       return true;
     } catch (error) {
+      // Erreur critique (AsyncStorage inaccessible, etc.)
       debugError('Erreur lors du chargement des paramètres:', error);
       showAlert(
         'Erreur',
         'Impossible de charger vos paramètres. Veuillez réessayer.',
       );
-      return false;
-    } finally {
       safeSetState(setLoading, false);
+      return false;
     }
   }, [safeSetState, unregisterFCMToken]);
 
