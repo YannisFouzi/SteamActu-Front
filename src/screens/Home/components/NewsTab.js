@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from 'react';
 import {
   Alert,
   FlatList,
+  Image,
   Linking,
   RefreshControl,
   Switch,
@@ -108,11 +109,21 @@ const NewsTab = ({
           activeOpacity={0.9}
           onPress={() => openNews(item)}>
           <View style={styles.newsCardHeader}>
-            <View>
-              <Text style={styles.newsGameName}>{item.gameName}</Text>
-              <Text style={styles.newsMetaText}>
-                {formatDate(item.news?.date)}
-              </Text>
+            <View style={styles.newsGameInfo}>
+              {/* Logo du jeu */}
+              {item.gameLogoUrl && (
+                <Image
+                  source={{uri: item.gameLogoUrl}}
+                  style={styles.gameLogo}
+                  resizeMode="contain"
+                />
+              )}
+              <View style={styles.newsMetadata}>
+                <Text style={styles.newsGameName}>{item.gameName}</Text>
+                <Text style={styles.newsMetaText}>
+                  {formatDate(item.news?.date)}
+                </Text>
+              </View>
             </View>
             {steamId && typeof onToggleFavorite === 'function' ? (
               <TouchableOpacity
@@ -132,7 +143,18 @@ const NewsTab = ({
               </TouchableOpacity>
             ) : null}
           </View>
+
+          {/* Titre de la news */}
           <Text style={styles.newsTitle}>{item.news?.title}</Text>
+
+          {/* Image de la news (si disponible) */}
+          {item.news?.firstImageUrl && (
+            <Image
+              source={{uri: item.news.firstImageUrl}}
+              style={styles.newsImage}
+              resizeMode="cover"
+            />
+          )}
         </TouchableOpacity>
       );
     },

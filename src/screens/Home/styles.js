@@ -167,6 +167,21 @@ export default StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
+  newsGameInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  gameLogo: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: COLORS.STEAM_DARK,
+  },
+  newsMetadata: {
+    flex: 1,
+  },
   newsFavoriteButton: {
     padding: 4,
   },
@@ -181,6 +196,13 @@ export default StyleSheet.create({
   },
   newsTitle: {
     ...TEXT_STYLES.newsTitle,
+  },
+  newsImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginTop: 12,
+    backgroundColor: COLORS.PLACEHOLDER_GRAY,
   },
   newsErrorContainer: {
     ...CONTAINER_STYLES.errorContainer,
