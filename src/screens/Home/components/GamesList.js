@@ -8,7 +8,7 @@ import EmptyStateMessage from './EmptyStateMessage';
 import GameItemAlt from './GameItemAlt';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
 
-const GamesList = React.memo(() => {
+const GamesList = React.memo(({listRef}) => {
   const {filteredGames, refreshing, handleRefresh, searchQuery} =
     useAppContext();
 
@@ -27,6 +27,7 @@ const GamesList = React.memo(() => {
 
   return (
     <FlatList
+      ref={listRef}
       data={filteredGames}
       renderItem={({item}) => <GameItemAlt game={item} />}
       keyExtractor={(item, index) => {

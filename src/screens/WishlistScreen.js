@@ -1,5 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import {
   FlatList,
   RefreshControl,
@@ -32,6 +32,7 @@ const WishlistScreen = ({
 }) => {
   const [wishlistSearchQuery, setWishlistSearchQuery] = useState('');
   const [wishlistSortBy, setWishlistSortBy] = useState('recent');
+  const listRef = useRef(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -40,6 +41,12 @@ const WishlistScreen = ({
       }
     }, [maybeRefreshWishlist]),
   );
+
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollToOffset({offset: 0, animated: true});
+    }
+  }, [wishlistSortBy]);
 
   const getSortedWishlist = useCallback(() => {
     const filtered = wishlistSearchQuery
@@ -155,6 +162,7 @@ const WishlistScreen = ({
         <LoadingContainer text="Chargement de la wishlist..." />
       ) : (
         <FlatList
+          ref={listRef}
           data={getSortedWishlist()}
           renderItem={renderWishlistItem}
           keyExtractor={(item, index) =>

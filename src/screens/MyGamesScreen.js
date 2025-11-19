@@ -1,5 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { View } from 'react-native';
 import LoadingContainer from '../components/LoadingContainer';
 import { useAppContext } from '../context/AppContext';
@@ -22,11 +22,15 @@ const MyGamesScreen = () => {
     filterAndSortGames,
     maybeRefreshGames,
   } = useAppContext();
+  const listRef = useRef(null);
 
   const handleMyGamesSortChange = useCallback(
     option => {
       setSortOption(option);
       filterAndSortGames();
+      if (listRef.current) {
+        listRef.current.scrollToOffset({offset: 0, animated: true});
+      }
     },
     [filterAndSortGames, setSortOption],
   );
@@ -48,7 +52,7 @@ const MyGamesScreen = () => {
       {gamesLoading ? (
         <LoadingContainer text="Chargement des jeux..." />
       ) : (
-        <GamesList />
+        <GamesList listRef={listRef} />
       )}
     </View>
   );
