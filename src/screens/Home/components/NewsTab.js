@@ -1,13 +1,15 @@
-﻿import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   Alert,
   FlatList,
   Linking,
   RefreshControl,
+  Switch,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import LoadingContainer from '../../../components/LoadingContainer';
 import { COLORS } from '../../../constants';
 import { debugError } from '../../../hooks/hooksLogger';
@@ -19,8 +21,18 @@ import EmptyStateMessage from './EmptyStateMessage';
  * Composant pour l'onglet News
  * Extrait du HomeScreen pour rÃ©duire la complexitÃ©
  */
-const NewsTab = ({steamId, newsState, fetchNews}) => {
+const NewsTab = ({
+  steamId,
+  newsState,
+  fetchNews,
+  favoritesOnly = false,
+  hasFavorites = false,
+  onToggleFavoritesFilter,
+  onToggleFavorite,
+}) => {
   const activeNewsState = newsState?.news || null;
+  const showFavoritesToggle =
+    (hasFavorites || favoritesOnly) && typeof onToggleFavoritesFilter === 'function';
 
   // Formater une date relative avec les minutes (spÃ©cifique aux news)
   const formatDate = useCallback(timestamp => {
@@ -102,12 +114,29 @@ const NewsTab = ({steamId, newsState, fetchNews}) => {
                 {formatDate(item.news?.date)}
               </Text>
             </View>
+            {steamId && typeof onToggleFavorite === 'function' ? (
+              <TouchableOpacity
+                style={styles.newsFavoriteButton}
+                accessibilityRole="button"
+                hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                onPress={() => onToggleFavorite(item)}>
+                <Icon
+                  name={item.isFavorite ? 'star' : 'star-outline'}
+                  size={20}
+                  color={
+                    item.isFavorite
+                      ? COLORS.FAVORITE_GOLD
+                      : COLORS.STEAM_TEXT_GRAY
+                  }
+                />
+              </TouchableOpacity>
+            ) : null}
           </View>
           <Text style={styles.newsTitle}>{item.news?.title}</Text>
         </TouchableOpacity>
       );
     },
-    [formatDate, openNews],
+    [formatDate, onToggleFavorite, openNews, steamId],
   );
 
   const newsKeyExtractor = useCallback(
@@ -123,6 +152,25 @@ const NewsTab = ({steamId, newsState, fetchNews}) => {
         </View>
       ) : null}
 
+      {showFavoritesToggle ? (
+        <View style={styles.newsFavoritesToggle}>
+          <Text style={styles.newsFavoritesToggleLabel}>
+            Afficher uniquement les favoris
+          </Text>
+          <Switch
+            value={favoritesOnly}
+            onValueChange={onToggleFavoritesFilter}
+            trackColor={{
+              false: COLORS.STEAM_BORDER,
+              true: COLORS.STEAM_LIGHT_BLUE,
+            }}
+            thumbColor={
+              favoritesOnly ? COLORS.STEAM_BLUE : COLORS.STEAM_TEXT_GRAY
+            }
+          />
+        </View>
+      ) : null}
+
       {activeNewsState?.loading ? (
         <LoadingContainer text="Chargement du fil d'actualités..." />
       ) : (
@@ -134,7 +182,9 @@ const NewsTab = ({steamId, newsState, fetchNews}) => {
           refreshControl={
             <RefreshControl
               refreshing={Boolean(activeNewsState?.refreshing)}
-              onRefresh={() => fetchNews({silent: true})}
+              onRefresh={() =>
+                fetchNews({silent: true, favoritesOnly})
+              }
               tintColor={COLORS.STEAM_BLUE}
             />
           }

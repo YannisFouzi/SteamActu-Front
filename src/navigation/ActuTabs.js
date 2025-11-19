@@ -18,6 +18,8 @@ const ActuTabs = () => {
     isNewsInitialized,
     isNewsLoading,
     removeNewsByAppId,
+    setFavoritesOnlyFilter,
+    toggleNewsFavorite,
   } = useNewsManager(steamId);
   const followedGamesExternalHandlerRef = useRef(null);
 
@@ -84,6 +86,8 @@ const ActuTabs = () => {
               steamId={steamId}
               newsState={newsState}
               fetchNews={fetchNews}
+              onToggleFavoritesFilter={setFavoritesOnlyFilter}
+              onToggleNewsFavorite={toggleNewsFavorite}
             />
           )}
         </Tab.Screen>

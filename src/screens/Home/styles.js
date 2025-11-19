@@ -123,6 +123,20 @@ export default StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.STEAM_NAVY,
   },
+  newsFavoritesToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+    backgroundColor: COLORS.STEAM_NAVY,
+  },
+  newsFavoritesToggleLabel: {
+    color: COLORS.WHITE,
+    fontWeight: '600',
+    fontSize: 14,
+  },
   newsFilterRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -149,9 +163,12 @@ export default StyleSheet.create({
   },
   newsCardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 12,
+  },
+  newsFavoriteButton: {
+    padding: 4,
   },
   newsGameName: {
     ...TEXT_STYLES.newsGameName,
@@ -320,7 +337,5 @@ export default StyleSheet.create({
     padding: 12,
   },
 });
-
-
 
 

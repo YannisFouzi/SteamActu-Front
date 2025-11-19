@@ -74,6 +74,10 @@ const userService = {
   getFollowedGamesDetails: steamId =>
     api.get(`/users/${steamId}/followed-games-details`),
   deleteAccount: steamId => api.delete(`/users/${steamId}`),
+  addNewsFavorite: (steamId, payload) =>
+    api.post(`/users/${steamId}/news-favorites`, payload),
+  removeNewsFavorite: (steamId, appId, newsId) =>
+    api.delete(`/users/${steamId}/news-favorites/${appId}/${newsId}`),
   registerFCMToken: (steamId, token, platform) =>
     api.post(`/users/${steamId}/fcm-token`, {token, platform}),
   unregisterFCMToken: (steamId, token) =>
@@ -98,6 +102,7 @@ const newsService = {
     {
       perGameLimit = API_CONFIG.DEFAULT_LIMITS.perGameLimit,
       language = API_CONFIG.DEFAULT_NEWS_PARAMS.language,
+      favoritesOnly = false,
     } = {},
   ) => {
     const params = {
@@ -107,6 +112,9 @@ const newsService = {
 
     if (steamId) {
       params.steamId = steamId;
+    }
+    if (favoritesOnly) {
+      params.favoritesOnly = true;
     }
 
     return api.get("/news/feed", {params});
@@ -153,4 +161,3 @@ export const apiConfig = {
 };
 
 export { newsService, steamAuthService, steamService, userService };
-

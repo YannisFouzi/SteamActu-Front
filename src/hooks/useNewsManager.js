@@ -1,12 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { newsService } from '../services/api';
+import { newsService, userService } from '../services/api';
 import { debugError, debugLog, maskSteamId } from './hooksLogger';
 import {
   buildStorageKey,
   getJSONItem,
   setJSONItem,
 } from './useAsyncStorage';
+
+const buildNewsKey = (appId, newsId) => `${appId}:${newsId}`;
 
 /**
  * Hook personnalisé pour la gestion des actualités
@@ -23,6 +25,10 @@ export const useNewsManager = steamId => {
       refreshing: false,
       error: null,
       initialized: false,
+      favoritesOnly: false,
+      hasFavorites: false,
+      favoriteIds: [],
+      favoriteCount: 0,
     };
   }, []);
 
@@ -32,6 +38,11 @@ export const useNewsManager = steamId => {
   const isMountedRef = useRef(true);
   const requestIdRef = useRef(0);
   const newsHydratedFromCacheRef = useRef(false);
+  const favoritesOnlyRef = useRef(false);
+
+  useEffect(() => {
+    favoritesOnlyRef.current = Boolean(newsState.news?.favoritesOnly);
+  }, [newsState.news?.favoritesOnly]);
 
   useEffect(() => {
     return () => {
@@ -67,28 +78,35 @@ export const useNewsManager = steamId => {
   // Fonction pour récupérer les actualités
   const fetchNews = useCallback(
     async (options = {}) => {
-      debugLog('\n📰 [NEWS] fetchNews appelée');
-      debugLog('📰 [NEWS] steamId:', maskSteamId(steamId) || '(vide)');
-      debugLog('📰 [NEWS] silent:', options.silent);
-      
+      debugLog('[NEWS] fetchNews appelée');
+      debugLog('[NEWS] steamId:', maskSteamId(steamId) || '(vide)');
+      debugLog('[NEWS] silent:', options.silent);
+
       const silent = options.silent === true;
+      const requestedFavoritesOnly =
+        typeof options.favoritesOnly === 'boolean'
+          ? options.favoritesOnly
+          : favoritesOnlyRef.current;
       const requestId = ++requestIdRef.current;
       const shouldProcess = () =>
         isMountedRef.current && requestId === requestIdRef.current;
 
+      favoritesOnlyRef.current = requestedFavoritesOnly;
+
       if (!steamId) {
-        debugLog('📰 [NEWS] ❌ Pas de steamId → état vide');
+        debugLog('[NEWS] Pas de steamId → état vide');
         safeSetNewsState(prev => ({
           ...prev,
           news: {
             ...createInitialNewsState(),
+            favoritesOnly: requestedFavoritesOnly,
             initialized: true,
           },
         }));
         return;
       }
-      
-      debugLog('📰 [NEWS] ⏳ Chargement des actualités...');
+
+      debugLog('[NEWS] Chargement des actualités...');
 
       safeSetNewsState(prev => {
         const previous = prev.news || createInitialNewsState();
@@ -100,14 +118,15 @@ export const useNewsManager = steamId => {
             refreshing: silent,
             error: null,
             initialized: true,
+            favoritesOnly: requestedFavoritesOnly,
           },
         };
       });
 
       try {
-        debugLog('📰 [NEWS] 🔄 GET /news/feed (perGameLimit: 20)');
         const response = await newsService.getNewsFeed(steamId, {
           perGameLimit: 20,
+          favoritesOnly: requestedFavoritesOnly,
         });
 
         if (!shouldProcess()) {
@@ -117,11 +136,11 @@ export const useNewsManager = steamId => {
         const items = Array.isArray(response.data?.items)
           ? response.data.items
           : [];
+        const favoriteStats = response.data?.metadata?.favoriteStats || {};
+        const favoriteIds = items
+          .filter(item => item?.isFavorite)
+          .map(item => buildNewsKey(item.appId, item.news?.id));
 
-        debugLog('📰 [NEWS] ✅ News récupérées:', items.length, 'items');
-        debugLog('📰 [NEWS] ✅ Chargement terminé\n');
-
-        // Persister dans le cache
         await persistNewsCache(items);
 
         safeSetNewsState(prev => {
@@ -135,11 +154,16 @@ export const useNewsManager = steamId => {
               refreshing: false,
               error: null,
               initialized: true,
+              favoritesOnly: requestedFavoritesOnly,
+              hasFavorites:
+                Boolean(favoriteStats.hasFavorites) || favoriteIds.length > 0,
+              favoriteIds,
+              favoriteCount: favoriteStats.count ?? favoriteIds.length,
             },
           };
         });
       } catch (error) {
-        debugError('📰 [NEWS] ❌ Erreur lors du chargement du fil:', error);
+        debugError('[NEWS] Erreur lors du chargement du fil:', error);
         if (!shouldProcess()) {
           return;
         }
@@ -155,6 +179,7 @@ export const useNewsManager = steamId => {
               error:
                 'Impossible de récupérer les actualités pour le moment. Veuillez réessayer.',
               initialized: true,
+              favoritesOnly: requestedFavoritesOnly,
             },
           };
         });
@@ -162,7 +187,6 @@ export const useNewsManager = steamId => {
     },
     [createInitialNewsState, safeSetNewsState, steamId, persistNewsCache],
   );
-
   // Hydratation depuis le cache au montage
   useEffect(() => {
     const hydrateFromCache = async () => {
@@ -242,6 +266,68 @@ export const useNewsManager = steamId => {
     [createInitialNewsState, safeSetNewsState],
   );
 
+  const setFavoritesOnlyFilter = useCallback(
+    value => {
+      fetchNews({ favoritesOnly: value });
+    },
+    [fetchNews],
+  );
+
+  const toggleNewsFavorite = useCallback(
+    async newsItem => {
+      if (!steamId || !newsItem?.news?.id || !newsItem?.appId || !newsItem.news?.date) {
+        return;
+      }
+
+      const newsId = newsItem.news.id;
+      const appId = newsItem.appId;
+      const isFavorite = Boolean(newsItem.isFavorite);
+      const key = buildNewsKey(appId, newsId);
+      const newsDate = newsItem.news.date;
+
+      safeSetNewsState(prev => {
+        const previous = prev.news || createInitialNewsState();
+        const favoriteSet = new Set(previous.favoriteIds || []);
+        if (isFavorite) {
+          favoriteSet.delete(key);
+        } else {
+          favoriteSet.add(key);
+        }
+
+        return {
+          ...prev,
+          news: {
+            ...previous,
+            items: previous.items.map(item =>
+              item.appId === appId && item.news?.id === newsId
+                ? {...item, isFavorite: !isFavorite}
+                : item,
+            ),
+            favoriteIds: Array.from(favoriteSet),
+            hasFavorites: favoriteSet.size > 0,
+          },
+        };
+      });
+
+      try {
+        if (isFavorite) {
+          await userService.removeNewsFavorite(steamId, appId, newsId);
+        } else {
+          await userService.addNewsFavorite(steamId, {
+            appId,
+            newsId,
+            newsDate,
+          });
+        }
+        await fetchNews({ silent: true, favoritesOnly: favoritesOnlyRef.current });
+      } catch (error) {
+        debugError('[NEWS] toggle favorite error', error);
+        await fetchNews({ favoritesOnly: favoritesOnlyRef.current });
+      }
+    },
+    [steamId, fetchNews, safeSetNewsState, createInitialNewsState],
+  );
+
   // Réinitialiser les news quand le steamId change
   useEffect(() => {
     debugLog('\n📰 [NEWS useEffect[steamId]] Déclenché');
@@ -265,6 +351,8 @@ export const useNewsManager = steamId => {
     fetchNews,
     updateNewsFollowStatus,
     removeNewsByAppId,
+     setFavoritesOnlyFilter,
+     toggleNewsFavorite,
     activeNewsState: newsState.news,
     isNewsInitialized: newsState.news?.initialized,
     isNewsLoading: newsState.news?.loading,
