@@ -299,21 +299,12 @@ export const useUserSettings = () => {
               ['wishlistFollowMode', resolvedWishlistMode],
             ]);
 
-            // Nettoyer les anciennes clés legacy si elles existent
+            // Nettoyer les anciennes cles legacy si elles existent
             await AsyncStorage.multiRemove([
               'notificationsEnabled',
               'autoFollowEnabled',
               'autoFollowWishlistEnabled',
             ]);
-
-            // Gérer l'état des notifications
-            const shouldEnable =
-              followPromptNotifications ||
-              shouldEnablePrompts(resolvedLibraryMode, resolvedWishlistMode);
-
-            if (!shouldEnable) {
-              await unregisterFCMToken(savedSteamId);
-            }
           }
         }
       } catch (apiError) {
@@ -336,7 +327,7 @@ export const useUserSettings = () => {
       safeSetState(setLoading, false);
       return false;
     }
-  }, [safeSetState, unregisterFCMToken]);
+  }, [safeSetState]);
 
   const handleToggleNews = useCallback(
     async value => {

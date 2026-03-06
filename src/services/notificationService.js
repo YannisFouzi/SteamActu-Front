@@ -6,7 +6,6 @@ import notifee, {
 import { getApp } from '@react-native-firebase/app';
 import {
   deleteToken,
-  getInitialNotification,
   getMessaging,
   getToken,
   onMessage,
@@ -16,6 +15,7 @@ import {
 import { Linking, Platform } from 'react-native';
 import { debugError, debugLog, showAlert } from '../hooks/hooksLogger';
 import { userService } from './api';
+import { consumePendingNotification } from './initialNotificationStore';
 
 const NOTIFICATION_CHANNEL_ID = 'steam_news';
 const IOS_CATEGORY_ID = 'steam_news_actions';
@@ -244,8 +244,8 @@ function extractNotificationPayload(remoteMessage) {
   }
 
   const data = remoteMessage.data || {};
-  const title = data.title || remoteMessage.notification?.title || '';
-  const body = data.body || remoteMessage.notification?.body || '';
+  const title = remoteMessage.notification?.title || data.title || '';
+  const body = remoteMessage.notification?.body || data.body || '';
 
   if (!title && !body) {
     debugLog('[FCM] Pas de titre/corps dans le message FCM, notification ignorée');
@@ -253,16 +253,13 @@ function extractNotificationPayload(remoteMessage) {
   }
 
   const notificationId =
-    data.notificationId || remoteMessage.messageId || `${Date.now()}`;
+    remoteMessage.messageId || data.notificationId || `${Date.now()}`;
 
   return {
     id: notificationId,
     title,
     body,
-    allowUnfollow:
-      data.allowUnfollow === '1' ||
-      data.allowUnfollow === 'true' ||
-      data.allowUnfollow === 'yes',
+    allowUnfollow: data.allowUnfollow === 'true',
     data: {
       ...data,
       notificationId,
@@ -534,52 +531,36 @@ export function setupNotificationHandlers(steamId, options = {}) {
     },
   );
 
-  getInitialNotification(messagingInstance)
-    .then(async remoteMessage => {
-      if (remoteMessage) {
-        debugLog('[FCM] App ouverte depuis notification (initiale):', remoteMessage);
-        const payload = extractNotificationPayload(remoteMessage);
-        if (payload?.id && processedNotificationIds.has(payload.id)) {
-          processedNotificationIds.delete(payload.id);
-          return;
-        }
+  // Consommer la notification initiale capturee au bootstrap (index.js)
+  // Elle a ete stockee le plus tot possible, avant le render React
+  const pendingNotification = consumePendingNotification();
+  if (pendingNotification) {
+    const { source, data: initialData } = pendingNotification;
+    debugLog(`[FCM] Notification initiale consommee (source: ${source})`);
+
+    if (source === 'firebase' && initialData) {
+      const payload = extractNotificationPayload(initialData);
+      if (payload?.id && !processedNotificationIds.has(payload.id)) {
         if (payload?.data?.url) {
-          await openUrlSafely(payload.data.url);
-          if (payload?.id) {
-            processedNotificationIds.add(payload.id);
-          }
+          openUrlSafely(payload.data.url);
+          processedNotificationIds.add(payload.id);
         }
       }
-    })
-    .catch(err => {
-      debugError('[FCM] Erreur getInitialNotification:', err);
-    });
-
-  notifee
-    .getInitialNotification()
-    .then(async initialNotification => {
-      if (initialNotification) {
-        debugLog(
-          '[FCM] Notifee initial notification détectée:',
-          initialNotification,
-        );
-        const notificationId = initialNotification.notification?.id;
-        if (notificationId && processedNotificationIds.has(notificationId)) {
-          processedNotificationIds.delete(notificationId);
-          return;
-        }
-        await handleNotificationEvent({
+    } else if (source === 'notifee' && initialData) {
+      const notificationId = initialData.notification?.id;
+      if (!notificationId || !processedNotificationIds.has(notificationId)) {
+        handleNotificationEvent({
           type: EventType.PRESS,
-          detail: initialNotification,
+          detail: initialData,
+        }).catch(error => {
+          debugError('[FCM] Erreur traitement notification initiale Notifee:', error);
         });
         if (notificationId) {
           processedNotificationIds.add(notificationId);
         }
       }
-    })
-    .catch(error => {
-      debugError('[FCM] Erreur notifee.getInitialNotification:', error);
-    });
+    }
+  }
 
   // Retourner les fonctions de nettoyage
   return () => {

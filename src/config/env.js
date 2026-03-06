@@ -21,7 +21,7 @@ const isDevelopment = ENVIRONMENT === 'development';
 const API_BASE_URL = getEnvVar(
   'API_BASE_URL',
   isDevelopment
-    ? 'http://192.168.50.42:5000/api' // Android Emulator → localhost:5000
+    ? 'http://192.168.0.36:5000/api' // Android Emulator → localhost:5000
     : 'https://steamactu-back-production.up.railway.app/api', // Production Railway
 );
 
