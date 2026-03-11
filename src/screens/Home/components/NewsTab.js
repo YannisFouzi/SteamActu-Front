@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -17,6 +17,27 @@ import { debugError } from '../../../hooks/hooksLogger';
 import { formatRelativeDate } from '../../../utils';
 import styles from '../styles';
 import EmptyStateMessage from './EmptyStateMessage';
+
+const GameLogo = ({logoUrl}) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError || !logoUrl) {
+    return (
+      <View style={[styles.gameLogo, styles.gameLogoPlaceholder]}>
+        <Icon name="game-controller-outline" size={20} color={COLORS.STEAM_TEXT_GRAY} />
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={{uri: logoUrl}}
+      style={styles.gameLogo}
+      resizeMode="cover"
+      onError={() => setHasError(true)}
+    />
+  );
+};
 
 /**
  * Composant pour l'onglet News
@@ -111,13 +132,7 @@ const NewsTab = ({
           <View style={styles.newsCardHeader}>
             <View style={styles.newsGameInfo}>
               {/* Logo du jeu */}
-              {item.gameLogoUrl && (
-                <Image
-                  source={{uri: item.gameLogoUrl}}
-                  style={styles.gameLogo}
-                  resizeMode="contain"
-                />
-              )}
+              <GameLogo logoUrl={item.gameLogoUrl} />
               <View style={styles.newsMetadata}>
                 <Text style={styles.newsGameName}>{item.gameName}</Text>
                 <Text style={styles.newsMetaText}>

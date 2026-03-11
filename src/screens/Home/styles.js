@@ -179,6 +179,10 @@ export default StyleSheet.create({
     marginRight: 12,
     backgroundColor: COLORS.STEAM_DARK,
   },
+  gameLogoPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   newsMetadata: {
     flex: 1,
   },

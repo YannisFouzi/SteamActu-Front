@@ -3,7 +3,7 @@ import { normalizeTimestamp, TIME_CONSTANTS } from './dateHelpers';
 import { isDefined, toNumber } from './numberHelpers';
 
 const STEAM_ICON_BASE_URL = `${APP_CONFIG.STEAM_MEDIA_CDN}/steamcommunity/public/images/apps`;
-const STEAM_CDN_BASE_URL = 'https://cdn.cloudflare.steamstatic.com/steam/apps';
+const STEAM_CDN_BASE_URL = 'https://shared.fastly.steamstatic.com/store_item_assets/steam/apps';
 
 /**
  * Retourne la meilleure URL d'image disponible pour un jeu Steam.
