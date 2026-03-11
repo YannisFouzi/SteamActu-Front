@@ -40,12 +40,14 @@ const GameCard = ({
             />
           </View>
         ) : (
-          <Image
-            source={{uri: currentUrl}}
-            style={styles.image}
-            resizeMode="cover"
-            onError={handleImageError}
-          />
+          <>
+            <Image
+              source={{uri: currentUrl}}
+              style={styles.image}
+              resizeMode="cover"
+              onError={handleImageError}
+            />
+          </>
         )}
       </View>
       <View style={styles.info}>
@@ -82,13 +84,15 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   imageContainer: {
-    width: 120,
+    width: 160,
     height: 80,
-    backgroundColor: COLORS.STEAM_GRAY,
+    overflow: 'hidden',
   },
   image: {
-    width: '100%',
     height: '100%',
+    aspectRatio: 460 / 215,
+    position: 'absolute',
+    left: 0,
   },
   imagePlaceholder: {
     width: '100%',
