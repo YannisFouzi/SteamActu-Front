@@ -3,6 +3,41 @@ import { normalizeTimestamp, TIME_CONSTANTS } from './dateHelpers';
 import { isDefined, toNumber } from './numberHelpers';
 
 const STEAM_ICON_BASE_URL = `${APP_CONFIG.STEAM_MEDIA_CDN}/steamcommunity/public/images/apps`;
+const STEAM_CDN_BASE_URL = 'https://cdn.cloudflare.steamstatic.com/steam/apps';
+
+/**
+ * Retourne la meilleure URL d'image disponible pour un jeu Steam.
+ * Accepte n'importe quel format de données jeu (library, wishlist, search, followed).
+ * @param {Object} game
+ * @returns {string|null}
+ */
+export const getGameImageUrl = game => {
+  if (!game) {
+    return null;
+  }
+  const appId = game.appid ?? game.appId;
+  const cdnFallback = appId
+    ? `${STEAM_CDN_BASE_URL}/${appId}/header.jpg`
+    : null;
+  return game.header_image || game.capsule || game.imageUrl || cdnFallback;
+};
+
+/**
+ * Retourne une URL d'image alternative (capsule petite) pour un jeu Steam.
+ * Utilisé comme fallback quand l'image principale échoue.
+ * @param {Object} game
+ * @returns {string|null}
+ */
+export const getGameImageFallback = game => {
+  if (!game) {
+    return null;
+  }
+  const appId = game.appid ?? game.appId;
+  if (!appId) {
+    return null;
+  }
+  return `${STEAM_CDN_BASE_URL}/${appId}/capsule_sm_120.jpg`;
+};
 
 /**
  * Retourne le temps de jeu total (minutes) à partir de différents formats d’API.

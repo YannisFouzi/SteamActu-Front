@@ -3,15 +3,14 @@ import {
   ActivityIndicator,
   FlatList,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
 import GameCard from '../../../components/GameCard';
 import { COLORS } from '../../../constants';
 import { steamService } from '../../../services/api';
+import { getGameImageUrl, getGameImageFallback } from '../../../utils/steamHelpers';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
+import SearchInput from './SearchInput';
 import EmptyStateMessage from './EmptyStateMessage';
 import { debugError } from '../../../hooks/hooksLogger';
 
@@ -53,16 +52,27 @@ const SearchGameTab = ({styles}) => {
     return () => clearTimeout(timeoutId);
   }, [searchQuery, searchGames]);
 
+  const handleSearchChange = useCallback(text => {
+    setSearchQuery(text);
+    if (!text || text.trim() === '') {
+      setSearchResults([]);
+      setHasSearched(false);
+    }
+  }, []);
+
   const renderGameItem = ({item}) => {
     const appId = item.appid.toString();
+    const imageUrl = getGameImageUrl(item);
+    const fallbackImageUrl = getGameImageFallback(item);
     return (
       <GameCard
         game={{name: item.name}}
-        imageUrl={item.header_image}
+        imageUrl={imageUrl}
+        fallbackImageUrl={fallbackImageUrl}
         followConfig={{
           appId,
           name: item.name,
-          imageUrl: item.header_image,
+          imageUrl,
         }}
       />
     );
@@ -109,40 +119,11 @@ const SearchGameTab = ({styles}) => {
 
   return (
     <View style={styles.searchTabContainer}>
-      <View style={styles.searchSection}>
-        <View style={styles.searchBarContainer}>
-          <Icon
-            name="search"
-            size={20}
-            color={COLORS.STEAM_TEXT_GRAY}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Rechercher un jeu Steam..."
-            placeholderTextColor={COLORS.STEAM_TEXT_GRAY}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity
-              style={styles.searchClearButton}
-              onPress={() => {
-                setSearchQuery('');
-                setSearchResults([]);
-                setHasSearched(false);
-              }}>
-              <Icon
-                name="close-circle"
-                size={20}
-                color={COLORS.STEAM_TEXT_GRAY}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+      <SearchInput
+        value={searchQuery}
+        onChangeText={handleSearchChange}
+        placeholder="Rechercher un jeu Steam..."
+      />
 
       {renderSearchContent()}
     </View>

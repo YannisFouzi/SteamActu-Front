@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, CONTAINER_STYLES } from '../constants';
@@ -7,16 +7,31 @@ import FollowToggle from './FollowToggle';
 const GameCard = ({
   game,
   imageUrl,
+  fallbackImageUrl,
   followConfig = null,
   showDate = false,
   dateText = '',
 }) => {
+  const [currentUrl, setCurrentUrl] = useState(imageUrl);
   const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setCurrentUrl(imageUrl);
+    setImageError(false);
+  }, [imageUrl]);
+
+  const handleImageError = useCallback(() => {
+    if (currentUrl !== fallbackImageUrl && fallbackImageUrl) {
+      setCurrentUrl(fallbackImageUrl);
+    } else {
+      setImageError(true);
+    }
+  }, [currentUrl, fallbackImageUrl]);
 
   return (
     <View style={styles.card}>
       <View style={styles.imageContainer}>
-        {imageError ? (
+        {imageError || !currentUrl ? (
           <View style={styles.imagePlaceholder}>
             <Icon
               name="game-controller-outline"
@@ -26,10 +41,10 @@ const GameCard = ({
           </View>
         ) : (
           <Image
-            source={{uri: imageUrl}}
+            source={{uri: currentUrl}}
             style={styles.image}
             resizeMode="cover"
-            onError={() => setImageError(true)}
+            onError={handleImageError}
           />
         )}
       </View>

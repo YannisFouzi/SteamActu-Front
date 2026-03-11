@@ -3,16 +3,15 @@ import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react'
 import {
   FlatList,
   RefreshControl,
-  TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
 import GameCard from '../components/GameCard';
 import LoadingContainer from '../components/LoadingContainer';
 import { COLORS } from '../constants';
+import { getGameImageUrl, getGameImageFallback } from '../utils/steamHelpers';
 import EmptyStateMessage from './Home/components/EmptyStateMessage';
 import NoResultsPlaceholder from './Home/components/NoResultsPlaceholder';
+import SearchInput from './Home/components/SearchInput';
 import SortOptions from './Home/components/SortOptions';
 import styles from './Home/styles';
 
@@ -86,15 +85,14 @@ const WishlistScreen = ({
     ({item}) => {
       const appId = item.appid ? item.appid.toString() : null;
       const gameName = item.name || (appId ? `Jeu ${appId}` : 'Jeu Steam');
-      const fallbackImage =
-        appId &&
-        `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
-      const imageUrl = item.header_image || item.capsule || fallbackImage;
+      const imageUrl = getGameImageUrl(item);
+      const fallbackImageUrl = getGameImageFallback(item);
 
       return (
         <GameCard
           game={{name: gameName}}
           imageUrl={imageUrl}
+          fallbackImageUrl={fallbackImageUrl}
           followConfig={
             appId
               ? {
@@ -121,36 +119,11 @@ const WishlistScreen = ({
 
   return (
     <View style={styles.container}>
-      <View style={styles.searchSection}>
-        <View style={styles.searchBarContainer}>
-          <Icon
-            name="search"
-            size={20}
-            color={COLORS.STEAM_TEXT_GRAY}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Rechercher dans ma wishlist..."
-            placeholderTextColor={COLORS.STEAM_TEXT_GRAY}
-            value={wishlistSearchQuery}
-            onChangeText={setWishlistSearchQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {wishlistSearchQuery !== '' && (
-            <TouchableOpacity
-              style={styles.searchClearButton}
-              onPress={() => setWishlistSearchQuery('')}>
-              <Icon
-                name="close-circle"
-                size={20}
-                color={COLORS.STEAM_TEXT_GRAY}
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+      <SearchInput
+        value={wishlistSearchQuery}
+        onChangeText={setWishlistSearchQuery}
+        placeholder="Rechercher dans ma wishlist..."
+      />
 
       <SortOptions
         options={WISHLIST_SORT_OPTIONS}

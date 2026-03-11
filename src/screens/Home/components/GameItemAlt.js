@@ -1,25 +1,25 @@
 import React from 'react';
 import GameCard from '../../../components/GameCard';
-import { getGameAppId, isValidGame } from '../../../utils';
+import { getGameAppId, isValidGame, getGameImageUrl, getGameImageFallback } from '../../../utils';
 
 const GameItemAlt = ({game}) => {
-  // Validation et extraction des données du jeu
   if (!isValidGame(game)) {
     return null;
   }
 
   const appId = getGameAppId(game);
-  // Construire l'URL de l'image du jeu (header image Steam)
-  const gameImageUrl = `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
+  const imageUrl = getGameImageUrl(game);
+  const fallbackImageUrl = getGameImageFallback(game);
 
   return (
     <GameCard
       game={game}
-      imageUrl={gameImageUrl}
+      imageUrl={imageUrl}
+      fallbackImageUrl={fallbackImageUrl}
       followConfig={{
         appId,
         name: game.name,
-        imageUrl: gameImageUrl,
+        imageUrl,
       }}
     />
   );
