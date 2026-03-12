@@ -1,3 +1,4 @@
+import { translate } from '../i18n';
 import { userService } from '../services/api';
 import { debugError, debugLog, maskSteamId } from './hooksLogger';
 
@@ -55,7 +56,7 @@ export const useGameSync = () => {
         if (!existing || normalizedTimestamp > existing.timestamp) {
           dedupeMap.set(appId, {
             appId,
-            name: rawGame.name || `Jeu ${appId}`,
+            name: rawGame.name || translate('common.gameWithId', {appId}),
             timestamp: normalizedTimestamp,
           });
         }

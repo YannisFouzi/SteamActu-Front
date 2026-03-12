@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { newsService } from '../services/api';
 import { getGameAppId } from '../utils';
 import { debugError, debugLog, showAlert } from './hooksLogger';
@@ -8,6 +9,7 @@ import { debugError, debugLog, showAlert } from './hooksLogger';
  * Centralise la logique de chargement et de rafraîchissement des actualités
  */
 export const useGameNews = game => {
+  const { t } = useTranslation();
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -54,8 +56,8 @@ export const useGameNews = game => {
       }
 
       showAlert(
-        'Erreur',
-        'Impossible de charger les actualités. Veuillez réessayer.',
+        t('common.error'),
+        t('news.loadGameNewsError'),
       );
     } finally {
       if (!shouldProcess()) {
@@ -65,7 +67,7 @@ export const useGameNews = game => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [game]);
+  }, [game, t]);
 
   // Fonction pour rafraîchir les données
   const handleRefresh = useCallback(() => {

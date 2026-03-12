@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { Alert, AppState } from 'react-native';
+import { translate } from '../i18n';
 import {
   buildStorageKey,
   getJSONItem,
@@ -56,7 +57,7 @@ class GamesFetchError extends Error {
   constructor(originalError) {
     super(
       (originalError && originalError.message) ||
-        "Une erreur est survenue lors de la récupération des jeux.",
+        translate('errors.connectionGamesMessage'),
     );
     this.name = 'GamesFetchError';
     this.original = originalError;
@@ -119,11 +120,11 @@ const handleDataLoadError = ({error, onRetry, onLogout}) => {
 
   if (error instanceof GamesFetchError) {
     showAlert(
-      'Erreur de connexion',
-      'Impossible de récupérer vos jeux. Veuillez vérifier votre connexion et réessayer.',
+      translate('errors.connectionTitle'),
+      translate('errors.connectionGamesMessage'),
       [
-        {text: 'Réessayer', onPress: onRetry},
-        {text: 'Déconnexion', style: 'destructive', onPress: onLogout},
+        {text: translate('common.retry'), onPress: onRetry},
+        {text: translate('auth.logout'), style: 'destructive', onPress: onLogout},
       ],
     );
     return;
@@ -133,31 +134,31 @@ const handleDataLoadError = ({error, onRetry, onLogout}) => {
 
   if (status === 404) {
     showAlert(
-      'Session expirée',
-      'Votre session a expiré ou votre compte a été supprimé. Veuillez vous reconnecter.',
-      [{text: 'OK', onPress: onLogout}],
+      translate('errors.sessionExpiredTitle'),
+      translate('errors.sessionExpiredMessage'),
+      [{text: translate('common.ok'), onPress: onLogout}],
     );
     return;
   }
 
   if (error?.isAxiosError || status) {
     showAlert(
-      'Erreur de connexion',
-      'Impossible de récupérer vos données. Veuillez vérifier votre connexion et réessayer.',
+      translate('errors.connectionTitle'),
+      translate('errors.connectionDataMessage'),
       [
-        {text: 'Réessayer', onPress: onRetry},
-        {text: 'Déconnexion', style: 'destructive', onPress: onLogout},
+        {text: translate('common.retry'), onPress: onRetry},
+        {text: translate('auth.logout'), style: 'destructive', onPress: onLogout},
       ],
     );
     return;
   }
 
   showAlert(
-    'Erreur',
-    "Une erreur inattendue s'est produite. Voulez-vous vous déconnecter et réessayer?",
+    translate('common.error'),
+    translate('errors.unexpectedRetryOrLogout'),
     [
-      {text: 'Réessayer', onPress: onRetry},
-      {text: 'Déconnexion', style: 'destructive', onPress: onLogout},
+      {text: translate('common.retry'), onPress: onRetry},
+      {text: translate('auth.logout'), style: 'destructive', onPress: onLogout},
     ],
   );
 };
@@ -632,8 +633,8 @@ export const AppProvider = ({children, navigation = null}) => {
         navigation.replace('Login');
       } else {
         showAlert(
-          'Déconnexion réussie',
-          "Vous avez été déconnecté.",
+          translate('auth.logoutSuccessTitle'),
+          translate('auth.logoutSuccessMessage'),
         );
       }
 
@@ -641,8 +642,8 @@ export const AppProvider = ({children, navigation = null}) => {
     } catch (error) {
       debugError('🚪 [LOGOUT] ❌ Erreur lors de la déconnexion:', error);
       showAlert(
-        'Erreur de déconnexion',
-        'Une erreur est survenue lors de la déconnexion. Veuillez réessayer.',
+        translate('auth.logoutErrorTitle'),
+        translate('auth.logoutErrorMessage'),
       );
     }
   }, [
@@ -892,7 +893,7 @@ export const AppProvider = ({children, navigation = null}) => {
       const gameName =
         gameMeta.name ||
         game?.name ||
-        `Jeu ${appIdString}`;
+        translate('common.gameWithId', {appId: appIdString});
       const gameIcon =
         gameMeta.imageUrl ||
         gameMeta.logoUrl ||
@@ -1012,16 +1013,16 @@ export const AppProvider = ({children, navigation = null}) => {
         }
 
         showAlert(
-          'Erreur',
-          'Impossible de modifier le suivi du jeu. Veuillez réessayer.',
+          translate('common.error'),
+          translate('games.followUpdateError'),
         );
         return false;
       }
     } catch (error) {
       debugError('Erreur lors de la modification du suivi:', error);
       showAlert(
-        'Erreur',
-        'Une erreur inattendue est survenue. Veuillez réessayer.',
+        translate('common.error'),
+        translate('games.followUpdateUnexpectedError'),
       );
       return false;
     }
@@ -1063,9 +1064,9 @@ export const AppProvider = ({children, navigation = null}) => {
 
         if (addedGames.length > 0) {
           showAlert(
-            'Nouveaux jeux détectés',
-            `${addedGames.length} nouveau(x) jeu(x) ont été ajoutés à votre bibliothèque.`,
-            [{text: 'OK'}],
+            translate('games.newGamesDetectedTitle'),
+            translate('games.newGamesDetectedMessage', {count: addedGames.length}),
+            [{text: translate('common.ok')}],
           );
 
           // Mettre à jour les jeux

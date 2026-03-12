@@ -4,6 +4,11 @@ import { Linking } from 'react-native';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
 import { COLORS } from '../constants';
 import { useAppContext } from '../context/AppContext';
+import {
+  getCurrentAppLanguage,
+  translate,
+  waitForI18nInitialization,
+} from '../i18n';
 import { steamAuthService, userService } from '../services/api';
 import {
   debugError,
@@ -102,7 +107,8 @@ export const useSteamAuth = navigation => {
         let response;
         try {
           debugLog('🔐 [LOGIN] 🔄 POST /users/register');
-          response = await userService.register(steamId);
+          await waitForI18nInitialization();
+          response = await userService.register(steamId, getCurrentAppLanguage());
           debugLog('🔐 [LOGIN] ✅ Utilisateur créé/récupéré');
         } catch (registerError) {
           // Vérifier si l'erreur est due à un utilisateur déjà existant
@@ -209,9 +215,8 @@ export const useSteamAuth = navigation => {
       } catch (error) {
         debugError('🔐 [LOGIN] ❌ Erreur authentification:', error);
         showAlert(
-          'Erreur',
-          error.message ||
-            'Impossible de se connecter. Vérifiez que le serveur est accessible.',
+          translate('common.error'),
+          translate('auth.connectivityErrorMessage'),
         );
       } finally {
         if (isMountedRef.current) {
@@ -247,8 +252,8 @@ export const useSteamAuth = navigation => {
             await handleSteamIdReceived(steamId);
           } else {
             showAlert(
-              "Erreur d'authentification",
-              'Impossible de récupérer votre identifiant Steam. Veuillez réessayer.',
+              translate('auth.steamIdMissingTitle'),
+              translate('auth.steamIdMissingMessage'),
             );
           }
         } catch (error) {
@@ -288,8 +293,8 @@ export const useSteamAuth = navigation => {
         if (result?.type === 'cancel') {
           debugLog('[STEAM AUTH] Authentification annulée par l’utilisateur');
           showAlert(
-            'Connexion annulée',
-            'La fenêtre de connexion Steam a été fermée avant la fin du processus.',
+            translate('auth.loginCancelledTitle'),
+            translate('auth.loginCancelledMessage'),
           );
         }
       } else {
@@ -299,8 +304,8 @@ export const useSteamAuth = navigation => {
     } catch (error) {
       debugError("Erreur lors du lancement de l'authentification:", error);
       showAlert(
-        'Erreur',
-        'Impossible de lancer la connexion Steam. Veuillez réessayer.',
+        translate('common.error'),
+        translate('auth.launchErrorMessage'),
       );
     } finally {
       if (isMountedRef.current) {

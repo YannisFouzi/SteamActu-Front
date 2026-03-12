@@ -1,11 +1,12 @@
-﻿import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import {Image, StyleSheet, Text, View} from 'react-native';
+import {useTranslation} from 'react-i18next';
 import SteamLoginButton from '../components/SteamLoginButton';
-import { COLORS, TEXT_STYLES } from '../constants';
-import { useSteamAuth } from '../hooks/useSteamAuth';
+import {COLORS, TEXT_STYLES} from '../constants';
+import {useSteamAuth} from '../hooks/useSteamAuth';
 
 const LoginScreen = ({navigation}) => {
-  // Hook personnalisé pour l'authentification Steam
+  const {t} = useTranslation();
   const {loading, handleSteamLogin} = useSteamAuth(navigation);
 
   return (
@@ -17,9 +18,7 @@ const LoginScreen = ({navigation}) => {
       />
 
       <Text style={styles.title}>Steam Actu</Text>
-      <Text style={styles.subtitle}>
-        Restez informé des dernières actualités de vos jeux Steam
-      </Text>
+      <Text style={styles.subtitle}>{t('auth.loginSubtitle')}</Text>
 
       <SteamLoginButton onPress={handleSteamLogin} loading={loading} />
     </View>

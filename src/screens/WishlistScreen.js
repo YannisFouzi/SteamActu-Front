@@ -1,24 +1,16 @@
-import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
-import {
-  FlatList,
-  RefreshControl,
-  View,
-} from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {FlatList, RefreshControl, View} from 'react-native';
+import {useTranslation} from 'react-i18next';
 import GameCard from '../components/GameCard';
 import LoadingContainer from '../components/LoadingContainer';
-import { COLORS } from '../constants';
-import { getGameImageUrl, getGameImageFallback } from '../utils/steamHelpers';
+import {COLORS} from '../constants';
+import {getGameImageFallback, getGameImageUrl} from '../utils/steamHelpers';
 import EmptyStateMessage from './Home/components/EmptyStateMessage';
 import NoResultsPlaceholder from './Home/components/NoResultsPlaceholder';
 import SearchInput from './Home/components/SearchInput';
 import SortOptions from './Home/components/SortOptions';
 import styles from './Home/styles';
-
-const WISHLIST_SORT_OPTIONS = [
-  {value: 'recent', label: 'Recents'},
-  {value: 'alphabetical', label: 'A-Z'},
-];
 
 const WishlistScreen = ({
   wishlist,
@@ -29,9 +21,18 @@ const WishlistScreen = ({
   updateWishlistFollowState,
   maybeRefreshWishlist,
 }) => {
+  const {t} = useTranslation();
   const [wishlistSearchQuery, setWishlistSearchQuery] = useState('');
   const [wishlistSortBy, setWishlistSortBy] = useState('recent');
   const listRef = useRef(null);
+
+  const sortOptions = useMemo(
+    () => [
+      {value: 'recent', label: t('games.recents')},
+      {value: 'alphabetical', label: t('games.sortAZ')},
+    ],
+    [t],
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -74,17 +75,18 @@ const WishlistScreen = ({
       <EmptyStateMessage
         styles={styles}
         iconName="sad-outline"
-        title="Wishlist vide"
-        text="Ajoutez les jeux qui vous interessent pour les suivre ici."
+        title={t('games.wishlistEmptyTitle')}
+        text={t('games.wishlistEmptyText')}
         align="top"
       />
     );
-  }, [wishlistSearchQuery]);
+  }, [t, wishlistSearchQuery]);
 
   const renderWishlistItem = useCallback(
     ({item}) => {
       const appId = item.appid ? item.appid.toString() : null;
-      const gameName = item.name || (appId ? `Jeu ${appId}` : 'Jeu Steam');
+      const gameName =
+        item.name || (appId ? t('common.gameWithId', {appId}) : t('common.unknownGame'));
       const imageUrl = getGameImageUrl(item);
       const fallbackImageUrl = getGameImageFallback(item);
 
@@ -108,7 +110,7 @@ const WishlistScreen = ({
         />
       );
     },
-    [updateWishlistFollowState],
+    [t, updateWishlistFollowState],
   );
 
   const onRefresh = useCallback(() => {
@@ -122,17 +124,17 @@ const WishlistScreen = ({
       <SearchInput
         value={wishlistSearchQuery}
         onChangeText={setWishlistSearchQuery}
-        placeholder="Rechercher dans ma wishlist..."
+        placeholder={t('games.searchWishlistPlaceholder')}
       />
 
       <SortOptions
-        options={WISHLIST_SORT_OPTIONS}
+        options={sortOptions}
         selectedValue={wishlistSortBy}
         onSelect={setWishlistSortBy}
       />
 
       {loading && !refreshing ? (
-        <LoadingContainer text="Chargement de la wishlist..." />
+        <LoadingContainer text={t('games.wishlistLoading')} />
       ) : (
         <FlatList
           ref={listRef}

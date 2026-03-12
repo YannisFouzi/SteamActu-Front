@@ -1,7 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { newsService, userService } from '../services/api';
-import { debugError, debugLog, maskSteamId } from './hooksLogger';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import {useTranslation} from 'react-i18next';
+import {normalizeLanguage, translate} from '../i18n';
+import {newsService, userService} from '../services/api';
+import {debugError, debugLog, maskSteamId} from './hooksLogger';
 import {
   buildStorageKey,
   getJSONItem,
@@ -10,13 +11,10 @@ import {
 
 const buildNewsKey = (appId, newsId) => `${appId}:${newsId}`;
 
-/**
- * Hook personnalisé pour la gestion des actualités
- * Extrait la logique complexe de gestion des news du HomeScreen
- * Inclut un système de cache pour afficher instantanément les news
- */
 export const useNewsManager = steamId => {
-  // Factory pour créer l'état initial des news
+  const {i18n} = useTranslation();
+  const language = normalizeLanguage(i18n.resolvedLanguage || i18n.language);
+
   const createInitialNewsState = useCallback(() => {
     debugLog('[NEWS] Initialisation de letat des actualites');
     return {
@@ -63,23 +61,28 @@ export const useNewsManager = steamId => {
     setNewsState(updater);
   }, []);
 
+  const getCacheKey = useCallback(
+    targetSteamId => buildStorageKey('newsFeed', `${targetSteamId}:${language}`),
+    [language],
+  );
+
   const persistNewsCache = useCallback(
     async (items, targetSteamId = steamId) => {
-      const cacheKey = buildStorageKey('newsFeed', targetSteamId);
+      const cacheKey = getCacheKey(targetSteamId);
       if (!cacheKey) {
         return;
       }
       await setJSONItem(cacheKey, items);
-      debugLog('[NEWS] Cache sauvegardé', { count: items.length });
+      debugLog('[NEWS] Cache sauvegarde', {count: items.length, language});
     },
-    [steamId],
+    [getCacheKey, language, steamId],
   );
 
-  // Fonction pour récupérer les actualités
   const fetchNews = useCallback(
     async (options = {}) => {
-      debugLog('[NEWS] fetchNews appelée');
+      debugLog('[NEWS] fetchNews appelee');
       debugLog('[NEWS] steamId:', maskSteamId(steamId) || '(vide)');
+      debugLog('[NEWS] language:', language);
       debugLog('[NEWS] silent:', options.silent);
 
       const silent = options.silent === true;
@@ -94,7 +97,7 @@ export const useNewsManager = steamId => {
       favoritesOnlyRef.current = requestedFavoritesOnly;
 
       if (!steamId) {
-        debugLog('[NEWS] Pas de steamId → état vide');
+        debugLog('[NEWS] Pas de steamId -> etat vide');
         safeSetNewsState(prev => ({
           ...prev,
           news: {
@@ -105,8 +108,6 @@ export const useNewsManager = steamId => {
         }));
         return;
       }
-
-      debugLog('[NEWS] Chargement des actualités...');
 
       safeSetNewsState(prev => {
         const previous = prev.news || createInitialNewsState();
@@ -126,6 +127,7 @@ export const useNewsManager = steamId => {
       try {
         const response = await newsService.getNewsFeed(steamId, {
           perGameLimit: 20,
+          language,
           favoritesOnly: requestedFavoritesOnly,
         });
 
@@ -176,8 +178,7 @@ export const useNewsManager = steamId => {
               ...previous,
               loading: false,
               refreshing: false,
-              error:
-                'Impossible de récupérer les actualités pour le moment. Veuillez réessayer.',
+              error: translate('errors.connectionDataMessage'),
               initialized: true,
               favoritesOnly: requestedFavoritesOnly,
             },
@@ -185,16 +186,16 @@ export const useNewsManager = steamId => {
         });
       }
     },
-    [createInitialNewsState, safeSetNewsState, steamId, persistNewsCache],
+    [createInitialNewsState, language, persistNewsCache, safeSetNewsState, steamId],
   );
-  // Hydratation depuis le cache au montage
+
   useEffect(() => {
     const hydrateFromCache = async () => {
       if (!steamId || newsHydratedFromCacheRef.current) {
         return;
       }
 
-      const cacheKey = buildStorageKey('newsFeed', steamId);
+      const cacheKey = getCacheKey(steamId);
       if (!cacheKey) {
         return;
       }
@@ -211,8 +212,9 @@ export const useNewsManager = steamId => {
               initialized: true,
             },
           }));
-          debugLog('[NEWS] Hydraté depuis le cache', {
+          debugLog('[NEWS] Hydrate depuis le cache', {
             count: cachedNews.length,
+            language,
           });
         }
       } catch (err) {
@@ -221,9 +223,8 @@ export const useNewsManager = steamId => {
     };
 
     hydrateFromCache();
-  }, [steamId, safeSetNewsState, createInitialNewsState]);
+  }, [createInitialNewsState, getCacheKey, language, safeSetNewsState, steamId]);
 
-  // Fonction pour mettre à jour le statut de suivi d'un jeu dans les news
   const updateNewsFollowStatus = useCallback(
     (appId, isFollowed) => {
       safeSetNewsState(prev => {
@@ -268,7 +269,7 @@ export const useNewsManager = steamId => {
 
   const setFavoritesOnlyFilter = useCallback(
     value => {
-      fetchNews({ favoritesOnly: value });
+      fetchNews({favoritesOnly: value});
     },
     [fetchNews],
   );
@@ -319,26 +320,23 @@ export const useNewsManager = steamId => {
             newsDate,
           });
         }
-        await fetchNews({ silent: true, favoritesOnly: favoritesOnlyRef.current });
+        await fetchNews({silent: true, favoritesOnly: favoritesOnlyRef.current});
       } catch (error) {
         debugError('[NEWS] toggle favorite error', error);
-        await fetchNews({ favoritesOnly: favoritesOnlyRef.current });
+        await fetchNews({favoritesOnly: favoritesOnlyRef.current});
       }
     },
-    [steamId, fetchNews, safeSetNewsState, createInitialNewsState],
+    [createInitialNewsState, fetchNews, safeSetNewsState, steamId],
   );
 
-  // Réinitialiser les news quand le steamId change
   useEffect(() => {
-    debugLog('\n📰 [NEWS useEffect[steamId]] Déclenché');
-    debugLog('📰 [NEWS useEffect[steamId]] steamId:', steamId || '(vide)');
-    debugLog('📰 [NEWS useEffect[steamId]] Reset newsState');
+    debugLog('[NEWS] reset state', {steamId: steamId || '(vide)', language});
+    newsHydratedFromCacheRef.current = false;
     safeSetNewsState({
       news: createInitialNewsState(),
     });
-  }, [createInitialNewsState, safeSetNewsState, steamId]);
+  }, [createInitialNewsState, language, safeSetNewsState, steamId]);
 
-  // Charger les news quand le filtre change
   useEffect(() => {
     if (!newsState.news?.initialized) {
       return;
@@ -351,8 +349,8 @@ export const useNewsManager = steamId => {
     fetchNews,
     updateNewsFollowStatus,
     removeNewsByAppId,
-     setFavoritesOnlyFilter,
-     toggleNewsFavorite,
+    setFavoritesOnlyFilter,
+    toggleNewsFavorite,
     activeNewsState: newsState.news,
     isNewsInitialized: newsState.news?.initialized,
     isNewsLoading: newsState.news?.loading,

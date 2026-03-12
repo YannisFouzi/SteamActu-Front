@@ -1,3 +1,4 @@
+import i18n, {getCurrentLocale, normalizeLanguage} from '../i18n';
 import { isDefined } from './numberHelpers';
 
 export const TIME_CONSTANTS = {
@@ -9,8 +10,6 @@ export const TIME_CONSTANTS = {
 };
 
 export const DATE_CONFIG = {
-  DEFAULT_FALLBACK: 'Jamais',
-  LOCALE: 'fr-FR',
   DEFAULT_ABSOLUTE_OPTIONS: {
     year: 'numeric',
     month: 'long',
@@ -41,11 +40,21 @@ export const normalizeTimestamp = timestamp => {
  * @returns {string}
  */
 export const formatRelativeDate = (timestamp, options = {}) => {
-  const {includeMinutes = false, fallback = DATE_CONFIG.DEFAULT_FALLBACK} =
-    options;
+  const {
+    includeMinutes = false,
+    fallback,
+    language,
+  } = options;
+  const translationOptions = language
+    ? {lng: normalizeLanguage(language)}
+    : undefined;
+  const resolvedFallback =
+    typeof fallback === 'string'
+      ? fallback
+      : i18n.t('dates.fallbackNever', translationOptions);
 
   if (!timestamp) {
-    return fallback;
+    return resolvedFallback;
   }
 
   const normalizedTimestamp = normalizeTimestamp(timestamp);
@@ -56,23 +65,35 @@ export const formatRelativeDate = (timestamp, options = {}) => {
   const diffInMinutes = Math.floor(diffInMs / TIME_CONSTANTS.MINUTE_MS);
   const diffInHours = Math.floor(diffInMs / TIME_CONSTANTS.HOUR_MS);
   const diffInDays = Math.floor(diffInMs / TIME_CONSTANTS.DAY_MS);
+  const locale = getCurrentLocale(language);
 
-  if (includeMinutes && diffInMinutes < 60) {
-    return `Il y a ${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''}`;
+  if (diffInMinutes <= 0) {
+    return i18n.t('dates.fallbackNow', translationOptions);
   }
 
-  if (diffInHours < 24) {
-    return `Il y a ${diffInHours} heure${diffInHours > 1 ? 's' : ''}`;
+  try {
+    const formatter = new Intl.RelativeTimeFormat(locale, {numeric: 'auto'});
+
+    if (includeMinutes && diffInMinutes < 60) {
+      return formatter.format(-diffInMinutes, 'minute');
+    }
+
+    if (diffInHours < 24) {
+      return formatter.format(-diffInHours, 'hour');
+    }
+
+    if (diffInDays < 7) {
+      return formatter.format(-diffInDays, 'day');
+    }
+  } catch (error) {
+    // Fallback vers un format absolu si RelativeTimeFormat indisponible.
   }
 
-  if (diffInDays < 7) {
-    return `Il y a ${diffInDays} jour${diffInDays > 1 ? 's' : ''}`;
-  }
-
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
+  return new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
 };
 
 /**
@@ -88,11 +109,15 @@ export const formatAbsoluteDate = (timestamp, options = {}) => {
 
   const normalizedTimestamp = normalizeTimestamp(timestamp);
   const date = new Date(normalizedTimestamp);
+  const {language, ...formatOverrides} = options;
 
   const formatOptions = {
     ...DATE_CONFIG.DEFAULT_ABSOLUTE_OPTIONS,
-    ...options,
+    ...formatOverrides,
   };
 
-  return date.toLocaleDateString(DATE_CONFIG.LOCALE, formatOptions);
+  return new Intl.DateTimeFormat(
+    getCurrentLocale(language),
+    formatOptions,
+  ).format(date);
 };

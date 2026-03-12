@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, {useMemo} from 'react';
 import {
   Dimensions,
   StyleSheet,
@@ -6,11 +6,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { COLORS } from '../constants';
-import { SUMMARY_STEP_INDEX, TUTORIAL_STEPS } from './steps';
+import {useTranslation} from 'react-i18next';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {COLORS} from '../constants';
+import {SUMMARY_STEP_INDEX, TUTORIAL_STEPS} from './steps';
 
-const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get('window');
+const {width: WINDOW_WIDTH, height: WINDOW_HEIGHT} = Dimensions.get('window');
 const HIGHLIGHT_PADDING = 12;
 
 const TutorialOverlay = ({
@@ -21,6 +22,7 @@ const TutorialOverlay = ({
   onPrev,
   onSkip,
 }) => {
+  const {t} = useTranslation();
   const step = TUTORIAL_STEPS[stepIndex];
   const insets = useSafeAreaInsets();
 
@@ -29,11 +31,7 @@ const TutorialOverlay = ({
       return null;
     }
 
-    // Utilise un padding uniforme autour des dimensions réelles mesurées
     const padding = HIGHLIGHT_PADDING;
-
-    // Ajoute l'offset de la safe area au Y pour corriger la position
-    // measureInWindow() ne prend pas en compte la status bar
     const adjusted = {
       x: layout.x - padding,
       y: layout.y + insets.top - padding,
@@ -41,7 +39,6 @@ const TutorialOverlay = ({
       height: layout.height + padding * 2,
     };
 
-    // Clamp pour rester dans les limites de l'écran
     const clamped = {
       x: Math.max(adjusted.x, 0),
       y: Math.max(adjusted.y, 0),
@@ -87,7 +84,7 @@ const TutorialOverlay = ({
           <View key={index} style={[styles.backdrop, overlay]} />
         ))}
 
-        {highlight && (
+        {highlight ? (
           <View
             pointerEvents="none"
             style={[
@@ -100,33 +97,38 @@ const TutorialOverlay = ({
               },
             ]}
           />
-        )}
+        ) : null}
 
         <View style={[styles.tooltipContainer, tooltipPosition]}>
           <Text style={styles.stepLabel}>
-            Étape {stepIndex + 1}/{TUTORIAL_STEPS.length}
+            {t('tutorial.stepLabel', {
+              current: stepIndex + 1,
+              total: TUTORIAL_STEPS.length,
+            })}
           </Text>
-          <Text style={styles.title}>{step.title}</Text>
-          <Text style={styles.description}>{step.description}</Text>
+          <Text style={styles.title}>{t(step.titleKey)}</Text>
+          <Text style={styles.description}>{t(step.descriptionKey)}</Text>
 
           <View style={styles.buttonsRow}>
             <TouchableOpacity onPress={handleSkip} style={styles.textButton}>
-              <Text style={styles.textButtonLabel}>Passer</Text>
+              <Text style={styles.textButtonLabel}>{t('tutorial.skipButton')}</Text>
             </TouchableOpacity>
 
             <View style={styles.actions}>
-              {!isFirst && (
+              {!isFirst ? (
                 <TouchableOpacity
                   onPress={onPrev}
                   style={[styles.button, styles.secondaryButton]}>
-                  <Text style={styles.secondaryButtonLabel}>Précédent</Text>
+                  <Text style={styles.secondaryButtonLabel}>
+                    {t('tutorial.previous')}
+                  </Text>
                 </TouchableOpacity>
-              )}
+              ) : null}
               <TouchableOpacity
                 onPress={onNext}
                 style={[styles.button, styles.primaryButton]}>
                 <Text style={styles.primaryButtonLabel}>
-                  {isLast ? 'Terminer' : 'Suivant'}
+                  {isLast ? t('tutorial.finish') : t('tutorial.next')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -252,18 +254,12 @@ const styles = StyleSheet.create({
     borderColor: COLORS.STEAM_BORDER,
     shadowColor: '#000',
     shadowOpacity: 0.25,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: {width: 0, height: 4},
     shadowRadius: 12,
     elevation: 12,
   },
   tooltipAbsolute: {
     position: 'absolute',
-  },
-  tooltipCentered: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    top: WINDOW_HEIGHT / 2 - 120,
   },
   stepLabel: {
     color: COLORS.STEAM_TEXT_GRAY,
@@ -324,4 +320,3 @@ const styles = StyleSheet.create({
 });
 
 export default TutorialOverlay;
-

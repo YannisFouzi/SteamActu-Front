@@ -14,6 +14,7 @@ import {
 } from '@react-native-firebase/messaging';
 import { Linking, Platform } from 'react-native';
 import { debugError, debugLog, showAlert } from '../hooks/hooksLogger';
+import { getCurrentAppLanguage, translate } from '../i18n';
 import { userService } from './api';
 import { consumePendingNotification } from './initialNotificationStore';
 
@@ -23,8 +24,8 @@ const ACTION_OPEN_NEWS = 'open-news';
 const ACTION_UNFOLLOW_GAME = 'unfollow-game';
 const ACTION_FOLLOW_GAME = 'follow-game';
 
-let androidChannelInitialized = false;
-let iosCategoriesInitialized = false;
+let androidChannelLanguage = null;
+let iosCategoriesLanguage = null;
 const processedNotificationIds = new Set();
 const appInstance = getApp();
 const messagingInstance = getMessaging(appInstance);
@@ -117,10 +118,14 @@ async function ensureNotificationPermission() {
   }
 
   try {
-    const authStatus = await messaging().requestPermission();
+    let settings = await notifee.getNotificationSettings();
+    if (settings.authorizationStatus === AuthorizationStatus.NOT_DETERMINED) {
+      settings = await notifee.requestPermission();
+    }
+
     const granted =
-      authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-      authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+      settings.authorizationStatus === AuthorizationStatus.AUTHORIZED ||
+      settings.authorizationStatus === AuthorizationStatus.PROVISIONAL;
 
     if (granted) {
       debugLog('[FCM] Permission notifications iOS accordée');
@@ -206,20 +211,22 @@ export async function unregisterFCMToken(steamId) {
  * @returns {Promise<void>}
  */
 async function ensureAndroidNotificationChannel() {
-  if (Platform.OS !== 'android' || androidChannelInitialized) {
+  const language = getCurrentAppLanguage();
+
+  if (Platform.OS !== 'android' || androidChannelLanguage === language) {
     return;
   }
 
   try {
     await notifee.createChannel({
       id: NOTIFICATION_CHANNEL_ID,
-      name: 'Actualités Steam',
-      description: 'Notifications push pour les actualités des jeux suivis',
+      name: translate('notifications.channelName'),
+      description: translate('notifications.channelDescription'),
       importance: AndroidImportance.HIGH,
       sound: 'default',
     });
 
-    androidChannelInitialized = true;
+    androidChannelLanguage = language;
     debugLog('[FCM] Canal Android "steam_news" prêt');
   } catch (error) {
     debugError('[FCM] Erreur création canal Android:', error);
@@ -227,7 +234,9 @@ async function ensureAndroidNotificationChannel() {
 }
 
 async function ensureIosNotificationCategories() {
-  if (Platform.OS !== 'ios' || iosCategoriesInitialized) {
+  const language = getCurrentAppLanguage();
+
+  if (Platform.OS !== 'ios' || iosCategoriesLanguage === language) {
     return;
   }
 
@@ -238,12 +247,12 @@ async function ensureIosNotificationCategories() {
         actions: [
           {
             id: ACTION_UNFOLLOW_GAME,
-            title: 'Ne plus suivre ce jeu',
+            title: translate('notifications.unfollowAction'),
           },
         ],
       },
     ]);
-    iosCategoriesInitialized = true;
+    iosCategoriesLanguage = language;
     debugLog('[FCM] Catégorie iOS "steam_news_actions" prête');
   } catch (error) {
     debugError('[FCM] Erreur création catégorie iOS:', error);
@@ -356,7 +365,7 @@ export async function displayRemoteNotification(remoteMessage) {
         ? [
             {
               id: ACTION_UNFOLLOW_GAME,
-              title: 'Ne plus suivre ce jeu',
+              title: translate('notifications.unfollowAction'),
               pressAction: {id: ACTION_UNFOLLOW_GAME},
             },
           ]
@@ -514,8 +523,8 @@ export function setupNotificationHandlers(steamId, options = {}) {
           } catch (error) {
             debugError('[FCM] Erreur lors du follow_prompt:', error);
             showAlert(
-              'Suivi impossible',
-              "Impossible d'ajouter ce jeu aux suivis pour le moment. Réessayez plus tard.",
+              translate('notifications.followUnavailableTitle'),
+              translate('notifications.followUnavailableMessage'),
             );
             return;
           }

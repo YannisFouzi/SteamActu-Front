@@ -1,10 +1,11 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
+import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS } from '../constants';
+import {COLORS} from '../constants';
+import AccountStack from './AccountStack';
 import ActuTabs from './ActuTabs';
 import FollowTabs from './FollowTabs';
-import AccountStack from './AccountStack';
 
 const Tab = createBottomTabNavigator();
 
@@ -15,6 +16,8 @@ const TAB_ICONS = {
 };
 
 const MainTabNavigator = () => {
+  const {t} = useTranslation();
+
   return (
     <Tab.Navigator
       screenOptions={({route}) => ({
@@ -37,17 +40,17 @@ const MainTabNavigator = () => {
       <Tab.Screen
         name="Actu"
         component={ActuTabs}
-        options={{title: 'Actu'}}
+        options={{title: t('nav.news')}}
       />
       <Tab.Screen
         name="SuivreUnJeu"
         component={FollowTabs}
-        options={{title: 'Suivre un jeu'}}
+        options={{title: t('nav.followGame')}}
       />
       <Tab.Screen
         name="MonCompte"
         component={AccountStack}
-        options={{title: 'Mon compte'}}
+        options={{title: t('nav.account')}}
       />
     </Tab.Navigator>
   );

@@ -1,5 +1,5 @@
-import { useNavigation } from '@react-navigation/native';
-import React, { useCallback, useState } from 'react';
+import {useNavigation} from '@react-navigation/native';
+import React, {useCallback, useMemo, useState} from 'react';
 import {
   Alert,
   ScrollView,
@@ -8,37 +8,27 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 import FollowModeSetting from '../components/FollowModeSetting';
 import LogoutButton from '../components/LogoutButton';
+import OptionSetting from '../components/OptionSetting';
 import SettingSection from '../components/SettingSection';
-import { COLORS, CONTAINER_STYLES, TEXT_STYLES } from '../constants';
-import { useAppContext } from '../context/AppContext';
-import { debugError } from '../hooks/hooksLogger';
-import { useUserSettings } from '../hooks/useUserSettings';
-import { userService } from '../services/api';
-import { useTutorial } from '../tutorial/useTutorial';
-
-const LEGAL_LINKS = [
-  {
-    label: "Conditions d'utilisation",
-    icon: 'document-text-outline',
-    route: 'TermsOfService',
-  },
-  {
-    label: 'Politique de confidentialité',
-    icon: 'shield-checkmark-outline',
-    route: 'PrivacyPolicy',
-  },
-];
+import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../constants';
+import {useAppContext} from '../context/AppContext';
+import {useAppLanguage} from '../hooks/useAppLanguage';
+import {debugError} from '../hooks/hooksLogger';
+import {useUserSettings} from '../hooks/useUserSettings';
+import {userService} from '../services/api';
+import {useTutorial} from '../tutorial/useTutorial';
 
 const SettingsScreen = () => {
   const navigation = useNavigation();
+  const {t} = useTranslation();
   const {handleLogout, steamId} = useAppContext();
   const [loggingOut, setLoggingOut] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Hook personnalisé pour la gestion des paramètres
   const {
     saving,
     newsNotifications,
@@ -53,9 +43,82 @@ const SettingsScreen = () => {
     completeTutorial,
     state: tutorialState,
   } = useTutorial();
+  const {appLanguage, savingLanguage, handleLanguageChange} =
+    useAppLanguage(steamId);
   const isTutorialActive = tutorialState.status === 'running';
 
-  // Gestionnaire pour la déconnexion
+  const legalLinks = useMemo(
+    () => [
+      {
+        label: t('nav.termsOfService'),
+        icon: 'document-text-outline',
+        route: 'TermsOfService',
+      },
+      {
+        label: t('nav.privacyPolicy'),
+        icon: 'shield-checkmark-outline',
+        route: 'PrivacyPolicy',
+      },
+    ],
+    [t],
+  );
+
+  const libraryOptions = useMemo(
+    () => [
+      {
+        value: 'off',
+        title: t('followModes.offTitle'),
+        subtitle: t('followModes.offSubtitleLibrary'),
+      },
+      {
+        value: 'auto',
+        title: t('followModes.autoTitle'),
+        subtitle: t('followModes.autoSubtitleLibrary'),
+      },
+      {
+        value: 'prompt',
+        title: t('followModes.promptTitle'),
+        subtitle: t('followModes.promptSubtitleLibrary'),
+      },
+    ],
+    [t],
+  );
+
+  const wishlistOptions = useMemo(
+    () => [
+      {
+        value: 'off',
+        title: t('followModes.offTitle'),
+        subtitle: t('followModes.offSubtitleWishlist'),
+      },
+      {
+        value: 'auto',
+        title: t('followModes.autoTitle'),
+        subtitle: t('followModes.autoSubtitleWishlist'),
+      },
+      {
+        value: 'prompt',
+        title: t('followModes.promptTitle'),
+        subtitle: t('followModes.promptSubtitleWishlist'),
+      },
+    ],
+    [t],
+  );
+
+  const languageOptions = useMemo(
+    () => [
+      {
+        value: 'fr',
+        title: t('common.french'),
+      },
+      {
+        value: 'en',
+        title: t('common.english'),
+      },
+    ],
+    [t],
+  );
+
   const handlePressLogout = useCallback(async () => {
     if (loggingOut) {
       return;
@@ -69,24 +132,23 @@ const SettingsScreen = () => {
         routes: [{name: 'Login'}],
       });
     } catch (error) {
-      debugError('Erreur lors de la déconnexion:', error);
+      debugError('Erreur lors de la deconnexion:', error);
     } finally {
       setLoggingOut(false);
     }
   }, [handleLogout, loggingOut, navigation]);
 
-  // Gestionnaire pour la suppression du compte
   const handleDeleteAccount = useCallback(() => {
     Alert.alert(
-      'Supprimer mon compte',
-      'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible. Toutes vos données seront définitivement supprimées.',
+      t('settings.deleteAccountConfirmTitle'),
+      t('settings.deleteAccountConfirmMessage'),
       [
         {
-          text: 'Annuler',
+          text: t('common.cancel'),
           style: 'cancel',
         },
         {
-          text: 'Supprimer',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -105,10 +167,7 @@ const SettingsScreen = () => {
               });
             } catch (error) {
               debugError('Erreur lors de la suppression du compte:', error);
-              Alert.alert(
-                'Erreur',
-                'Une erreur est survenue lors de la suppression de votre compte. Veuillez réessayer.',
-              );
+              Alert.alert(t('common.error'), t('settings.deleteAccountError'));
             } finally {
               setDeleting(false);
             }
@@ -116,57 +175,25 @@ const SettingsScreen = () => {
         },
       ],
     );
-  }, [handleLogout, navigation, steamId]);
+  }, [handleLogout, navigation, steamId, t]);
 
   const followModeDisabled = saving || loggingOut;
-
-  const libraryOptions = [
-    {
-      value: 'off',
-      title: 'Désactivé',
-      subtitle: 'Les jeux achetés ne seront pas ajoutés aux suivis.',
-    },
-    {
-      value: 'auto',
-      title: 'Ajout automatique',
-      subtitle: 'Chaque jeu acheté est ajouté directement à vos jeux suivis.',
-    },
-    {
-      value: 'prompt',
-      title: 'Demander confirmation',
-      subtitle:
-        'Recevez une notification pour confirmer le suivi de chaque jeu acheté.',
-    },
-  ];
-
-  const wishlistOptions = [
-    {
-      value: 'off',
-      title: 'Désactivé',
-      subtitle: 'Les jeux wishlistés ne seront pas ajoutés aux suivis.',
-    },
-    {
-      value: 'auto',
-      title: 'Ajout automatique',
-      subtitle:
-        'Chaque jeu ajouté à votre wishlist est suivi automatiquement.',
-    },
-    {
-      value: 'prompt',
-      title: 'Demander confirmation',
-      subtitle:
-        'Une notification vous demande de confirmer le suivi de chaque jeu wishlisté.',
-    },
-  ];
-
-  // Loader bloquant supprimé : l'UI s'affiche immédiatement avec les valeurs AsyncStorage
-  // La synchronisation serveur se fait en arrière-plan de manière transparente
+  const languageDisabled = savingLanguage || loggingOut || deleting;
 
   return (
     <ScrollView style={styles.container}>
+      <OptionSetting
+        label={t('settings.languageLabel')}
+        description={t('settings.languageDescription')}
+        value={appLanguage}
+        options={languageOptions}
+        onChange={handleLanguageChange}
+        disabled={languageDisabled}
+      />
+
       <SettingSection
-        label="Notifications d'actualités"
-        description="Activez ce réglage pour recevoir une notification lorsqu'une nouvelle news est publiée sur vos jeux suivis."
+        label={t('settings.newsNotificationsLabel')}
+        description={t('settings.newsNotificationsDescription')}
         value={newsNotifications}
         onValueChange={handleToggleNews}
         disabled={saving || loggingOut}
@@ -174,8 +201,8 @@ const SettingsScreen = () => {
       />
 
       <FollowModeSetting
-        label="Jeux achetés"
-        description="Choisissez comment gérer le suivi des jeux détectés dans votre bibliothèque."
+        label={t('settings.libraryLabel')}
+        description={t('settings.libraryDescription')}
         value={libraryFollowMode}
         options={libraryOptions}
         onChange={handleLibraryModeChange}
@@ -184,8 +211,8 @@ const SettingsScreen = () => {
       />
 
       <FollowModeSetting
-        label="Jeux wishlistés"
-        description="Décidez si les jeux ajoutés à votre wishlist doivent être suivis automatiquement."
+        label={t('settings.wishlistLabel')}
+        description={t('settings.wishlistDescription')}
         value={wishlistFollowMode}
         options={wishlistOptions}
         onChange={handleWishlistModeChange}
@@ -194,21 +221,22 @@ const SettingsScreen = () => {
       />
 
       <View style={styles.tutorialSummaryCard}>
-        <Text style={styles.summaryText}>
-          Dès que vos réglages vous conviennent, appuyez sur “Terminer” pour
-          profiter pleinement des notifications et du suivi automatisé.
-        </Text>
+        <Text style={styles.summaryText}>{t('settings.tutorialSummary')}</Text>
         {isTutorialActive ? (
           <TouchableOpacity
             style={styles.summaryButton}
             onPress={completeTutorial}>
-            <Text style={styles.summaryButtonText}>Terminer le tutoriel</Text>
+            <Text style={styles.summaryButtonText}>
+              {t('settings.tutorialFinish')}
+            </Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity
             style={styles.restartButton}
             onPress={restartTutorial}>
-            <Text style={styles.restartButtonText}>Revoir le tutoriel</Text>
+            <Text style={styles.restartButtonText}>
+              {t('settings.reviewTutorial')}
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -223,12 +251,10 @@ const SettingsScreen = () => {
           onPress={handleDeleteAccount}
           disabled={deleting || loggingOut || saving}>
           <Text style={styles.deleteButtonText}>
-            {deleting ? 'Suppression...' : 'Supprimer mon compte'}
+            {deleting ? t('settings.deleting') : t('settings.deleteAccount')}
           </Text>
         </TouchableOpacity>
-        <Text style={styles.deleteWarning}>
-          ⚠️ Cette action est irréversible
-        </Text>
+        <Text style={styles.deleteWarning}>{t('settings.deleteWarning')}</Text>
       </View>
 
       <TouchableOpacity
@@ -240,20 +266,24 @@ const SettingsScreen = () => {
         </View>
 
         <View style={styles.contactShortcutContent}>
-          <Text style={styles.contactShortcutTitle}>Mes infos de contact</Text>
+          <Text style={styles.contactShortcutTitle}>
+            {t('settings.contactShortcut')}
+          </Text>
         </View>
 
         <Icon name="chevron-forward" size={18} color={COLORS.STEAM_TEXT_GRAY} />
       </TouchableOpacity>
 
       <View style={styles.legalSection}>
-        <Text style={[styles.sectionTitle, styles.legalSectionTitle]}>Légal</Text>
-        {LEGAL_LINKS.map((link, index) => (
+        <Text style={[styles.sectionTitle, styles.legalSectionTitle]}>
+          {t('common.legal')}
+        </Text>
+        {legalLinks.map((link, index) => (
           <TouchableOpacity
             key={link.route}
             style={[
               styles.legalItem,
-              index !== LEGAL_LINKS.length - 1 && styles.legalItemDivider,
+              index !== legalLinks.length - 1 && styles.legalItemDivider,
             ]}
             onPress={() => navigation.navigate(link.route)}
             activeOpacity={0.85}>
@@ -271,12 +301,9 @@ const SettingsScreen = () => {
       </View>
 
       <View style={styles.aboutSection}>
-        <Text style={styles.sectionTitle}>À propos</Text>
-        <Text style={styles.aboutText}>Steam Notifications v1.0.0</Text>
-        <Text style={styles.aboutText}>
-          Cette application vous permet de recevoir des notifications pour les
-          actualités des jeux Steam que vous suivez.
-        </Text>
+        <Text style={styles.sectionTitle}>{t('common.about')}</Text>
+        <Text style={styles.aboutText}>{t('settings.aboutVersion')}</Text>
+        <Text style={styles.aboutText}>{t('settings.aboutBody')}</Text>
       </View>
     </ScrollView>
   );
@@ -425,11 +452,6 @@ const styles = StyleSheet.create({
   summaryButtonText: {
     color: COLORS.WHITE,
     fontWeight: '600',
-  },
-  summaryHelper: {
-    color: COLORS.STEAM_TEXT_GRAY,
-    fontSize: 13,
-    lineHeight: 18,
   },
   restartButton: {
     alignSelf: 'flex-start',

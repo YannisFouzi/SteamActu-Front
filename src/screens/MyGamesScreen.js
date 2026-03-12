@@ -1,22 +1,16 @@
-import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useRef } from 'react';
-import { View } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
+import React, {useCallback, useMemo, useRef} from 'react';
+import {View} from 'react-native';
+import {useTranslation} from 'react-i18next';
 import LoadingContainer from '../components/LoadingContainer';
-import { useAppContext } from '../context/AppContext';
+import {useAppContext} from '../context/AppContext';
 import GamesList from './Home/components/GamesList';
 import SearchBar from './Home/components/SearchBar';
 import SortOptions from './Home/components/SortOptions';
 import styles from './Home/styles';
 
-const MY_GAMES_SORT_OPTIONS = [
-  {value: 'default', label: 'A-Z'},
-  {value: 'recent', label: 'Recents'},
-  {value: 'recentsPlus', label: 'Recents ++'},
-  {value: 'lastTwoWeeks', label: 'Lances 2 semaines'},
-  {value: 'mostPlayed', label: 'Plus joues'},
-];
-
 const MyGamesScreen = () => {
+  const {t} = useTranslation();
   const {
     loading: gamesLoading,
     sortOption,
@@ -25,6 +19,17 @@ const MyGamesScreen = () => {
     maybeRefreshGames,
   } = useAppContext();
   const listRef = useRef(null);
+
+  const sortOptions = useMemo(
+    () => [
+      {value: 'default', label: t('games.sortAZ')},
+      {value: 'recent', label: t('games.recents')},
+      {value: 'recentsPlus', label: t('games.recentsPlus')},
+      {value: 'lastTwoWeeks', label: t('games.recentTwoWeeks')},
+      {value: 'mostPlayed', label: t('games.topPlayed')},
+    ],
+    [t],
+  );
 
   const handleMyGamesSortChange = useCallback(
     option => {
@@ -47,12 +52,12 @@ const MyGamesScreen = () => {
     <View style={styles.container}>
       <SearchBar />
       <SortOptions
-        options={MY_GAMES_SORT_OPTIONS}
+        options={sortOptions}
         selectedValue={sortOption}
         onSelect={handleMyGamesSortChange}
       />
       {gamesLoading ? (
-        <LoadingContainer text="Chargement des jeux..." />
+        <LoadingContainer text={t('games.loadingGames')} />
       ) : (
         <GamesList listRef={listRef} />
       )}

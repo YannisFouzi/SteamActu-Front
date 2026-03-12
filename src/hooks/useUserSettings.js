@@ -2,6 +2,7 @@ import notifee from '@notifee/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking, Platform } from 'react-native';
+import { translate } from '../i18n';
 import { userService } from '../services/api';
 import {
   registerFCMToken,
@@ -83,12 +84,12 @@ export const useUserSettings = () => {
 
       if (result?.status === 'blocked') {
         showAlert(
-          'Notifications bloquées',
-          "Android bloque les notifications pour Steam Actu. Activez-les dans les paramètres.",
+          translate('notifications.blockedTitle'),
+          translate('notifications.blockedMessage'),
           [
-            { text: 'Annuler', style: 'cancel' },
+            { text: translate('common.cancel'), style: 'cancel' },
             {
-              text: 'Ouvrir les paramètres',
+              text: translate('common.openSettings'),
               onPress: async () => {
                 try {
                   if (Platform.OS === 'android') {
@@ -108,8 +109,8 @@ export const useUserSettings = () => {
         );
       } else {
         showAlert(
-          'Notifications désactivées',
-          "Impossible d'activer les notifications pour le moment. Veuillez réessayer plus tard.",
+          translate('notifications.disabledTitle'),
+          translate('notifications.disabledMessage'),
         );
       }
 
@@ -117,8 +118,8 @@ export const useUserSettings = () => {
     } catch (error) {
       debugError('[FCM] Erreur lors de l’activation des notifications:', error);
       showAlert(
-        'Erreur',
-        "Impossible d'activer les notifications pour le moment. Veuillez réessayer plus tard.",
+        translate('common.error'),
+        translate('notifications.disabledMessage'),
       );
       return false;
     }
@@ -128,7 +129,10 @@ export const useUserSettings = () => {
     async (newNews, newLibraryMode, newWishlistMode) => {
       if (!steamId) {
         debugError('Impossible de sauvegarder les paramètres: steamId manquant');
-        showAlert('Erreur', 'Utilisateur non connecté.');
+        showAlert(
+          translate('common.error'),
+          translate('errors.notConnectedMessage'),
+        );
         return false;
       }
 
@@ -173,8 +177,8 @@ export const useUserSettings = () => {
       } catch (error) {
         debugError('Erreur lors de la sauvegarde des paramètres:', error);
         showAlert(
-          'Erreur',
-          'Impossible de sauvegarder vos paramètres. Veuillez réessayer.',
+          translate('common.error'),
+          translate('errors.saveSettingsMessage'),
         );
         return false;
       } finally {
@@ -199,7 +203,10 @@ export const useUserSettings = () => {
       const savedSteamId = await AsyncStorage.getItem('steamId');
 
       if (!savedSteamId) {
-        showAlert('Erreur', 'Utilisateur non connecté');
+        showAlert(
+          translate('common.error'),
+          translate('errors.notConnectedMessage'),
+        );
         safeSetState(setLoading, false);
         return false;
       }
@@ -321,8 +328,8 @@ export const useUserSettings = () => {
       // Erreur critique (AsyncStorage inaccessible, etc.)
       debugError('Erreur lors du chargement des paramètres:', error);
       showAlert(
-        'Erreur',
-        'Impossible de charger vos paramètres. Veuillez réessayer.',
+        translate('common.error'),
+        translate('errors.loadSettingsMessage'),
       );
       safeSetState(setLoading, false);
       return false;
@@ -332,7 +339,10 @@ export const useUserSettings = () => {
   const handleToggleNews = useCallback(
     async value => {
       if (!steamId) {
-        showAlert('Erreur', 'Utilisateur non connecté.');
+        showAlert(
+          translate('common.error'),
+          translate('errors.notConnectedMessage'),
+        );
         return;
       }
 
@@ -375,7 +385,10 @@ export const useUserSettings = () => {
   const handleLibraryModeChange = useCallback(
     async mode => {
       if (!steamId) {
-        showAlert('Erreur', 'Utilisateur non connecté.');
+        showAlert(
+          translate('common.error'),
+          translate('errors.notConnectedMessage'),
+        );
         return;
       }
 
@@ -423,7 +436,10 @@ export const useUserSettings = () => {
   const handleWishlistModeChange = useCallback(
     async mode => {
       if (!steamId) {
-        showAlert('Erreur', 'Utilisateur non connecté.');
+        showAlert(
+          translate('common.error'),
+          translate('errors.notConnectedMessage'),
+        );
         return;
       }
 

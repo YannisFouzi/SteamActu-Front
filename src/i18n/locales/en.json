@@ -1,0 +1,229 @@
+{
+  "common": {
+    "about": "About",
+    "cancel": "Cancel",
+    "contact": "Contact",
+    "delete": "Delete",
+    "disabled": "Disabled",
+    "english": "English",
+    "error": "Error",
+    "french": "French",
+    "gameWithId": "Game {{appId}}",
+    "language": "Language",
+    "legal": "Legal",
+    "loading": "Loading...",
+    "notifications": "Notifications",
+    "ok": "OK",
+    "openSettings": "Open settings",
+    "retry": "Retry",
+    "searchPlaceholder": "Search...",
+    "settings": "Settings",
+    "unknownGame": "Unknown game",
+    "unavailableLink": "Unavailable link"
+  },
+  "nav": {
+    "account": "Account",
+    "contact": "Contact",
+    "feed": "Feed",
+    "followGame": "Follow a game",
+    "followedGames": "Followed games",
+    "myGames": "My games",
+    "news": "News",
+    "privacyPolicy": "Privacy policy",
+    "search": "Search",
+    "settings": "Settings",
+    "termsOfService": "Terms of service",
+    "wishlist": "Wishlist"
+  },
+  "auth": {
+    "connectivityErrorMessage": "Unable to sign in. Check that the server is reachable.",
+    "launchErrorMessage": "Unable to start Steam sign-in. Please try again.",
+    "loginCancelledMessage": "The Steam sign-in window was closed before the process finished.",
+    "loginCancelledTitle": "Sign-in cancelled",
+    "loginSubtitle": "Stay informed about the latest news for your Steam games",
+    "loginWithSteam": "Sign in with Steam",
+    "logout": "Sign out",
+    "logoutErrorMessage": "An error occurred while signing out. Please try again.",
+    "logoutErrorTitle": "Sign-out error",
+    "logoutSuccessMessage": "You have been signed out successfully.",
+    "logoutSuccessTitle": "Signed out",
+    "steamIdMissingMessage": "Unable to retrieve your Steam ID. Please try again.",
+    "steamIdMissingTitle": "Authentication error"
+  },
+  "settings": {
+    "aboutBody": "This app lets you receive notifications for news about the Steam games you follow.",
+    "aboutVersion": "Steam Notifications v1.0.0",
+    "contactShortcut": "My contact info",
+    "deleteAccount": "Delete my account",
+    "deleteAccountConfirmMessage": "Are you sure you want to delete your account? This action is irreversible. All your data will be permanently deleted.",
+    "deleteAccountConfirmTitle": "Delete my account",
+    "deleteAccountError": "An error occurred while deleting your account. Please try again.",
+    "deleting": "Deleting...",
+    "deleteWarning": "This action is irreversible",
+    "languageDescription": "Choose the language for the interface, requested Steam news, and notifications.",
+    "languageLabel": "App language",
+    "languageSaveError": "Unable to update the language right now. Please try again.",
+    "libraryDescription": "Choose how to handle follow tracking for games detected in your library.",
+    "libraryLabel": "Purchased games",
+    "newsNotificationsDescription": "Enable this setting to receive a notification when new news is published for your followed games.",
+    "newsNotificationsLabel": "News notifications",
+    "reviewTutorial": "Review tutorial",
+    "tutorialSummary": "Once your settings look right, tap \"Finish\" to fully enable notifications and automatic tracking.",
+    "tutorialFinish": "Finish tutorial",
+    "wishlistDescription": "Decide whether games added to your wishlist should be followed automatically.",
+    "wishlistLabel": "Wishlisted games"
+  },
+  "followModes": {
+    "autoSubtitleLibrary": "Every purchased game is added directly to your followed games.",
+    "autoSubtitleWishlist": "Every game added to your wishlist is followed automatically.",
+    "autoTitle": "Automatic follow",
+    "offSubtitleLibrary": "Purchased games will not be added to followed games.",
+    "offSubtitleWishlist": "Wishlisted games will not be added to followed games.",
+    "offTitle": "Disabled",
+    "promptSubtitleLibrary": "Receive a notification to confirm following each purchased game.",
+    "promptSubtitleWishlist": "A notification asks you to confirm following each wishlisted game.",
+    "promptTitle": "Ask for confirmation"
+  },
+  "notifications": {
+    "blockedMessage": "Android is blocking notifications for Steam Actu. Enable them in settings.",
+    "blockedTitle": "Notifications blocked",
+    "channelDescription": "Push notifications for followed games news",
+    "channelName": "Steam news",
+    "disabledMessage": "Unable to enable notifications right now. Please try again later.",
+    "disabledTitle": "Notifications disabled",
+    "followUnavailableMessage": "Unable to add this game to followed games right now. Try again later.",
+    "followUnavailableTitle": "Unable to follow",
+    "unfollowAction": "Unfollow this game"
+  },
+  "news": {
+    "favoritesOnly": "Show favorites only",
+    "loadGameNewsError": "Unable to load the game's news. Please try again.",
+    "loadingFeed": "Loading news feed...",
+    "loginForNewsSubtext": "Go to settings to sign in to your Steam account.",
+    "loginForNewsText": "Sign in to see news from your followed games.",
+    "loginForNewsTitle": "Sign in for your news",
+    "noLinkMessage": "No link is available for this news item.",
+    "noLinkTitle": "Information",
+    "noRecentNewsText": "Your followed games have not published any recent news. Come back later or follow more games to expand the feed.",
+    "noRecentNewsTitle": "No recent news",
+    "openLinkError": "Unable to open the Steam link."
+  },
+  "games": {
+    "followedEmptySubtext": "You can add a follow from a game card or from the news feed.",
+    "followedEmptyText": "Enable the bell on your games to receive notifications here.",
+    "followedEmptyTitle": "No followed games",
+    "followUpdateError": "Unable to update the game follow state. Please try again.",
+    "followUpdateUnexpectedError": "An unexpected error occurred. Please try again.",
+    "loadingGames": "Loading games...",
+    "newGamesDetectedMessage_one": "{{count}} new game was added to your library.",
+    "newGamesDetectedMessage_other": "{{count}} new games were added to your library.",
+    "newGamesDetectedTitle": "New games detected",
+    "recents": "Recent",
+    "recentsPlus": "Recent ++",
+    "recentTwoWeeks": "Played 2 weeks",
+    "wishlistAccessDenied": "Access to the wishlist was denied (private profile).",
+    "searchMyGamesPlaceholder": "Search in my games...",
+    "searchSteamPlaceholder": "Search a Steam game...",
+    "searchWishlistPlaceholder": "Search in my wishlist...",
+    "sortAZ": "A-Z",
+    "topPlayed": "Most played",
+    "wishlistEmptyText": "Add games you are interested in to follow them here.",
+    "wishlistEmptyTitle": "Empty wishlist",
+    "wishlistLoadError": "Unable to load the wishlist.",
+    "wishlistLoading": "Loading wishlist...",
+    "wishlistNotFoundOrPrivate": "Wishlist not found or private.",
+    "wishlistProfilePublicHint": "Unable to load your wishlist. Make sure your Steam profile is public."
+  },
+  "search": {
+    "hint": "Type at least 2 characters to start",
+    "loading": "Searching...",
+    "placeholderFollowed": "Search in followed games...",
+    "title": "Search for a game"
+  },
+  "emptyStates": {
+    "noResultsText": "Try different keywords",
+    "noResultsTitle": "No results"
+  },
+  "contact": {
+    "directTitle": "Direct contact",
+    "email": "Email",
+    "github": "GitHub",
+    "linkUnavailableMessage": "Unable to open this link right now.",
+    "website": "Website"
+  },
+  "legal": {
+    "frenchOnlyNotice": "This legal content is currently available in French only.",
+    "lastUpdated": "Last updated: {{date}}",
+    "privacyTitle": "Privacy policy",
+    "termsTitle": "Terms of service"
+  },
+  "dates": {
+    "fallbackNever": "Never",
+    "fallbackNow": "Just now"
+  },
+  "errors": {
+    "connectionDataMessage": "Unable to retrieve your data. Please check your connection and try again.",
+    "connectionGamesMessage": "Unable to retrieve your games. Please check your connection and try again.",
+    "connectionTitle": "Connection error",
+    "genericTitle": "Error",
+    "loadSettingsMessage": "Unable to load your settings. Please try again.",
+    "notConnectedMessage": "User is not signed in.",
+    "saveSettingsMessage": "Unable to save your settings. Please try again.",
+    "sessionExpiredMessage": "Your session expired or your account was deleted. Please sign in again.",
+    "sessionExpiredTitle": "Session expired",
+    "unexpectedRetryOrLogout": "An unexpected error occurred. Do you want to sign out and try again?"
+  },
+  "tutorial": {
+    "resumeMessage": "You stopped the guide. Do you want to resume where you left off, restart from the beginning, or skip it for now?",
+    "resumeTitle": "Resume the tutorial?",
+    "resumeButton": "Resume",
+    "restartButton": "Restart",
+    "skipButton": "Skip",
+    "stepLabel": "Step {{current}}/{{total}}",
+    "previous": "Previous",
+    "next": "Next",
+    "finish": "Finish",
+    "steps": {
+      "homeIntro": {
+        "title": "First steps",
+        "description": "This is where you will find the news related to the games you are going to follow."
+      },
+      "homeNewsFollowed": {
+        "title": "Followed games",
+        "description": "This is where you will see the list of games you follow."
+      },
+      "homeMyGames": {
+        "title": "My games",
+        "description": "Find the games already in your library and manage whether you follow them."
+      },
+      "homeWishlist": {
+        "title": "Wishlist",
+        "description": "View the games in your wishlist and enable following for them."
+      },
+      "homeSearch": {
+        "title": "Search for a game",
+        "description": "Use Steam search to add new games to your follows."
+      },
+      "homeSettings": {
+        "title": "Open settings",
+        "description": "Tap here to configure notifications and follow preferences."
+      },
+      "settingsNotifications": {
+        "title": "News notifications",
+        "description": "Enable this switch to receive news for the games you follow."
+      },
+      "settingsLibrary": {
+        "title": "Purchased games",
+        "description": "Choose whether newly detected games in your library are added to your followed games automatically or after confirmation."
+      },
+      "settingsWishlist": {
+        "title": "Steam wishlist",
+        "description": "Same idea for games added to your wishlist: automatic follow or confirmation through a notification."
+      },
+      "settingsSummary": {
+        "title": "All set!",
+        "description": "You can change these options at any time from settings."
+      }
+    }
+  }
+}

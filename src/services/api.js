@@ -1,12 +1,12 @@
-﻿import axios from "axios";
-import { APP_CONFIG } from "../config/env";
-import { debugError } from "../hooks/hooksLogger";
+import axios from 'axios';
+import {APP_CONFIG} from '../config/env';
+import {debugError} from '../hooks/hooksLogger';
+import {getCurrentAppLanguage} from '../i18n';
 
 const DEFAULT_CONFIG = {
   API_URL: APP_CONFIG.API_BASE_URL,
   DEFAULT_NEWS_PARAMS: {
-    language: "fr",
-    steamOnly: "true",
+    steamOnly: 'true',
   },
   DEFAULT_LIMITS: {
     newsCount: 5,
@@ -23,7 +23,7 @@ const API_CONFIG = {
 const api = axios.create({
   baseURL: API_CONFIG.API_URL,
   headers: {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   },
   timeout: 10000,
 });
@@ -35,8 +35,8 @@ const normalizeError = error => {
     data?.message ||
     error?.message ||
     (status === 0
-      ? "Erreur réseau, veuillez vérifier votre connexion."
-      : "Une erreur est survenue, veuillez réessayer.");
+      ? 'Erreur reseau, veuillez verifier votre connexion.'
+      : 'Une erreur est survenue, veuillez reessayer.');
 
   return {
     status,
@@ -49,7 +49,7 @@ const normalizeError = error => {
 api.interceptors.response.use(
   response => response,
   error => {
-    debugError("API Error", {
+    debugError('API Error', {
       url: error.config?.url,
       method: error.config?.method,
       status: error.response?.status,
@@ -61,7 +61,7 @@ api.interceptors.response.use(
 );
 
 const userService = {
-  register: steamId => api.post("/users/register", {steamId}),
+  register: (steamId, language) => api.post('/users/register', {steamId, language}),
   getUser: steamId => api.get(`/users/${steamId}`),
   followGame: (steamId, appId, name, logoUrl) =>
     api.post(`/users/${steamId}/follow`, {appId, name, logoUrl}),
@@ -71,6 +71,8 @@ const userService = {
     api.put(`/users/${steamId}/notifications`, settings),
   updateRecentActiveGames: (steamId, games) =>
     api.put(`/users/${steamId}/active-games`, {games}),
+  updateLanguage: (steamId, language) =>
+    api.put(`/users/${steamId}/language`, {language}),
   getFollowedGamesDetails: steamId =>
     api.get(`/users/${steamId}/followed-games-details`),
   deleteAccount: steamId => api.delete(`/users/${steamId}`),
@@ -89,19 +91,21 @@ const newsService = {
     appId,
     count = API_CONFIG.DEFAULT_LIMITS.newsCount,
     maxLength = API_CONFIG.DEFAULT_LIMITS.newsMaxLength,
+    language = getCurrentAppLanguage(),
   ) =>
     api.get(`/news/game/${appId}`, {
       params: {
         count,
         maxLength,
-        ...API_CONFIG.DEFAULT_NEWS_PARAMS,
+        language,
+        steamOnly: API_CONFIG.DEFAULT_NEWS_PARAMS.steamOnly,
       },
     }),
   getNewsFeed: (
     steamId,
     {
       perGameLimit = API_CONFIG.DEFAULT_LIMITS.perGameLimit,
-      language = API_CONFIG.DEFAULT_NEWS_PARAMS.language,
+      language = getCurrentAppLanguage(),
       favoritesOnly = false,
     } = {},
   ) => {
@@ -117,7 +121,7 @@ const newsService = {
       params.favoritesOnly = true;
     }
 
-    return api.get("/news/feed", {params});
+    return api.get('/news/feed', {params});
   },
 };
 
@@ -126,29 +130,25 @@ const steamService = {
   getUserWishlist: (steamId, config = {}) =>
     api.get(`/steam/wishlist/${steamId}`, config),
   searchGames: (query, limit = 5) =>
-    api.get("/steam/search", {params: {q: query, limit}}),
-  /**
-   * Endpoint léger pour récupérer les versions de données
-   * Permet de savoir si les données ont changé sans télécharger tout
-   */
+    api.get('/steam/search', {params: {q: query, limit}}),
   fetchStatus: (steamId, config = {}) => api.get(`/steam/status/${steamId}`, config),
 };
 
 const steamAuthService = {
-  STEAM_OPENID_URL: "https://steamcommunity.com/openid",
+  STEAM_OPENID_URL: 'https://steamcommunity.com/openid',
   RETURN_URL: APP_CONFIG.STEAM_RETURN_URL,
   APP_SCHEME_URL: APP_CONFIG.APP_SCHEME,
   OPENID_PARAMS: {
-    "openid.ns": "http://specs.openid.net/auth/2.0",
-    "openid.mode": "checkid_setup",
-    "openid.identity": "http://specs.openid.net/auth/2.0/identifier_select",
-    "openid.claimed_id": "http://specs.openid.net/auth/2.0/identifier_select",
+    'openid.ns': 'http://specs.openid.net/auth/2.0',
+    'openid.mode': 'checkid_setup',
+    'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
+    'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select',
   },
   getAuthUrl: () => {
     const params = new URLSearchParams({
       ...steamAuthService.OPENID_PARAMS,
-      "openid.return_to": steamAuthService.RETURN_URL,
-      "openid.realm": steamAuthService.RETURN_URL,
+      'openid.return_to': steamAuthService.RETURN_URL,
+      'openid.realm': steamAuthService.RETURN_URL,
     });
 
     return `${steamAuthService.STEAM_OPENID_URL}/login?${params.toString()}`;
@@ -160,4 +160,4 @@ export const apiConfig = {
   ENVIRONMENT: APP_CONFIG.ENVIRONMENT,
 };
 
-export { newsService, steamAuthService, steamService, userService };
+export {newsService, steamAuthService, steamService, userService};

@@ -1,48 +1,42 @@
-import React, { useCallback, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  Text,
-  View,
-} from 'react-native';
+import React, {useCallback, useState} from 'react';
+import {ActivityIndicator, FlatList, Text, View} from 'react-native';
+import {useTranslation} from 'react-i18next';
 import GameCard from '../../../components/GameCard';
-import { COLORS } from '../../../constants';
-import { steamService } from '../../../services/api';
-import { getGameImageUrl, getGameImageFallback } from '../../../utils/steamHelpers';
+import {COLORS} from '../../../constants';
+import {debugError} from '../../../hooks/hooksLogger';
+import {steamService} from '../../../services/api';
+import {getGameImageFallback, getGameImageUrl} from '../../../utils/steamHelpers';
+import EmptyStateMessage from './EmptyStateMessage';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
 import SearchInput from './SearchInput';
-import EmptyStateMessage from './EmptyStateMessage';
-import { debugError } from '../../../hooks/hooksLogger';
 
 const SearchGameTab = ({styles}) => {
+  const {t} = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
-  const searchGames = useCallback(
-    async query => {
-      if (!query || query.trim().length < 2) {
-        setSearchResults([]);
-        setHasSearched(false);
-        return;
-      }
+  const searchGames = useCallback(async query => {
+    if (!query || query.trim().length < 2) {
+      setSearchResults([]);
+      setHasSearched(false);
+      return;
+    }
 
-      setSearching(true);
-      try {
-        const response = await steamService.searchGames(query.trim(), 5);
-        setSearchResults(response.data || []);
-        setHasSearched(true);
-      } catch (error) {
-        debugError('Erreur recherche:', error);
-        setSearchResults([]);
-        setHasSearched(true);
-      } finally {
-        setSearching(false);
-      }
-    },
-    [],
-  );
+    setSearching(true);
+    try {
+      const response = await steamService.searchGames(query.trim(), 5);
+      setSearchResults(response.data || []);
+      setHasSearched(true);
+    } catch (error) {
+      debugError('Erreur recherche:', error);
+      setSearchResults([]);
+      setHasSearched(true);
+    } finally {
+      setSearching(false);
+    }
+  }, []);
 
   React.useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -83,7 +77,7 @@ const SearchGameTab = ({styles}) => {
       return (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={COLORS.STEAM_BLUE} />
-          <Text style={styles.loadingText}>Recherche en cours...</Text>
+          <Text style={styles.loadingText}>{t('search.loading')}</Text>
         </View>
       );
     }
@@ -93,8 +87,8 @@ const SearchGameTab = ({styles}) => {
         <EmptyStateMessage
           styles={styles}
           iconName="search"
-          title="Rechercher un jeu"
-          text="Tapez au moins 2 caractères pour commencer"
+          title={t('search.title')}
+          text={t('search.hint')}
           titleStyle={styles.emptyTitle}
           textStyle={styles.emptyText}
           align="top"
@@ -122,7 +116,7 @@ const SearchGameTab = ({styles}) => {
       <SearchInput
         value={searchQuery}
         onChangeText={handleSearchChange}
-        placeholder="Rechercher un jeu Steam..."
+        placeholder={t('games.searchSteamPlaceholder')}
       />
 
       {renderSearchContent()}
@@ -131,4 +125,3 @@ const SearchGameTab = ({styles}) => {
 };
 
 export default SearchGameTab;
-

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../context/AppContext';
 import { steamService } from '../services/api';
 import { debugError, debugLog, maskSteamId, showAlert } from './hooksLogger';
@@ -16,6 +17,7 @@ const STATUS_DEBOUNCE_DELAY = 250;
  * Centralise la logique de chargement, le cache et le versioning.
  */
 export const useWishlist = steamId => {
+  const { t } = useTranslation();
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -285,16 +287,16 @@ export const useWishlist = steamId => {
         }
 
         if (err.response?.status === 404) {
-          safeSetState(setError, 'Wishlist non trouvée ou privée');
+          safeSetState(setError, t('games.wishlistNotFoundOrPrivate'));
         } else if (err.response?.status === 403) {
-          safeSetState(setError, 'Accès à la wishlist refusé (profil privé)');
+          safeSetState(setError, t('games.wishlistAccessDenied'));
         } else {
-          safeSetState(setError, 'Erreur lors du chargement de la wishlist');
+          safeSetState(setError, t('games.wishlistLoadError'));
         }
 
         showAlert(
-          'Erreur',
-          'Impossible de charger votre wishlist. Assurez-vous que votre profil Steam est public.',
+          t('common.error'),
+          t('games.wishlistProfilePublicHint'),
         );
 
         safeSetState(setWishlist, []);
@@ -318,6 +320,7 @@ export const useWishlist = steamId => {
       persistWishlistVersion,
       safeSetState,
       steamId,
+      t,
     ],
   );
 

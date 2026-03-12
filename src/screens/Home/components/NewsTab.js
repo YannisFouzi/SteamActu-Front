@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 import {
   Alert,
   FlatList,
@@ -10,11 +10,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LoadingContainer from '../../../components/LoadingContainer';
-import { COLORS } from '../../../constants';
-import { debugError } from '../../../hooks/hooksLogger';
-import { formatRelativeDate } from '../../../utils';
+import {COLORS} from '../../../constants';
+import {debugError} from '../../../hooks/hooksLogger';
+import {formatRelativeDate} from '../../../utils';
 import styles from '../styles';
 import EmptyStateMessage from './EmptyStateMessage';
 
@@ -56,10 +57,6 @@ const GameLogo = ({logoUrl}) => {
   );
 };
 
-/**
- * Composant pour l'onglet News
- * Extrait du HomeScreen pour réduire la complexité
- */
 const NewsTab = ({
   steamId,
   newsState,
@@ -69,43 +66,46 @@ const NewsTab = ({
   onToggleFavoritesFilter,
   onToggleFavorite,
 }) => {
+  const {t, i18n} = useTranslation();
   const activeNewsState = newsState?.news || null;
   const showFavoritesToggle =
     (hasFavorites || favoritesOnly) && typeof onToggleFavoritesFilter === 'function';
 
-  // Formater une date relative avec les minutes (spécifique aux news)
-  const formatDate = useCallback(timestamp => {
-    return formatRelativeDate(timestamp, {
-      includeMinutes: true,
-      fallback: '',
-    });
-  }, []);
+  const formatDate = useCallback(
+    timestamp =>
+      formatRelativeDate(timestamp, {
+        includeMinutes: true,
+        fallback: '',
+        language: i18n.resolvedLanguage || i18n.language,
+      }),
+    [i18n.language, i18n.resolvedLanguage],
+  );
 
-  const openNews = useCallback(item => {
-    if (!item) {
-      return;
-    }
+  const openNews = useCallback(
+    item => {
+      if (!item) {
+        return;
+      }
 
-    const appId = item.appId?.toString();
-    let targetUrl = item.news?.url;
+      const appId = item.appId?.toString();
+      let targetUrl = item.news?.url;
 
-    if (!targetUrl && appId) {
-      targetUrl = `https://store.steampowered.com/news/app/${appId}`;
-    }
+      if (!targetUrl && appId) {
+        targetUrl = `https://store.steampowered.com/news/app/${appId}`;
+      }
 
-    if (!targetUrl) {
-      Alert.alert(
-        'Information',
-        "Aucun lien n'est disponible pour cette actualité.",
-      );
-      return;
-    }
+      if (!targetUrl) {
+        Alert.alert(t('news.noLinkTitle'), t('news.noLinkMessage'));
+        return;
+      }
 
-    Linking.openURL(targetUrl).catch(err => {
-      debugError("Erreur lors de l'ouverture du lien:", err);
-      Alert.alert('Erreur', "Impossible d'ouvrir le lien sur Steam.");
-    });
-  }, []);
+      Linking.openURL(targetUrl).catch(err => {
+        debugError("Erreur lors de l'ouverture du lien:", err);
+        Alert.alert(t('common.error'), t('news.openLinkError'));
+      });
+    },
+    [t],
+  );
 
   const renderEmptyNewsList = useMemo(() => {
     const commonProps = {
@@ -118,9 +118,9 @@ const NewsTab = ({
         <EmptyStateMessage
           {...commonProps}
           iconName="log-in-outline"
-          title="Connectez-vous pour vos actus"
-          text="Identifiez-vous pour retrouver les actualités de vos jeux suivis."
-          subtext="Allez dans les paramètres pour vous connecter à votre compte Steam."
+          title={t('news.loginForNewsTitle')}
+          text={t('news.loginForNewsText')}
+          subtext={t('news.loginForNewsSubtext')}
         />
       );
     }
@@ -129,11 +129,11 @@ const NewsTab = ({
       <EmptyStateMessage
         {...commonProps}
         iconName="newspaper-outline"
-        title="Aucune actualité récente"
-        text="Vos jeux suivis n'ont pas publié de nouvelles actualités. Revenez plus tard ou suivez d'autres jeux pour élargir le flux."
+        title={t('news.noRecentNewsTitle')}
+        text={t('news.noRecentNewsText')}
       />
     );
-  }, [steamId]);
+  }, [steamId, t]);
 
   const renderNewsItem = useCallback(
     ({item}) => {
@@ -148,7 +148,6 @@ const NewsTab = ({
           onPress={() => openNews(item)}>
           <View style={styles.newsCardHeader}>
             <View style={styles.newsGameInfo}>
-              {/* Logo du jeu */}
               <GameLogo logoUrl={item.gameLogoUrl} />
               <View style={styles.newsMetadata}>
                 <Text style={styles.newsGameName}>{item.gameName}</Text>
@@ -176,10 +175,7 @@ const NewsTab = ({
             ) : null}
           </View>
 
-          {/* Titre de la news */}
           <Text style={styles.newsTitle}>{item.news?.title}</Text>
-
-          {/* Image de la news (si disponible, masquée si erreur de chargement) */}
           <NewsImage url={item.news?.firstImageUrl} />
         </TouchableOpacity>
       );
@@ -203,7 +199,7 @@ const NewsTab = ({
       {showFavoritesToggle ? (
         <View style={styles.newsFavoritesToggle}>
           <Text style={styles.newsFavoritesToggleLabel}>
-            Afficher uniquement les favoris
+            {t('news.favoritesOnly')}
           </Text>
           <Switch
             value={favoritesOnly}
@@ -220,7 +216,7 @@ const NewsTab = ({
       ) : null}
 
       {activeNewsState?.loading ? (
-        <LoadingContainer text="Chargement du fil d'actualités..." />
+        <LoadingContainer text={t('news.loadingFeed')} />
       ) : (
         <FlatList
           data={activeNewsState?.items || []}
@@ -230,9 +226,7 @@ const NewsTab = ({
           refreshControl={
             <RefreshControl
               refreshing={Boolean(activeNewsState?.refreshing)}
-              onRefresh={() =>
-                fetchNews({silent: true, favoritesOnly})
-              }
+              onRefresh={() => fetchNews({silent: true, favoritesOnly})}
               tintColor={COLORS.STEAM_BLUE}
             />
           }

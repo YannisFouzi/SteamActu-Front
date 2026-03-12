@@ -21,10 +21,25 @@ class AppDelegate: RCTAppDelegate, UNUserNotificationCenterDelegate {
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
+  private func currentNotificationLanguage() -> String {
+    let preferredLanguage =
+      Bundle.main.preferredLocalizations.first ??
+      Locale.preferredLanguages.first ??
+      "fr"
+
+    return preferredLanguage.lowercased().hasPrefix("en") ? "en" : "fr"
+  }
+
+  private func localizedUnfollowActionTitle() -> String {
+    return currentNotificationLanguage() == "en"
+      ? "Unfollow this game"
+      : "Ne plus suivre ce jeu"
+  }
+
   private func configureNotificationActions() {
     let unfollowAction = UNNotificationAction(
       identifier: unfollowActionId,
-      title: "Ne plus suivre ce jeu",
+      title: localizedUnfollowActionTitle(),
       options: []
     )
 

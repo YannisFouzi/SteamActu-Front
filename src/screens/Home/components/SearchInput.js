@@ -1,16 +1,13 @@
 import React from 'react';
-import { TextInput, TouchableOpacity, View } from 'react-native';
+import {TextInput, TouchableOpacity, View} from 'react-native';
+import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS } from '../../../constants';
+import {COLORS} from '../../../constants';
 import styles from '../styles';
 
-/**
- * Barre de recherche réutilisable.
- * @param {string} value - Valeur contrôlée
- * @param {function} onChangeText - (text) => void
- * @param {string} [placeholder] - Texte du placeholder
- */
-const SearchInput = ({ value, onChangeText, placeholder = 'Rechercher...' }) => {
+const SearchInput = ({value, onChangeText, placeholder}) => {
+  const {t} = useTranslation();
+
   return (
     <View style={styles.searchSection}>
       <View style={styles.searchBarContainer}>
@@ -22,14 +19,14 @@ const SearchInput = ({ value, onChangeText, placeholder = 'Rechercher...' }) => 
         />
         <TextInput
           style={styles.searchInput}
-          placeholder={placeholder}
+          placeholder={placeholder || t('common.searchPlaceholder')}
           placeholderTextColor={COLORS.STEAM_TEXT_GRAY}
           value={value}
           onChangeText={onChangeText}
           autoCapitalize="none"
           autoCorrect={false}
         />
-        {value && value.length > 0 && (
+        {value && value.length > 0 ? (
           <TouchableOpacity
             style={styles.searchClearButton}
             onPress={() => onChangeText('')}>
@@ -39,7 +36,7 @@ const SearchInput = ({ value, onChangeText, placeholder = 'Rechercher...' }) => 
               color={COLORS.STEAM_TEXT_GRAY}
             />
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
     </View>
   );

@@ -6,9 +6,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { COLORS } from '../constants';
+import {useTranslation} from 'react-i18next';
+import {COLORS} from '../constants';
 
-const TutorialResumeModal = ({ visible, onRestart, onResume, onSkip }) => {
+const TutorialResumeModal = ({visible, onRestart, onResume, onSkip}) => {
+  const {t} = useTranslation();
+
   if (!visible) {
     return null;
   }
@@ -17,27 +20,24 @@ const TutorialResumeModal = ({ visible, onRestart, onResume, onSkip }) => {
     <Modal transparent animationType="fade">
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.title}>Reprendre le tutoriel ?</Text>
-          <Text style={styles.message}>
-            Vous avez interrompu le guide. Souhaitez-vous reprendre où vous en
-            étiez, recommencer depuis le début ou le passer pour le moment ?
-          </Text>
+          <Text style={styles.title}>{t('tutorial.resumeTitle')}</Text>
+          <Text style={styles.message}>{t('tutorial.resumeMessage')}</Text>
 
           <View style={styles.actions}>
             <TouchableOpacity
               style={[styles.button, styles.secondaryButton]}
               onPress={onSkip}>
-              <Text style={styles.secondaryText}>Passer</Text>
+              <Text style={styles.secondaryText}>{t('tutorial.skipButton')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, styles.secondaryButton]}
               onPress={onRestart}>
-              <Text style={styles.secondaryText}>Recommencer</Text>
+              <Text style={styles.secondaryText}>{t('tutorial.restartButton')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.button, styles.primaryButton]}
               onPress={onResume}>
-              <Text style={styles.primaryText}>Reprendre</Text>
+              <Text style={styles.primaryText}>{t('tutorial.resumeButton')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -105,4 +105,3 @@ const styles = StyleSheet.create({
 });
 
 export default TutorialResumeModal;
-

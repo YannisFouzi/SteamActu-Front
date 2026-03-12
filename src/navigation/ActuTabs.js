@@ -1,16 +1,18 @@
-import React, { useCallback, useEffect, useRef } from 'react';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { useFocusEffect } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '../constants';
-import { useAppContext } from '../context/AppContext';
-import { useNewsManager } from '../hooks/useNewsManager';
+import React, {useCallback, useEffect, useRef} from 'react';
+import {createMaterialTopTabNavigator} from '@react-navigation/material-top-tabs';
+import {useFocusEffect} from '@react-navigation/native';
+import {useTranslation} from 'react-i18next';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {COLORS} from '../constants';
+import {useAppContext} from '../context/AppContext';
+import {useNewsManager} from '../hooks/useNewsManager';
 import FollowedGamesScreen from '../screens/FollowedGamesScreen';
 import NewsFeedScreen from '../screens/NewsFeedScreen';
 
 const Tab = createMaterialTopTabNavigator();
 
 const ActuTabs = () => {
+  const {t} = useTranslation();
   const {steamId, registerNotificationSyncHandler} = useAppContext();
   const {
     newsState,
@@ -78,9 +80,7 @@ const ActuTabs = () => {
             borderBottomColor: COLORS.STEAM_BORDER,
           },
         }}>
-        <Tab.Screen
-          name="Fil"
-          options={{title: 'Fil'}}>
+        <Tab.Screen name="Fil" options={{title: t('nav.feed')}}>
           {() => (
             <NewsFeedScreen
               steamId={steamId}
@@ -93,7 +93,7 @@ const ActuTabs = () => {
         </Tab.Screen>
         <Tab.Screen
           name="JeuxSuivis"
-          options={{title: 'Jeux suivis'}}>
+          options={{title: t('nav.followedGames')}}>
           {() => (
             <FollowedGamesScreen
               registerExternalUnfollowHandler={

@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect } from 'react';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '../constants';
-import { useAppContext } from '../context/AppContext';
-import { useWishlist } from '../hooks/useWishlist';
+import React, {useEffect} from 'react';
+import {createMaterialTopTabNavigator} from '@react-navigation/material-top-tabs';
+import {useTranslation} from 'react-i18next';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {COLORS} from '../constants';
+import {useAppContext} from '../context/AppContext';
+import {useWishlist} from '../hooks/useWishlist';
 import MyGamesScreen from '../screens/MyGamesScreen';
 import SearchGamesScreen from '../screens/SearchGamesScreen';
 import WishlistScreen from '../screens/WishlistScreen';
@@ -11,6 +12,7 @@ import WishlistScreen from '../screens/WishlistScreen';
 const Tab = createMaterialTopTabNavigator();
 
 const FollowTabs = () => {
+  const {t} = useTranslation();
   const {steamId, registerNotificationSyncHandler} = useAppContext();
 
   const {
@@ -71,17 +73,15 @@ const FollowTabs = () => {
         <Tab.Screen
           name="MesJeux"
           component={MyGamesScreen}
-          options={{title: 'Mes jeux'}}
+          options={{title: t('nav.myGames')}}
         />
-        <Tab.Screen
-          name="Wishlist"
-          options={{title: 'Wishlist'}}>
+        <Tab.Screen name="Wishlist" options={{title: t('nav.wishlist')}}>
           {() => <WishlistScreen {...wishlistProps} />}
         </Tab.Screen>
         <Tab.Screen
           name="Rechercher"
           component={SearchGamesScreen}
-          options={{title: 'Rechercher'}}
+          options={{title: t('nav.search')}}
         />
       </Tab.Navigator>
     </SafeAreaView>

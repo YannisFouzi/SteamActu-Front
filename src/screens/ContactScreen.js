@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {
   Alert,
   Linking,
@@ -8,43 +8,52 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS, CONTAINER_STYLES, TEXT_STYLES } from '../constants';
-import { debugError } from '../hooks/hooksLogger';
-
-const CONTACT_LINKS = [
-  {
-    label: 'Email',
-    value: 'contact@fouzi-dev.fr',
-    url: 'mailto:contact@fouzi-dev.fr',
-    icon: 'mail-unread-outline',
-  },
-  {
-    label: 'GitHub',
-    value: 'github.com/YannisFouzi',
-    url: 'https://github.com/YannisFouzi',
-    icon: 'logo-github',
-  },
-  {
-    label: 'Site web',
-    value: 'fouzi-dev.fr',
-    url: 'https://fouzi-dev.fr/',
-    icon: 'globe-outline',
-  },
-];
+import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../constants';
+import {debugError} from '../hooks/hooksLogger';
 
 const ContactScreen = () => {
-  const handleOpenLink = useCallback(async url => {
-    try {
-      await Linking.openURL(url);
-    } catch (error) {
-      debugError("Erreur lors de l'ouverture du lien de contact:", error);
-      Alert.alert(
-        'Lien indisponible',
-        "Impossible d'ouvrir ce lien pour le moment.",
-      );
-    }
-  }, []);
+  const {t} = useTranslation();
+
+  const links = useMemo(
+    () => [
+      {
+        label: t('contact.email'),
+        value: 'contact@fouzi-dev.fr',
+        url: 'mailto:contact@fouzi-dev.fr',
+        icon: 'mail-unread-outline',
+      },
+      {
+        label: t('contact.github'),
+        value: 'github.com/YannisFouzi',
+        url: 'https://github.com/YannisFouzi',
+        icon: 'logo-github',
+      },
+      {
+        label: t('contact.website'),
+        value: 'fouzi-dev.fr',
+        url: 'https://fouzi-dev.fr/',
+        icon: 'globe-outline',
+      },
+    ],
+    [t],
+  );
+
+  const handleOpenLink = useCallback(
+    async url => {
+      try {
+        await Linking.openURL(url);
+      } catch (error) {
+        debugError("Erreur lors de l'ouverture du lien de contact:", error);
+        Alert.alert(
+          t('common.unavailableLink'),
+          t('contact.linkUnavailableMessage'),
+        );
+      }
+    },
+    [t],
+  );
 
   return (
     <ScrollView
@@ -52,16 +61,16 @@ const ContactScreen = () => {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        <Text style={styles.title}>Contact direct</Text>
+        <Text style={styles.title}>{t('contact.directTitle')}</Text>
       </View>
 
       <View style={styles.list}>
-        {CONTACT_LINKS.map((link, index) => (
+        {links.map((link, index) => (
           <TouchableOpacity
             key={link.label}
             style={[
               styles.listItem,
-              index === CONTACT_LINKS.length - 1 && styles.listItemLast,
+              index === links.length - 1 && styles.listItemLast,
             ]}
             onPress={() => handleOpenLink(link.url)}>
             <View style={styles.itemIcon}>
@@ -101,11 +110,6 @@ const styles = StyleSheet.create({
     ...TEXT_STYLES.title,
     fontSize: 24,
     marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: COLORS.STEAM_TEXT_GRAY,
   },
   list: {
     backgroundColor: COLORS.STEAM_NAVY,
@@ -149,13 +153,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 6,
   },
-  helperText: {
-    fontSize: 13,
-    color: COLORS.STEAM_TEXT_GRAY,
-    lineHeight: 20,
-    marginTop: 24,
-  },
 });
 
 export default ContactScreen;
-

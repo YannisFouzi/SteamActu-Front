@@ -1,14 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  View,
-} from 'react-native';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {ActivityIndicator, FlatList, View} from 'react-native';
+import {useTranslation} from 'react-i18next';
 import GameCard from '../../../components/GameCard';
-import { COLORS } from '../../../constants';
-import { getGameImageUrl, getGameImageFallback } from '../../../utils/steamHelpers';
-import { useAppContext } from '../../../context/AppContext';
-import { useFollowedGames } from '../../../hooks/useFollowedGames';
+import {COLORS} from '../../../constants';
+import {useAppContext} from '../../../context/AppContext';
+import {useFollowedGames} from '../../../hooks/useFollowedGames';
+import {getGameImageFallback, getGameImageUrl} from '../../../utils/steamHelpers';
 import EmptyStateMessage from './EmptyStateMessage';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
 import SearchInput from './SearchInput';
@@ -18,6 +15,7 @@ const FollowedGamesTab = React.memo(({
   onToggleFollowState,
   registerExternalUnfollowHandler,
 }) => {
+  const {t} = useTranslation();
   const {steamId} = useAppContext();
   const {followedGames, loading, removeFollowedGame} = useFollowedGames(steamId);
   const [searchQuery, setSearchQuery] = useState('');
@@ -89,9 +87,9 @@ const FollowedGamesTab = React.memo(({
         <EmptyStateMessage
           styles={styles}
           iconName="notifications-off-outline"
-          title="Aucun jeu suivi"
-          text="Activez la cloche sur vos jeux pour recevoir les notifications ici."
-          subtext="Vous pouvez ajouter un suivi depuis une fiche jeu ou les actus."
+          title={t('games.followedEmptyTitle')}
+          text={t('games.followedEmptyText')}
+          subtext={t('games.followedEmptySubtext')}
           align="top"
         />
       );
@@ -116,7 +114,7 @@ const FollowedGamesTab = React.memo(({
       <SearchInput
         value={searchQuery}
         onChangeText={setSearchQuery}
-        placeholder="Rechercher dans les jeux suivis..."
+        placeholder={t('search.placeholderFollowed')}
       />
       {renderContent()}
     </View>
