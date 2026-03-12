@@ -1,6 +1,5 @@
 import React, {useCallback, useMemo} from 'react';
 import {
-  Alert,
   Linking,
   ScrollView,
   StyleSheet,
@@ -11,7 +10,7 @@ import {
 import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../constants';
-import {debugError} from '../hooks/hooksLogger';
+import {debugError, showErrorMessage} from '../hooks/hooksLogger';
 
 const ContactScreen = () => {
   const {t} = useTranslation();
@@ -46,7 +45,7 @@ const ContactScreen = () => {
         await Linking.openURL(url);
       } catch (error) {
         debugError("Erreur lors de l'ouverture du lien de contact:", error);
-        Alert.alert(
+        showErrorMessage(
           t('common.unavailableLink'),
           t('contact.linkUnavailableMessage'),
         );

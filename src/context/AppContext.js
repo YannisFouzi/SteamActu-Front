@@ -7,8 +7,13 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Alert, AppState } from 'react-native';
-import { translate } from '../i18n';
+import {AppState} from 'react-native';
+import {
+  showAlert,
+  showInfoMessage,
+  showSuccessMessage,
+} from '../hooks/hooksLogger';
+import {translate} from '../i18n';
 import {
   buildStorageKey,
   getJSONItem,
@@ -16,8 +21,8 @@ import {
   useAsyncStorage,
   useLastVerificationDate,
 } from '../hooks/useAsyncStorage';
-import { useGameSync } from '../hooks/useGameSync';
-import { steamService, userService } from '../services/api';
+import {useGameSync} from '../hooks/useGameSync';
+import {steamService, userService} from '../services/api';
 import {
   registerFCMToken,
   setupNotificationHandlers,
@@ -49,9 +54,6 @@ const debugError = (...args) => {
     console.error(...args);
   }
 };
-
-const showAlert = (title, message, buttons, options) =>
-  Alert.alert(title, message, buttons, options);
 
 class GamesFetchError extends Error {
   constructor(originalError) {
@@ -124,7 +126,11 @@ const handleDataLoadError = ({error, onRetry, onLogout}) => {
       translate('errors.connectionGamesMessage'),
       [
         {text: translate('common.retry'), onPress: onRetry},
-        {text: translate('auth.logout'), style: 'destructive', onPress: onLogout},
+        {
+          text: translate('auth.logout'),
+          style: 'destructive',
+          onPress: onLogout,
+        },
       ],
     );
     return;
@@ -147,7 +153,11 @@ const handleDataLoadError = ({error, onRetry, onLogout}) => {
       translate('errors.connectionDataMessage'),
       [
         {text: translate('common.retry'), onPress: onRetry},
-        {text: translate('auth.logout'), style: 'destructive', onPress: onLogout},
+        {
+          text: translate('auth.logout'),
+          style: 'destructive',
+          onPress: onLogout,
+        },
       ],
     );
     return;
@@ -189,24 +199,21 @@ export const AppProvider = ({children, navigation = null}) => {
     followed: new Set(),
   });
 
-  const registerNotificationSyncHandler = useCallback(
-    (type, handler) => {
-      if (!type || typeof handler !== 'function') {
-        return () => {};
-      }
+  const registerNotificationSyncHandler = useCallback((type, handler) => {
+    if (!type || typeof handler !== 'function') {
+      return () => {};
+    }
 
-      const listeners = notificationSyncListenersRef.current[type];
-      if (!listeners) {
-        return () => {};
-      }
+    const listeners = notificationSyncListenersRef.current[type];
+    if (!listeners) {
+      return () => {};
+    }
 
-      listeners.add(handler);
-      return () => {
-        listeners.delete(handler);
-      };
-    },
-    [],
-  );
+    listeners.add(handler);
+    return () => {
+      listeners.delete(handler);
+    };
+  }, []);
 
   const notifyNotificationSync = useCallback((type, appId) => {
     if (!type || !appId) {
@@ -284,13 +291,15 @@ export const AppProvider = ({children, navigation = null}) => {
     debugLog('🔄 [useEffect[steamId]] games.length:', games.length);
     debugLog('🔄 [useEffect[steamId]] loading:', loading);
     debugLog('🔄 [useEffect[steamId]] refreshing:', refreshing);
-    
+
     // Charger les données uniquement si :
     // - steamId existe
     // - Aucune donnée chargée (games.length === 0)
     // - Aucun chargement en cours (évite double appel)
     if (steamId && games.length === 0 && !loading && !refreshing) {
-      debugLog('🔄 [useEffect[steamId]] ✅ Condition remplie → appel loadData()');
+      debugLog(
+        '🔄 [useEffect[steamId]] ✅ Condition remplie → appel loadData()',
+      );
       loadData(false, 'steamIdEffect');
     } else if (loading || refreshing) {
       debugLog('🔄 [useEffect[steamId]] ⏭️ Skip (chargement en cours)');
@@ -309,8 +318,12 @@ export const AppProvider = ({children, navigation = null}) => {
     async function initializeNotifications() {
       try {
         const storedNews = await AsyncStorage.getItem('newsNotifications');
-        const storedLibraryMode = await AsyncStorage.getItem('libraryFollowMode');
-        const storedWishlistMode = await AsyncStorage.getItem('wishlistFollowMode');
+        const storedLibraryMode = await AsyncStorage.getItem(
+          'libraryFollowMode',
+        );
+        const storedWishlistMode = await AsyncStorage.getItem(
+          'wishlistFollowMode',
+        );
 
         const newsEnabled =
           storedNews !== null ? JSON.parse(storedNews) : false;
@@ -318,9 +331,7 @@ export const AppProvider = ({children, navigation = null}) => {
         const wishlistMode = storedWishlistMode || 'off';
 
         const needsNotifications =
-          newsEnabled ||
-          libraryMode === 'prompt' ||
-          wishlistMode === 'prompt';
+          newsEnabled || libraryMode === 'prompt' || wishlistMode === 'prompt';
 
         if (canceled || !steamId) {
           return;
@@ -343,7 +354,10 @@ export const AppProvider = ({children, navigation = null}) => {
           );
         }
       } catch (error) {
-        debugError('[FCM] Erreur lors de la lecture des préférences FCM:', error);
+        debugError(
+          '[FCM] Erreur lors de la lecture des préférences FCM:',
+          error,
+        );
       }
     }
 
@@ -379,7 +393,8 @@ export const AppProvider = ({children, navigation = null}) => {
         onWishlistUnfollow: appId => notifyNotificationSync('wishlist', appId),
         onFollowedGamesTabUnfollow: appId =>
           notifyNotificationSync('followed', appId),
-        onFollowPromptConfirm: appId => notifyNotificationSync('followed', appId),
+        onFollowPromptConfirm: appId =>
+          notifyNotificationSync('followed', appId),
       });
       initializeNotifications();
     }
@@ -451,7 +466,8 @@ export const AppProvider = ({children, navigation = null}) => {
       case 'lastTwoWeeks':
         filtered = filtered.filter(game => getPlaytimeRecentValue(game) > 0);
         filtered.sort((a, b) => {
-          const recentDiff = getPlaytimeRecentValue(b) - getPlaytimeRecentValue(a);
+          const recentDiff =
+            getPlaytimeRecentValue(b) - getPlaytimeRecentValue(a);
           if (recentDiff !== 0) {
             return recentDiff;
           }
@@ -471,7 +487,8 @@ export const AppProvider = ({children, navigation = null}) => {
           return recent > 0 || lastPlayed > 0;
         });
         filtered.sort((a, b) => {
-          const recentDiff = getPlaytimeRecentValue(b) - getPlaytimeRecentValue(a);
+          const recentDiff =
+            getPlaytimeRecentValue(b) - getPlaytimeRecentValue(a);
           if (recentDiff !== 0) {
             return recentDiff;
           }
@@ -583,7 +600,7 @@ export const AppProvider = ({children, navigation = null}) => {
           gamesFetchAbortControllerRef.current.abort();
           debugLog('🚪 [LOGOUT] Abort du fetch en cours');
         } catch (abortError) {
-          debugError('🚪 [LOGOUT] Erreur lors de l\'abort:', abortError);
+          debugError("🚪 [LOGOUT] Erreur lors de l'abort:", abortError);
         }
         gamesFetchAbortControllerRef.current = null;
       }
@@ -632,7 +649,7 @@ export const AppProvider = ({children, navigation = null}) => {
       if (navigation) {
         navigation.replace('Login');
       } else {
-        showAlert(
+        showSuccessMessage(
           translate('auth.logoutSuccessTitle'),
           translate('auth.logoutSuccessMessage'),
         );
@@ -646,12 +663,7 @@ export const AppProvider = ({children, navigation = null}) => {
         translate('auth.logoutErrorMessage'),
       );
     }
-  }, [
-    games.length,
-    navigation,
-    setSortOption,
-    steamId,
-  ]);
+  }, [games.length, navigation, setSortOption, steamId]);
 
   // Fonction pour charger les données
   const loadData = useCallback(
@@ -830,13 +842,15 @@ export const AppProvider = ({children, navigation = null}) => {
     ],
   );
 
-// Vérifier la dernière date de vérification
+  // Vérifier la dernière date de vérification
   const checkLastVerificationDate = async () => {
     try {
       // Vérifier d'abord si un steamId existe (évite race condition pendant login)
       const savedSteamId = await AsyncStorage.getItem('steamId');
       if (!savedSteamId) {
-        debugLog('⏭️ [CHECK] Skip vérification (pas de steamId dans AsyncStorage)');
+        debugLog(
+          '⏭️ [CHECK] Skip vérification (pas de steamId dans AsyncStorage)',
+        );
         return;
       }
 
@@ -844,13 +858,16 @@ export const AppProvider = ({children, navigation = null}) => {
         debugLog("⏰ [CHECK] Plus d'un jour écoulé → vérification complète");
         loadData(true, 'checkLastVerificationDate');
       } else if (Date.now() - lastRefreshTime > 300000) {
-        debugLog("⏰ [CHECK] Vérification des nouveaux jeux (5 min écoulées)");
+        debugLog('⏰ [CHECK] Vérification des nouveaux jeux (5 min écoulées)');
         checkForNewGames();
       } else {
         debugLog('⏭️ [CHECK] Vérification récente, skip');
       }
     } catch (error) {
-      debugError('❌ [CHECK] Erreur lors de la vérification de la date:', error);
+      debugError(
+        '❌ [CHECK] Erreur lors de la vérification de la date:',
+        error,
+      );
     }
   };
 
@@ -879,7 +896,9 @@ export const AppProvider = ({children, navigation = null}) => {
       debugLog('AppID reçu:', appIdString);
       debugLog(
         'État isFollowed (fourni):',
-        typeof gameMeta.isFollowed === 'boolean' ? gameMeta.isFollowed : 'non fourni',
+        typeof gameMeta.isFollowed === 'boolean'
+          ? gameMeta.isFollowed
+          : 'non fourni',
       );
       debugLog('Nombre total de jeux:', games.length);
 
@@ -1050,9 +1069,7 @@ export const AppProvider = ({children, navigation = null}) => {
       debugLog(`Jeux récupérés: ${newGames.length} jeux au total`);
 
       if (newGames.length > games.length) {
-        debugLog(
-          `${newGames.length - games.length} nouveaux jeux détectés!`,
-        );
+        debugLog(`${newGames.length - games.length} nouveaux jeux détectés!`);
 
         // Convertir en Set pour une comparaison plus rapide
         const currentAppIds = new Set(games.map(game => game.appid.toString()));
@@ -1063,10 +1080,11 @@ export const AppProvider = ({children, navigation = null}) => {
         );
 
         if (addedGames.length > 0) {
-          showAlert(
+          showInfoMessage(
             translate('games.newGamesDetectedTitle'),
-            translate('games.newGamesDetectedMessage', {count: addedGames.length}),
-            [{text: translate('common.ok')}],
+            translate('games.newGamesDetectedMessage', {
+              count: addedGames.length,
+            }),
           );
 
           // Mettre à jour les jeux
@@ -1132,7 +1150,10 @@ export const AppProvider = ({children, navigation = null}) => {
               expectedGamesVersion: serverGamesVersion,
             });
           } else {
-            debugLog('[VERSION] status_match', {origin, version: serverGamesVersion});
+            debugLog('[VERSION] status_match', {
+              origin,
+              version: serverGamesVersion,
+            });
           }
         } catch (error) {
           debugError('[VERSION] status_check_fail', error);

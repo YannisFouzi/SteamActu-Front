@@ -37,16 +37,16 @@ const sanitizeBaseUrl = url => {
   return url.replace(/\/+$/, '');
 };
 
-const deriveReturnUrl = baseUrl => {
+const deriveAuthBaseUrl = baseUrl => {
   if (!baseUrl) {
-    return 'steamnotif://auth/return';
+    return '';
   }
 
   const sanitized = sanitizeBaseUrl(baseUrl);
   if (sanitized.endsWith('/api')) {
-    return `${sanitized.slice(0, -4)}/auth/steam/return`;
+    return sanitized.slice(0, -4);
   }
-  return `${sanitized}/auth/steam/return`;
+  return sanitized;
 };
 
 const APP_SCHEME = getEnvVar('APP_SCHEME', 'steamnotif://');
@@ -54,9 +54,9 @@ const APP_SCHEME = getEnvVar('APP_SCHEME', 'steamnotif://');
 export const APP_CONFIG = {
   ENVIRONMENT,
   API_BASE_URL,
-  STEAM_RETURN_URL: getEnvVar(
-    'STEAM_RETURN_URL',
-    deriveReturnUrl(API_BASE_URL),
+  STEAM_AUTH_BASE_URL: getEnvVar(
+    'STEAM_AUTH_BASE_URL',
+    deriveAuthBaseUrl(API_BASE_URL),
   ),
   APP_SCHEME,
   STEAM_MEDIA_CDN,

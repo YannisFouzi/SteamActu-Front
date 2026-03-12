@@ -7,7 +7,20 @@ import {useSteamAuth} from '../hooks/useSteamAuth';
 
 const LoginScreen = ({navigation}) => {
   const {t} = useTranslation();
-  const {loading, handleSteamLogin} = useSteamAuth(navigation);
+  const {loading, authFlowState, handleSteamLogin} = useSteamAuth(navigation);
+
+  const authStatusContent =
+    authFlowState === 'pending'
+      ? {
+          title: t('auth.loginPendingTitle'),
+          message: t('auth.loginPendingMessage'),
+        }
+      : authFlowState === 'expired'
+      ? {
+          title: t('auth.loginExpiredTitle'),
+          message: t('auth.loginExpiredMessage'),
+        }
+      : null;
 
   return (
     <View style={styles.container}>
@@ -21,6 +34,13 @@ const LoginScreen = ({navigation}) => {
       <Text style={styles.subtitle}>{t('auth.loginSubtitle')}</Text>
 
       <SteamLoginButton onPress={handleSteamLogin} loading={loading} />
+
+      {authStatusContent ? (
+        <View style={styles.statusCard}>
+          <Text style={styles.statusTitle}>{authStatusContent.title}</Text>
+          <Text style={styles.statusMessage}>{authStatusContent.message}</Text>
+        </View>
+      ) : null}
     </View>
   );
 };
@@ -48,6 +68,27 @@ const styles = StyleSheet.create({
     ...TEXT_STYLES.subtitle,
     marginBottom: 40,
     textAlign: 'center',
+  },
+  statusCard: {
+    width: '100%',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 10,
+    backgroundColor: COLORS.STEAM_NAVY,
+    borderWidth: 1,
+    borderColor: COLORS.STEAM_BLUE,
+  },
+  statusTitle: {
+    ...TEXT_STYLES.subtitle,
+    color: COLORS.WHITE,
+    marginBottom: 6,
+    textAlign: 'left',
+  },
+  statusMessage: {
+    fontSize: 14,
+    color: COLORS.STEAM_TEXT_GRAY,
+    textAlign: 'left',
+    lineHeight: 20,
   },
 });
 

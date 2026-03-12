@@ -15,7 +15,7 @@ import { useTutorial } from '../tutorial/useTutorial';
 const Stack = createStackNavigator();
 
 const linking = {
-  prefixes: [APP_CONFIG.APP_SCHEME, APP_CONFIG.STEAM_RETURN_URL],
+  prefixes: [APP_CONFIG.APP_SCHEME],
   config: {
     screens: {
       Login: 'auth',

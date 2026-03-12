@@ -1,6 +1,5 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import {
-  Alert,
   FlatList,
   Image,
   Linking,
@@ -14,7 +13,11 @@ import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 import LoadingContainer from '../../../components/LoadingContainer';
 import {COLORS} from '../../../constants';
-import {debugError} from '../../../hooks/hooksLogger';
+import {
+  debugError,
+  showErrorMessage,
+  showInfoMessage,
+} from '../../../hooks/hooksLogger';
 import {formatRelativeDate} from '../../../utils';
 import styles from '../styles';
 import EmptyStateMessage from './EmptyStateMessage';
@@ -42,7 +45,11 @@ const GameLogo = ({logoUrl}) => {
   if (hasError || !logoUrl) {
     return (
       <View style={[styles.gameLogo, styles.gameLogoPlaceholder]}>
-        <Icon name="game-controller-outline" size={20} color={COLORS.STEAM_TEXT_GRAY} />
+        <Icon
+          name="game-controller-outline"
+          size={20}
+          color={COLORS.STEAM_TEXT_GRAY}
+        />
       </View>
     );
   }
@@ -69,7 +76,8 @@ const NewsTab = ({
   const {t, i18n} = useTranslation();
   const activeNewsState = newsState?.news || null;
   const showFavoritesToggle =
-    (hasFavorites || favoritesOnly) && typeof onToggleFavoritesFilter === 'function';
+    (hasFavorites || favoritesOnly) &&
+    typeof onToggleFavoritesFilter === 'function';
 
   const formatDate = useCallback(
     timestamp =>
@@ -95,13 +103,13 @@ const NewsTab = ({
       }
 
       if (!targetUrl) {
-        Alert.alert(t('news.noLinkTitle'), t('news.noLinkMessage'));
+        showInfoMessage(t('news.noLinkTitle'), t('news.noLinkMessage'));
         return;
       }
 
       Linking.openURL(targetUrl).catch(err => {
         debugError("Erreur lors de l'ouverture du lien:", err);
-        Alert.alert(t('common.error'), t('news.openLinkError'));
+        showErrorMessage(t('common.error'), t('news.openLinkError'));
       });
     },
     [t],

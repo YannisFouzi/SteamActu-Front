@@ -1,4 +1,11 @@
-import { Alert } from 'react-native';
+import {
+  showAlert as showFeedbackAlert,
+  showDialog as showFeedbackDialog,
+  showErrorMessage as showFeedbackErrorMessage,
+  showInfoMessage as showFeedbackInfoMessage,
+  showSnackbar as showFeedbackSnackbar,
+  showSuccessMessage as showFeedbackSuccessMessage,
+} from '../feedback/feedbackService';
 
 const DEBUG_MODE =
   (typeof __DEV__ !== 'undefined' && __DEV__) ||
@@ -19,7 +26,20 @@ export const debugError = (...args) => {
 };
 
 export const showAlert = (title, message, buttons, options) =>
-  Alert.alert(title, message, buttons, options);
+  showFeedbackAlert(title, message, buttons, options);
+
+export const showDialog = config => showFeedbackDialog(config);
+
+export const showSnackbar = config => showFeedbackSnackbar(config);
+
+export const showInfoMessage = (title, message, config) =>
+  showFeedbackInfoMessage(title, message, config);
+
+export const showSuccessMessage = (title, message, config) =>
+  showFeedbackSuccessMessage(title, message, config);
+
+export const showErrorMessage = (title, message, config) =>
+  showFeedbackErrorMessage(title, message, config);
 
 export const maskSteamId = steamId => {
   if (!steamId) {
@@ -35,5 +55,4 @@ export const maskSteamId = steamId => {
   return `${stringified.slice(0, 3)}***${stringified.slice(-2)}`;
 };
 
-export { DEBUG_MODE };
-
+export {DEBUG_MODE};

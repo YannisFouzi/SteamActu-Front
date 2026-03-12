@@ -1,5 +1,8 @@
+import {DarkTheme as NavigationDarkTheme} from '@react-navigation/native';
+import {MD3DarkTheme, adaptNavigationTheme} from 'react-native-paper';
+
 /**
- * Thème global de l'application Steam Notifications.
+ * Theme global de l'application Steam Notifications.
  * Centralise les couleurs, styles et configurations de navigation.
  */
 export const COLORS = {
@@ -34,6 +37,23 @@ export const COLORS = {
   // Couleurs avec transparence
   STEAM_BLUE_TRANSPARENT: 'rgba(102, 192, 244, 0.1)',
   OVERLAY_DARK: 'rgba(0, 0, 0, 0.5)',
+};
+
+export const SPACING = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 32,
+};
+
+export const RADIUS = {
+  sm: 8,
+  md: 12,
+  lg: 18,
+  xl: 24,
+  pill: 999,
 };
 
 export const TEXT_STYLES = {
@@ -157,21 +177,81 @@ export const CONTAINER_STYLES = {
   },
 };
 
-export const NAVIGATION_THEME = {
+const {DarkTheme: AdaptedNavigationTheme} = adaptNavigationTheme({
+  reactNavigationDark: NavigationDarkTheme,
+});
+
+export const PAPER_THEME = {
+  ...MD3DarkTheme,
+  dark: true,
+  roundness: RADIUS.lg,
   colors: {
+    ...MD3DarkTheme.colors,
+    primary: COLORS.STEAM_BLUE,
+    onPrimary: COLORS.STEAM_DARK_BLUE,
+    primaryContainer: COLORS.STEAM_LIGHT_BLUE,
+    onPrimaryContainer: COLORS.WHITE,
+    secondary: COLORS.STEAM_TEXT_GRAY,
+    onSecondary: COLORS.WHITE,
+    secondaryContainer: COLORS.STEAM_GRAY,
+    onSecondaryContainer: COLORS.WHITE,
+    tertiary: COLORS.FAVORITE_GOLD,
+    onTertiary: COLORS.BLACK,
+    tertiaryContainer: '#5A4600',
+    onTertiaryContainer: COLORS.WHITE,
+    error: COLORS.DANGER,
+    onError: COLORS.WHITE,
+    errorContainer: '#5C1A1A',
+    onErrorContainer: COLORS.WHITE,
+    background: COLORS.STEAM_DARK,
+    onBackground: COLORS.WHITE,
+    surface: COLORS.STEAM_NAVY,
+    onSurface: COLORS.WHITE,
+    surfaceDisabled: '#233448',
+    onSurfaceDisabled: 'rgba(255, 255, 255, 0.45)',
+    surfaceVariant: COLORS.STEAM_GRAY,
+    onSurfaceVariant: COLORS.STEAM_TEXT_GRAY,
+    outline: COLORS.STEAM_BORDER,
+    outlineVariant: COLORS.STEAM_BORDER,
+    shadow: COLORS.BLACK,
+    scrim: 'rgba(0, 0, 0, 0.72)',
+    inverseSurface: COLORS.WHITE,
+    inverseOnSurface: COLORS.STEAM_DARK,
+    inversePrimary: COLORS.STEAM_BLUE,
+    backdrop: 'rgba(0, 0, 0, 0.72)',
+    elevation: {
+      ...MD3DarkTheme.colors.elevation,
+      level0: 'transparent',
+      level1: '#203244',
+      level2: '#23384C',
+      level3: '#28405A',
+      level4: '#2C4864',
+      level5: '#30506E',
+    },
+  },
+};
+
+export const NAVIGATION_THEME = {
+  ...AdaptedNavigationTheme,
+  dark: true,
+  colors: {
+    ...AdaptedNavigationTheme.colors,
     background: COLORS.STEAM_DARK,
     border: COLORS.STEAM_BORDER,
-    notification: COLORS.STEAM_BLUE,
+    notification: COLORS.FAVORITE_GOLD,
     primary: COLORS.STEAM_BLUE,
     card: COLORS.STEAM_NAVY,
     text: COLORS.WHITE,
   },
   fonts: {
+    ...AdaptedNavigationTheme.fonts,
     bold: {
+      ...AdaptedNavigationTheme.fonts.bold,
       fontFamily: 'System',
       fontWeight: 'bold',
     },
     regular: {
+      ...AdaptedNavigationTheme.fonts.regular,
       fontFamily: 'System',
       fontWeight: 'normal',
     },
@@ -197,7 +277,7 @@ export const SCREEN_CONFIGS = {
     headerShown: false,
   },
   Settings: {
-    title: 'Paramètres',
+    title: 'Parametres',
   },
   Contact: {
     title: 'Contact',
@@ -206,11 +286,11 @@ export const SCREEN_CONFIGS = {
     title: "Conditions d'utilisation",
   },
   PrivacyPolicy: {
-    title: 'Politique de confidentialité',
+    title: 'Politique de confidentialite',
   },
   GameDetails: {
     getDynamicOptions: ({route}) => ({
-      title: route?.params?.game?.name || 'Détails du jeu',
+      title: route?.params?.game?.name || 'Details du jeu',
     }),
   },
 };

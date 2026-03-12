@@ -61,7 +61,8 @@ api.interceptors.response.use(
 );
 
 const userService = {
-  register: (steamId, language) => api.post('/users/register', {steamId, language}),
+  register: (steamId, language) =>
+    api.post('/users/register', {steamId, language}),
   getUser: steamId => api.get(`/users/${steamId}`),
   followGame: (steamId, appId, name, logoUrl) =>
     api.post(`/users/${steamId}/follow`, {appId, name, logoUrl}),
@@ -126,32 +127,49 @@ const newsService = {
 };
 
 const steamService = {
-  getUserGames: (steamId, config = {}) => api.get(`/steam/games/${steamId}`, config),
+  getUserGames: (steamId, config = {}) =>
+    api.get(`/steam/games/${steamId}`, config),
   getUserWishlist: (steamId, config = {}) =>
     api.get(`/steam/wishlist/${steamId}`, config),
   searchGames: (query, limit = 5) =>
     api.get('/steam/search', {params: {q: query, limit}}),
-  fetchStatus: (steamId, config = {}) => api.get(`/steam/status/${steamId}`, config),
+  fetchStatus: (steamId, config = {}) =>
+    api.get(`/steam/status/${steamId}`, config),
 };
 
-const steamAuthService = {
-  STEAM_OPENID_URL: 'https://steamcommunity.com/openid',
-  RETURN_URL: APP_CONFIG.STEAM_RETURN_URL,
-  APP_SCHEME_URL: APP_CONFIG.APP_SCHEME,
-  OPENID_PARAMS: {
-    'openid.ns': 'http://specs.openid.net/auth/2.0',
-    'openid.mode': 'checkid_setup',
-    'openid.identity': 'http://specs.openid.net/auth/2.0/identifier_select',
-    'openid.claimed_id': 'http://specs.openid.net/auth/2.0/identifier_select',
+const authApi = axios.create({
+  baseURL: APP_CONFIG.STEAM_AUTH_BASE_URL || '',
+  headers: {
+    'Content-Type': 'application/json',
   },
-  getAuthUrl: () => {
-    const params = new URLSearchParams({
-      ...steamAuthService.OPENID_PARAMS,
-      'openid.return_to': steamAuthService.RETURN_URL,
-      'openid.realm': steamAuthService.RETURN_URL,
+  timeout: 10000,
+});
+
+authApi.interceptors.response.use(
+  response => response,
+  error => {
+    debugError('Auth API Error', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data,
     });
 
-    return `${steamAuthService.STEAM_OPENID_URL}/login?${params.toString()}`;
+    return Promise.reject(normalizeError(error));
+  },
+);
+
+const steamAuthService = {
+  AUTH_REDIRECT_URL: `${APP_CONFIG.APP_SCHEME}auth`,
+
+  startAuth: async () => {
+    const response = await authApi.post('/auth/steam/start');
+    return response.data;
+  },
+
+  checkAuthStatus: async authToken => {
+    const response = await authApi.get(`/auth/steam/status/${authToken}`);
+    return response.data;
   },
 };
 

@@ -1,7 +1,6 @@
 import {useNavigation} from '@react-navigation/native';
 import React, {useCallback, useMemo, useState} from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -17,7 +16,7 @@ import SettingSection from '../components/SettingSection';
 import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../constants';
 import {useAppContext} from '../context/AppContext';
 import {useAppLanguage} from '../hooks/useAppLanguage';
-import {debugError} from '../hooks/hooksLogger';
+import {debugError, showAlert, showDialog} from '../hooks/hooksLogger';
 import {useUserSettings} from '../hooks/useUserSettings';
 import {userService} from '../services/api';
 import {useTutorial} from '../tutorial/useTutorial';
@@ -139,10 +138,13 @@ const SettingsScreen = () => {
   }, [handleLogout, loggingOut, navigation]);
 
   const handleDeleteAccount = useCallback(() => {
-    Alert.alert(
-      t('settings.deleteAccountConfirmTitle'),
-      t('settings.deleteAccountConfirmMessage'),
-      [
+    showDialog({
+      title: t('settings.deleteAccountConfirmTitle'),
+      message: t('settings.deleteAccountConfirmMessage'),
+      tone: 'destructive',
+      icon: 'trash-can-outline',
+      options: {cancelable: true},
+      buttons: [
         {
           text: t('common.cancel'),
           style: 'cancel',
@@ -167,15 +169,15 @@ const SettingsScreen = () => {
               });
             } catch (error) {
               debugError('Erreur lors de la suppression du compte:', error);
-              Alert.alert(t('common.error'), t('settings.deleteAccountError'));
+              showAlert(t('common.error'), t('settings.deleteAccountError'));
             } finally {
               setDeleting(false);
             }
           },
         },
       ],
-    );
-  }, [handleLogout, navigation, steamId, t]);
+    });
+  }, [handleLogout, navigation, showDialog, steamId, t]);
 
   const followModeDisabled = saving || loggingOut;
   const languageDisabled = savingLanguage || loggingOut || deleting;

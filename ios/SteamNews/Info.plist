@@ -11,6 +11,19 @@
 	</array>
 	<key>CFBundleDisplayName</key>
 	<string>SteamNews</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>steamnotif</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>steamnotif</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
