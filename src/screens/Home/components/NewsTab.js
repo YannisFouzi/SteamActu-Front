@@ -58,7 +58,7 @@ const GameLogo = ({logoUrl}) => {
 
 /**
  * Composant pour l'onglet News
- * Extrait du HomeScreen pour rÃ©duire la complexitÃ©
+ * Extrait du HomeScreen pour réduire la complexité
  */
 const NewsTab = ({
   steamId,
@@ -73,7 +73,7 @@ const NewsTab = ({
   const showFavoritesToggle =
     (hasFavorites || favoritesOnly) && typeof onToggleFavoritesFilter === 'function';
 
-  // Formater une date relative avec les minutes (spÃ©cifique aux news)
+  // Formater une date relative avec les minutes (spécifique aux news)
   const formatDate = useCallback(timestamp => {
     return formatRelativeDate(timestamp, {
       includeMinutes: true,
@@ -96,7 +96,7 @@ const NewsTab = ({
     if (!targetUrl) {
       Alert.alert(
         'Information',
-        "Aucun lien n'est disponible pour cette actualitÃ©.",
+        "Aucun lien n'est disponible pour cette actualité.",
       );
       return;
     }

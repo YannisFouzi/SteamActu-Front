@@ -49,6 +49,21 @@ notifee.onBackgroundEvent(async event => {
             processedNotificationIds.add(processedId);
           }
         }
+      } else if (
+        (event.type === EventType.PRESS ||
+          event.type === EventType.ACTION_PRESS) &&
+        event.detail?.pressAction?.id === ACTION_UNFOLLOW_GAME
+      ) {
+        const data = event.detail?.notification?.data || {};
+        const notificationId = event.detail?.notification?.id;
+        const success = await performHeadlessNotificationUnfollow(
+          data,
+          notificationId,
+        );
+
+        if (success && notificationId) {
+          processedNotificationIds.add(notificationId);
+        }
       }
     } catch (error) {
       debugError('[FCM] Erreur fallback background Notifee:', error);
@@ -277,6 +292,32 @@ async function openUrlSafely(url) {
     await Linking.openURL(url);
   } catch (error) {
     debugError('[FCM] Erreur ouverture URL:', error);
+  }
+}
+
+async function performHeadlessNotificationUnfollow(data, notificationId) {
+  const steamId = data?.steamId;
+  const appId = data?.appId;
+
+  if (!steamId || !appId) {
+    debugLog(
+      '[FCM] steamId ou appId manquant pour unfollow headless, action ignoree',
+    );
+    return false;
+  }
+
+  try {
+    await userService.unfollowGame(steamId, appId);
+
+    if (notificationId) {
+      await notifee.cancelNotification(notificationId);
+      await notifee.cancelDisplayedNotification(notificationId);
+    }
+
+    return true;
+  } catch (error) {
+    debugError('[FCM] Erreur unfollow headless via notification:', error);
+    return false;
   }
 }
 
