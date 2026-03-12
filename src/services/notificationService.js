@@ -239,9 +239,6 @@ async function ensureIosNotificationCategories() {
           {
             id: ACTION_UNFOLLOW_GAME,
             title: 'Ne plus suivre ce jeu',
-            options: {
-              foreground: true,
-            },
           },
         ],
       },
