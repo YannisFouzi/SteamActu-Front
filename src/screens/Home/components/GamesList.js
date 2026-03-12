@@ -9,12 +9,28 @@ import GameItemAlt from './GameItemAlt';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
 
 const GamesList = React.memo(({listRef}) => {
-  const {filteredGames, refreshing, handleRefresh, searchQuery} =
+  const {filteredGames, refreshing, handleRefresh, searchQuery, sortOption} =
     useAppContext();
 
   const renderEmptyList = () =>
     searchQuery && searchQuery.trim() !== '' ? (
       <NoResultsPlaceholder styles={styles} align="top" />
+    ) : sortOption === 'recentsPlus' ? (
+      <EmptyStateMessage
+        styles={styles}
+        iconName="time-outline"
+        title="Aucun jeu recent"
+        text="Aucun jeu lance recemment selon les donnees synchronisees."
+        align="top"
+      />
+    ) : sortOption === 'lastTwoWeeks' ? (
+      <EmptyStateMessage
+        styles={styles}
+        iconName="calendar-outline"
+        title="Aucun jeu sur 2 semaines"
+        text="Aucun jeu n'a ete lance dans les 14 derniers jours."
+        align="top"
+      />
     ) : (
       <EmptyStateMessage
         styles={styles}

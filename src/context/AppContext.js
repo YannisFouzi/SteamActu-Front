@@ -27,6 +27,7 @@ import {
   getGameIconUrl,
   getLastPlayedValue,
   getPlaytimeForeverValue,
+  getPlaytimeRecentValue,
   isRecentlyUpdated,
 } from '../utils';
 
@@ -446,6 +447,48 @@ export const AppProvider = ({children, navigation = null}) => {
           return getLastPlayedValue(b) - getLastPlayedValue(a);
         });
         break;
+      case 'lastTwoWeeks':
+        filtered = filtered.filter(game => getPlaytimeRecentValue(game) > 0);
+        filtered.sort((a, b) => {
+          const recentDiff = getPlaytimeRecentValue(b) - getPlaytimeRecentValue(a);
+          if (recentDiff !== 0) {
+            return recentDiff;
+          }
+
+          const lastPlayedDiff = getLastPlayedValue(b) - getLastPlayedValue(a);
+          if (lastPlayedDiff !== 0) {
+            return lastPlayedDiff;
+          }
+
+          return a.name.localeCompare(b.name);
+        });
+        break;
+      case 'recentsPlus':
+        filtered = filtered.filter(game => {
+          const recent = getPlaytimeRecentValue(game);
+          const lastPlayed = getLastPlayedValue(game);
+          return recent > 0 || lastPlayed > 0;
+        });
+        filtered.sort((a, b) => {
+          const recentDiff = getPlaytimeRecentValue(b) - getPlaytimeRecentValue(a);
+          if (recentDiff !== 0) {
+            return recentDiff;
+          }
+
+          const lastPlayedDiff = getLastPlayedValue(b) - getLastPlayedValue(a);
+          if (lastPlayedDiff !== 0) {
+            return lastPlayedDiff;
+          }
+
+          const totalPlaytimeDiff =
+            getPlaytimeForeverValue(b) - getPlaytimeForeverValue(a);
+          if (totalPlaytimeDiff !== 0) {
+            return totalPlaytimeDiff;
+          }
+
+          return a.name.localeCompare(b.name);
+        });
+        break;
       default:
         break;
     }
@@ -687,7 +730,9 @@ export const AppProvider = ({children, navigation = null}) => {
 
       const abortController = new AbortController();
       gamesFetchAbortControllerRef.current = abortController;
-      const requestConfig = {signal: abortController.signal};
+      const requestConfig = {
+        signal: abortController.signal,
+      };
 
       try {
         const userData = await loadUserProfile(savedSteamId);
@@ -1107,6 +1152,17 @@ export const AppProvider = ({children, navigation = null}) => {
     [gamesVersion, loadData, loading, refreshing, steamId],
   );
 
+  const refreshRecentsPlus = useCallback(
+    async (origin = 'refreshRecentsPlus') => {
+      if (!steamId) {
+        return;
+      }
+
+      await maybeRefreshGames(origin);
+    },
+    [maybeRefreshGames, steamId],
+  );
+
   // Valeur du contexte
   const contextValue = {
     // États
@@ -1137,6 +1193,7 @@ export const AppProvider = ({children, navigation = null}) => {
     filterAndSortGames,
     isGameFollowed,
     maybeRefreshGames,
+    refreshRecentsPlus,
     registerNotificationSyncHandler,
   };
 

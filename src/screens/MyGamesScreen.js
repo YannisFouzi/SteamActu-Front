@@ -11,6 +11,8 @@ import styles from './Home/styles';
 const MY_GAMES_SORT_OPTIONS = [
   {value: 'default', label: 'A-Z'},
   {value: 'recent', label: 'Recents'},
+  {value: 'recentsPlus', label: 'Recents ++'},
+  {value: 'lastTwoWeeks', label: 'Lances 2 semaines'},
   {value: 'mostPlayed', label: 'Plus joues'},
 ];
 
