@@ -18,6 +18,23 @@ import { formatRelativeDate } from '../../../utils';
 import styles from '../styles';
 import EmptyStateMessage from './EmptyStateMessage';
 
+const NewsImage = ({url}) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (hasError || !url) {
+    return null;
+  }
+
+  return (
+    <Image
+      source={{uri: url}}
+      style={styles.newsImage}
+      resizeMode="cover"
+      onError={() => setHasError(true)}
+    />
+  );
+};
+
 const GameLogo = ({logoUrl}) => {
   const [hasError, setHasError] = useState(false);
 
@@ -162,14 +179,8 @@ const NewsTab = ({
           {/* Titre de la news */}
           <Text style={styles.newsTitle}>{item.news?.title}</Text>
 
-          {/* Image de la news (si disponible) */}
-          {item.news?.firstImageUrl && (
-            <Image
-              source={{uri: item.news.firstImageUrl}}
-              style={styles.newsImage}
-              resizeMode="cover"
-            />
-          )}
+          {/* Image de la news (si disponible, masquée si erreur de chargement) */}
+          <NewsImage url={item.news?.firstImageUrl} />
         </TouchableOpacity>
       );
     },
