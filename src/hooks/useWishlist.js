@@ -148,8 +148,11 @@ export const useWishlist = steamId => {
             setContextWishlistVersion(cachedVersion);
           }
         }
-      } catch (error) {
-        debugError('[WISHLIST] Erreur lors du chargement du cache:', error);
+      } catch (cacheError) {
+        debugError(
+          '[WISHLIST] Erreur lors du chargement du cache:',
+          cacheError,
+        );
       }
     };
 
@@ -473,8 +476,8 @@ export const useWishlist = steamId => {
               version: serverWishlistVersion,
             });
           }
-        } catch (error) {
-          debugError('[WISHLIST-VERSION] status_check_fail', error);
+        } catch (statusError) {
+          debugError('[WISHLIST-VERSION] status_check_fail', statusError);
         } finally {
           statusDebounceTimeoutRef.current = null;
         }

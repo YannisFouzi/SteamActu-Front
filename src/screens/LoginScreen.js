@@ -5,9 +5,9 @@ import SteamLoginButton from '../components/SteamLoginButton';
 import {COLORS, TEXT_STYLES} from '../constants';
 import {useSteamAuth} from '../hooks/useSteamAuth';
 
-const LoginScreen = ({navigation}) => {
+const LoginScreen = () => {
   const {t} = useTranslation();
-  const {loading, authFlowState, handleSteamLogin} = useSteamAuth(navigation);
+  const {loading, authFlowState, handleSteamLogin} = useSteamAuth();
 
   const authStatusContent =
     authFlowState === 'pending'

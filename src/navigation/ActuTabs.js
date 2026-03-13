@@ -1,7 +1,7 @@
-import React, {useCallback, useEffect} from 'react';
+import React, {useEffect} from 'react';
 import {createMaterialTopTabNavigator} from '@react-navigation/material-top-tabs';
-import {useFocusEffect} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
+import {StyleSheet} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {COLORS} from '../constants';
 import {useAppContext} from '../context/AppContext';
@@ -17,20 +17,10 @@ const ActuTabs = () => {
   const {
     newsState,
     fetchNews,
-    isNewsInitialized,
-    isNewsLoading,
     removeNewsByAppId,
     setFavoritesOnlyFilter,
     toggleNewsFavorite,
   } = useNewsManager(steamId);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (!isNewsInitialized && !isNewsLoading) {
-        fetchNews();
-      }
-    }, [fetchNews, isNewsInitialized, isNewsLoading]),
-  );
 
   useEffect(() => {
     if (typeof registerNotificationSyncHandler !== 'function') {
@@ -49,9 +39,10 @@ const ActuTabs = () => {
   }, [registerNotificationSyncHandler, removeNewsByAppId]);
 
   return (
-    <SafeAreaView style={{flex: 1, backgroundColor: COLORS.STEAM_NAVY}} edges={['top']}>
+    <SafeAreaView style={localStyles.safeArea} edges={['top']}>
       <Tab.Navigator
         screenOptions={{
+          lazy: true,
           tabBarIndicatorStyle: {backgroundColor: COLORS.STEAM_BLUE},
           tabBarActiveTintColor: COLORS.WHITE,
           tabBarInactiveTintColor: COLORS.STEAM_TEXT_GRAY,
@@ -80,5 +71,12 @@ const ActuTabs = () => {
     </SafeAreaView>
   );
 };
+
+const localStyles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.STEAM_NAVY,
+  },
+});
 
 export default ActuTabs;

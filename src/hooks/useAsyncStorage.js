@@ -86,7 +86,9 @@ export const useLastVerificationDate = () => {
   };
 
   const isOlderThanOneDay = () => {
-    if (!date) return true;
+    if (!date) {
+      return true;
+    }
     const lastDate = parseInt(date, 10);
     const now = Date.now();
     const oneDayMs = 24 * 60 * 60 * 1000;

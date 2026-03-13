@@ -349,19 +349,7 @@ export default StyleSheet.create({
     color: COLORS.WHITE,
     marginBottom: 8,
   },
-  emptyText: {
-    fontSize: 14,
-    color: COLORS.STEAM_TEXT_GRAY,
-    textAlign: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: COLORS.WHITE,
-    marginTop: 12,
-  },
   followedGamesList: {
     padding: 12,
   },
 });
-
-

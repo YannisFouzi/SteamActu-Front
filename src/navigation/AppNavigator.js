@@ -1,16 +1,22 @@
-﻿import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
+import {
+  NavigationContainer,
+  useNavigationContainerRef,
+} from '@react-navigation/native';
+import {createStackNavigator} from '@react-navigation/stack';
 import React from 'react';
-import { APP_CONFIG } from '../config/env';
+import BootSplash from 'react-native-bootsplash';
+import {APP_CONFIG} from '../config/env';
 import {
   DEFAULT_SCREEN_OPTIONS,
   NAVIGATION_THEME,
   SCREEN_CONFIGS,
 } from '../constants';
-import { useAppContext } from '../context/AppContext';
-import MainTabNavigator from './MainTabNavigator';
+import {useAppContext} from '../context/AppContext';
+import {debugError} from '../hooks/hooksLogger';
 import LoginScreen from '../screens/LoginScreen';
-import { useTutorial } from '../tutorial/useTutorial';
+import StartupScreen from '../screens/StartupScreen';
+import {useTutorial} from '../tutorial/useTutorial';
+import MainTabNavigator from './MainTabNavigator';
 
 const Stack = createStackNavigator();
 
@@ -53,43 +59,72 @@ const linking = {
 };
 
 const AppNavigator = () => {
-  const {steamId, user} = useAppContext();
+  const {isBootstrapping, isAuthenticated, user} = useAppContext();
   const navigationRef = useNavigationContainerRef();
+  const navigationReadyRef = React.useRef(false);
   const {registerNavigationRef, startTutorialIfNeeded, state: tutorialState} =
     useTutorial();
-  const isAuthenticated = Boolean(steamId && user);
-  const navigatorKey = isAuthenticated ? 'auth-stack' : 'guest-stack';
-  const initialRouteName = isAuthenticated ? 'Home' : 'Login';
+  const navigatorKey = isBootstrapping
+    ? 'bootstrap-stack'
+    : isAuthenticated
+    ? 'auth-stack'
+    : 'guest-stack';
+
+  const hideBootSplashIfReady = React.useCallback(async () => {
+    if (!navigationReadyRef.current || isBootstrapping) {
+      return;
+    }
+
+    try {
+      await BootSplash.hide({fade: true});
+    } catch (error) {
+      debugError('[BOOTSTRAP] Erreur lors du masquage du splash natif:', error);
+    }
+  }, [isBootstrapping]);
 
   React.useEffect(() => {
     registerNavigationRef(navigationRef);
   }, [navigationRef, registerNavigationRef]);
 
   React.useEffect(() => {
-    if (isAuthenticated && tutorialState.status !== 'running') {
+    if (isAuthenticated && user && tutorialState.status !== 'running') {
       startTutorialIfNeeded();
     }
-  }, [isAuthenticated, startTutorialIfNeeded, tutorialState.status]);
+  }, [isAuthenticated, startTutorialIfNeeded, tutorialState.status, user]);
+
+  React.useEffect(() => {
+    hideBootSplashIfReady();
+  }, [hideBootSplashIfReady]);
 
   return (
     <NavigationContainer
       ref={navigationRef}
       theme={NAVIGATION_THEME}
-      linking={linking}>
-      <Stack.Navigator
-        key={navigatorKey}
-        initialRouteName={initialRouteName}
-        screenOptions={DEFAULT_SCREEN_OPTIONS}>
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={SCREEN_CONFIGS.Login}
-        />
-        <Stack.Screen
-          name="Home"
-          component={MainTabNavigator}
-          options={SCREEN_CONFIGS.Home}
-        />
+      linking={linking}
+      onReady={() => {
+        navigationReadyRef.current = true;
+        hideBootSplashIfReady();
+      }}>
+      <Stack.Navigator key={navigatorKey} screenOptions={DEFAULT_SCREEN_OPTIONS}>
+        {isBootstrapping ? (
+          <Stack.Screen
+            name="Startup"
+            component={StartupScreen}
+            options={{headerShown: false}}
+          />
+        ) : isAuthenticated ? (
+          <Stack.Screen
+            name="Home"
+            component={MainTabNavigator}
+            options={SCREEN_CONFIGS.Home}
+          />
+        ) : (
+          <Stack.Screen
+            name="Login"
+            component={LoginScreen}
+            options={SCREEN_CONFIGS.Login}
+          />
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -96,7 +96,9 @@ export const useGameSync = () => {
    * @returns {boolean} True si le jeu est récent
    */
   const isInRecentWindow = timestamp => {
-    if (!timestamp) return false;
+    if (!timestamp) {
+      return false;
+    }
     const now = Date.now();
     const normalizedTimestamp = timestamp > 1e12 ? timestamp : timestamp * 1000;
     return now - normalizedTimestamp <= RECENT_WINDOW_MS;

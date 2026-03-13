@@ -75,6 +75,10 @@ const NewsTab = ({
 }) => {
   const {t, i18n} = useTranslation();
   const activeNewsState = newsState?.news || null;
+  const hasNewsItems = (activeNewsState?.items?.length || 0) > 0;
+  const shouldShowInitialLoader =
+    !activeNewsState?.initialized ||
+    (activeNewsState?.loading && !hasNewsItems);
   const showFavoritesToggle =
     (hasFavorites || favoritesOnly) &&
     typeof onToggleFavoritesFilter === 'function';
@@ -223,7 +227,7 @@ const NewsTab = ({
         </View>
       ) : null}
 
-      {activeNewsState?.loading ? (
+      {shouldShowInitialLoader ? (
         <LoadingContainer text={t('news.loadingFeed')} />
       ) : (
         <FlatList

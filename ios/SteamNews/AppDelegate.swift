@@ -4,6 +4,7 @@ import React
 import React_RCTLinking
 import React_RCTAppDelegate
 import ReactAppDependencyProvider
+import RNBootSplash
 
 @main
 class AppDelegate: RCTAppDelegate, UNUserNotificationCenterDelegate {
@@ -40,6 +41,11 @@ class AppDelegate: RCTAppDelegate, UNUserNotificationCenterDelegate {
       continue: userActivity,
       restorationHandler: restorationHandler
     )
+  }
+
+  override func customize(_ rootView: RCTRootView!) {
+    super.customize(rootView)
+    RNBootSplash.initWithStoryboard("BootSplash", rootView: rootView)
   }
 
   private func currentNotificationLanguage() -> String {

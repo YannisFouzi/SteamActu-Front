@@ -15,28 +15,30 @@ const TAB_ICONS = {
   MonCompte: 'person-circle-outline',
 };
 
+const createScreenOptions = ({route}) => ({
+  headerShown: false,
+  lazy: true,
+  tabBarActiveTintColor: COLORS.STEAM_BLUE,
+  tabBarInactiveTintColor: COLORS.STEAM_TEXT_GRAY,
+  tabBarStyle: {
+    backgroundColor: COLORS.STEAM_NAVY,
+    borderTopColor: COLORS.STEAM_BORDER,
+  },
+  tabBarIcon: ({color, size}) => {
+    const iconName = TAB_ICONS[route.name] || 'ellipse-outline';
+    return <Icon name={iconName} size={size} color={color} />;
+  },
+  tabBarLabelStyle: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+});
+
 const MainTabNavigator = () => {
   const {t} = useTranslation();
 
   return (
-    <Tab.Navigator
-      screenOptions={({route}) => ({
-        headerShown: false,
-        tabBarActiveTintColor: COLORS.STEAM_BLUE,
-        tabBarInactiveTintColor: COLORS.STEAM_TEXT_GRAY,
-        tabBarStyle: {
-          backgroundColor: COLORS.STEAM_NAVY,
-          borderTopColor: COLORS.STEAM_BORDER,
-        },
-        tabBarIcon: ({color, size}) => {
-          const iconName = TAB_ICONS[route.name] || 'ellipse-outline';
-          return <Icon name={iconName} size={size} color={color} />;
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
-      })}>
+    <Tab.Navigator screenOptions={createScreenOptions}>
       <Tab.Screen
         name="Actu"
         component={ActuTabs}

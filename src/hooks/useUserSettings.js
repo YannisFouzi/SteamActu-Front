@@ -258,7 +258,6 @@ export const useUserSettings = () => {
         if (serverSettings) {
           const {
             newsNotifications: serverNews,
-            followPromptNotifications,
             enabled, // legacy
             libraryFollowMode: serverLibraryMode,
             wishlistFollowMode: serverWishlistMode,
@@ -377,7 +376,6 @@ export const useUserSettings = () => {
       newsNotifications,
       persistSettings,
       steamId,
-      unregisterFCMToken,
       wishlistFollowMode,
     ],
   );
@@ -428,7 +426,6 @@ export const useUserSettings = () => {
       newsNotifications,
       persistSettings,
       steamId,
-      unregisterFCMToken,
       wishlistFollowMode,
     ],
   );
@@ -479,7 +476,6 @@ export const useUserSettings = () => {
       newsNotifications,
       persistSettings,
       steamId,
-      unregisterFCMToken,
       wishlistFollowMode,
     ],
   );

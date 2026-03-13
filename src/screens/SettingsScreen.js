@@ -126,16 +126,12 @@ const SettingsScreen = () => {
     try {
       setLoggingOut(true);
       await handleLogout();
-      navigation.reset({
-        index: 0,
-        routes: [{name: 'Login'}],
-      });
     } catch (error) {
       debugError('Erreur lors de la deconnexion:', error);
     } finally {
       setLoggingOut(false);
     }
-  }, [handleLogout, loggingOut, navigation]);
+  }, [handleLogout, loggingOut]);
 
   const handleDeleteAccount = useCallback(() => {
     showDialog({
@@ -162,11 +158,6 @@ const SettingsScreen = () => {
 
               await userService.deleteAccount(steamId);
               await handleLogout();
-
-              navigation.reset({
-                index: 0,
-                routes: [{name: 'Login'}],
-              });
             } catch (error) {
               debugError('Erreur lors de la suppression du compte:', error);
               showAlert(t('common.error'), t('settings.deleteAccountError'));
@@ -177,7 +168,7 @@ const SettingsScreen = () => {
         },
       ],
     });
-  }, [handleLogout, navigation, showDialog, steamId, t]);
+  }, [handleLogout, steamId, t]);
 
   const followModeDisabled = saving || loggingOut;
   const languageDisabled = savingLanguage || loggingOut || deleting;

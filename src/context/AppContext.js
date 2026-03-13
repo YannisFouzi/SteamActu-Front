@@ -19,6 +19,7 @@ import {translate} from '../i18n';
 import {unregisterFCMToken} from '../services/notificationService';
 import {isRecentlyUpdated} from '../utils';
 import {getUserScopedStorageKeys} from './app/libraryHelpers';
+import {useAppBootstrap} from './app/useAppBootstrap';
 import {useAppLifecycleRefresh} from './app/useAppLifecycleRefresh';
 import {useAppNotificationsBridge} from './app/useAppNotificationsBridge';
 import {useFollowedGamesActions} from './app/useFollowedGamesActions';
@@ -42,6 +43,17 @@ export const AppProvider = ({children, navigation = null}) => {
 
   const onLogoutRef = useRef(null);
   const handleFollowGameRef = useRef(null);
+
+  const {
+    authStatus,
+    isBootstrapping,
+    isAuthenticated,
+    applySignedInSession,
+    applySignedOutSession,
+  } = useAppBootstrap({
+    setSteamId,
+    setUser,
+  });
 
   const {
     games,
@@ -132,15 +144,12 @@ export const AppProvider = ({children, navigation = null}) => {
       debugLog('[LOGOUT] AsyncStorage nettoye', storageKeys);
 
       resetGamesLibraryState();
-      setSteamId('');
-      setUser(null);
+      applySignedOutSession();
       setWishlistVersion(null);
       setSearchQuery('');
       await setSortOption('default');
 
-      if (navigation) {
-        navigation.replace('Login');
-      } else {
+      if (!navigation) {
         showSuccessMessage(
           translate('auth.logoutSuccessTitle'),
           translate('auth.logoutSuccessMessage'),
@@ -155,7 +164,15 @@ export const AppProvider = ({children, navigation = null}) => {
         translate('auth.logoutErrorMessage'),
       );
     }
-  }, [games.length, navigation, resetGamesLibraryState, setSortOption, steamId]);
+  }, [
+    applySignedOutSession,
+    games.length,
+    navigation,
+    resetGamesLibraryState,
+    setSearchQuery,
+    setSortOption,
+    steamId,
+  ]);
 
   onLogoutRef.current = handleLogout;
 
@@ -166,6 +183,7 @@ export const AppProvider = ({children, navigation = null}) => {
   });
 
   useAppLifecycleRefresh({
+    enabled: isAuthenticated,
     loadData,
     steamId,
     gamesLength: games.length,
@@ -182,6 +200,9 @@ export const AppProvider = ({children, navigation = null}) => {
       filteredGames,
       loading,
       refreshing,
+      authStatus,
+      isBootstrapping,
+      isAuthenticated,
       steamId,
       user,
       searchQuery,
@@ -195,6 +216,7 @@ export const AppProvider = ({children, navigation = null}) => {
       loadData,
       handleRefresh,
       handleLogout,
+      applySignedInSession,
       handleFollowGame,
       getResolvedFollowState,
       checkForNewGames,
@@ -213,10 +235,14 @@ export const AppProvider = ({children, navigation = null}) => {
       games,
       gamesVersion,
       getResolvedFollowState,
+      authStatus,
+      applySignedInSession,
       handleFollowGame,
       handleLogout,
       handleRefresh,
+      isAuthenticated,
       isGameFollowed,
+      isBootstrapping,
       isFollowPending,
       loadData,
       loading,

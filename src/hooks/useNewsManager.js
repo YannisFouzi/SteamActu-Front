@@ -11,31 +11,33 @@ import {
 
 const buildNewsKey = (appId, newsId) => `${appId}:${newsId}`;
 
+const buildInitialNewsState = (overrides = {}) => ({
+  items: [],
+  loading: false,
+  refreshing: false,
+  error: null,
+  initialized: false,
+  favoritesOnly: false,
+  hasFavorites: false,
+  favoriteIds: [],
+  favoriteCount: 0,
+  ...overrides,
+});
+
 export const useNewsManager = steamId => {
   const {i18n} = useTranslation();
   const language = normalizeLanguage(i18n.resolvedLanguage || i18n.language);
 
-  const createInitialNewsState = useCallback(() => {
+  const createInitialNewsState = useCallback((overrides = {}) => {
     debugLog('[NEWS] Initialisation de letat des actualites');
-    return {
-      items: [],
-      loading: false,
-      refreshing: false,
-      error: null,
-      initialized: false,
-      favoritesOnly: false,
-      hasFavorites: false,
-      favoriteIds: [],
-      favoriteCount: 0,
-    };
+    return buildInitialNewsState(overrides);
   }, []);
 
   const [newsState, setNewsState] = useState({
-    news: createInitialNewsState(),
+    news: buildInitialNewsState(),
   });
   const isMountedRef = useRef(true);
   const requestIdRef = useRef(0);
-  const newsHydratedFromCacheRef = useRef(false);
   const favoritesOnlyRef = useRef(false);
 
   useEffect(() => {
@@ -100,13 +102,12 @@ export const useNewsManager = steamId => {
         debugLog('[NEWS] Pas de steamId -> etat vide');
         safeSetNewsState(prev => ({
           ...prev,
-          news: {
-            ...createInitialNewsState(),
+          news: createInitialNewsState({
             favoritesOnly: requestedFavoritesOnly,
             initialized: true,
-          },
+          }),
         }));
-        return;
+        return [];
       }
 
       safeSetNewsState(prev => {
@@ -115,7 +116,7 @@ export const useNewsManager = steamId => {
           ...prev,
           news: {
             ...previous,
-            loading: !silent,
+            loading: !silent && previous.items.length === 0,
             refreshing: silent,
             error: null,
             initialized: true,
@@ -132,7 +133,7 @@ export const useNewsManager = steamId => {
         });
 
         if (!shouldProcess()) {
-          return;
+          return [];
         }
 
         const items = Array.isArray(response.data?.items)
@@ -164,10 +165,12 @@ export const useNewsManager = steamId => {
             },
           };
         });
+
+        return items;
       } catch (error) {
         debugError('[NEWS] Erreur lors du chargement du fil:', error);
         if (!shouldProcess()) {
-          return;
+          return [];
         }
 
         safeSetNewsState(prev => {
@@ -184,46 +187,80 @@ export const useNewsManager = steamId => {
             },
           };
         });
+
+        return [];
       }
     },
     [createInitialNewsState, language, persistNewsCache, safeSetNewsState, steamId],
   );
 
   useEffect(() => {
-    const hydrateFromCache = async () => {
-      if (!steamId || newsHydratedFromCacheRef.current) {
+    let canceled = false;
+
+    const initializeNews = async () => {
+      debugLog('[NEWS] reset state', {steamId: steamId || '(vide)', language});
+
+      favoritesOnlyRef.current = false;
+      safeSetNewsState({
+        news: buildInitialNewsState({
+          loading: Boolean(steamId),
+        }),
+      });
+
+      if (!steamId) {
+        safeSetNewsState({
+          news: buildInitialNewsState({
+            initialized: true,
+          }),
+        });
         return;
       }
 
       const cacheKey = getCacheKey(steamId);
       if (!cacheKey) {
+        await fetchNews();
         return;
       }
 
       try {
         const cachedNews = await getJSONItem(cacheKey, null);
+        if (canceled || !isMountedRef.current) {
+          return;
+        }
+
         if (Array.isArray(cachedNews) && cachedNews.length > 0) {
-          newsHydratedFromCacheRef.current = true;
-          safeSetNewsState(prev => ({
-            ...prev,
-            news: {
-              ...createInitialNewsState(),
+          safeSetNewsState({
+            news: buildInitialNewsState({
               items: cachedNews,
               initialized: true,
-            },
-          }));
+            }),
+          });
           debugLog('[NEWS] Hydrate depuis le cache', {
             count: cachedNews.length,
             language,
           });
+          fetchNews({silent: true}).catch(error => {
+            debugError('[NEWS] Refresh silencieux post-cache échoué:', error);
+          });
+          return;
         }
       } catch (err) {
         debugError('[NEWS] Erreur hydratation cache:', err);
       }
+
+      if (canceled || !isMountedRef.current) {
+        return;
+      }
+
+      await fetchNews();
     };
 
-    hydrateFromCache();
-  }, [createInitialNewsState, getCacheKey, language, safeSetNewsState, steamId]);
+    initializeNews();
+
+    return () => {
+      canceled = true;
+    };
+  }, [fetchNews, getCacheKey, language, safeSetNewsState, steamId]);
 
   const updateNewsFollowStatus = useCallback(
     (appId, isFollowed) => {
@@ -328,21 +365,6 @@ export const useNewsManager = steamId => {
     },
     [createInitialNewsState, fetchNews, safeSetNewsState, steamId],
   );
-
-  useEffect(() => {
-    debugLog('[NEWS] reset state', {steamId: steamId || '(vide)', language});
-    newsHydratedFromCacheRef.current = false;
-    safeSetNewsState({
-      news: createInitialNewsState(),
-    });
-  }, [createInitialNewsState, language, safeSetNewsState, steamId]);
-
-  useEffect(() => {
-    if (!newsState.news?.initialized) {
-      return;
-    }
-    fetchNews();
-  }, [fetchNews, newsState.news?.initialized]);
 
   return {
     newsState,

@@ -225,8 +225,10 @@ export const useFollowedGames = ({
       reconcileFollowedGames(currentGames, normalizedFollowedIds),
     );
 
-    void fetchFollowedGames({
+    fetchFollowedGames({
       silent: followedGamesHydratedFromCacheRef.current,
+    }).catch(fetchError => {
+      debugError('[FOLLOWED_GAMES] Refresh initial échoué:', fetchError);
     });
   }, [
     fetchFollowedGames,
@@ -248,7 +250,12 @@ export const useFollowedGames = ({
         return;
       }
 
-      void fetchFollowedGames({silent: true});
+      fetchFollowedGames({silent: true}).catch(fetchError => {
+        debugError(
+          '[FOLLOWED_GAMES] Sync handler refresh échoué:',
+          fetchError,
+        );
+      });
     });
   }, [fetchFollowedGames, registerSyncHandler, steamId]);
 

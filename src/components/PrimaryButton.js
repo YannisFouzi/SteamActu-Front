@@ -21,16 +21,26 @@ const PrimaryButton = ({
   testID,
 }) => {
   const isDisabled = disabled || loading;
+  const buttonColorsStyle = React.useMemo(
+    () => ({
+      backgroundColor,
+      borderColor,
+    }),
+    [backgroundColor, borderColor],
+  );
+  const textColorsStyle = React.useMemo(
+    () => ({
+      color: textColor,
+    }),
+    [textColor],
+  );
 
   return (
     <TouchableOpacity
       style={[
         styles.button,
-        {
-          backgroundColor,
-          borderColor,
-          opacity: isDisabled ? 0.6 : 1,
-        },
+        buttonColorsStyle,
+        isDisabled ? styles.buttonDisabled : null,
         style,
       ]}
       onPress={onPress}
@@ -39,7 +49,7 @@ const PrimaryButton = ({
       {loading ? (
         <ActivityIndicator color={spinnerColor} size="small" />
       ) : (
-        <Text style={[styles.buttonText, {color: textColor}, textStyle]}>
+        <Text style={[styles.buttonText, textColorsStyle, textStyle]}>
           {label}
         </Text>
       )}
@@ -53,6 +63,9 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     alignItems: 'center',
     borderWidth: 1,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
   buttonText: {
     ...TEXT_STYLES.button,

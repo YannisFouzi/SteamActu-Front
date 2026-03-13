@@ -3,7 +3,10 @@ import {AppState} from 'react-native';
 import {useCallback, useEffect, useRef} from 'react';
 import {debugError, debugLog} from '../../hooks/hooksLogger';
 
+const INITIAL_LIBRARY_LOAD_DELAY_MS = 350;
+
 export const useAppLifecycleRefresh = ({
+  enabled,
   loadData,
   steamId,
   gamesLength,
@@ -16,6 +19,8 @@ export const useAppLifecycleRefresh = ({
   const appStateRef = useRef(AppState.currentState);
   const loadDataRef = useRef(loadData);
   const checkLastVerificationDateRef = useRef(null);
+  const initialLoadTimeoutRef = useRef(null);
+  const initialLoadFrameRef = useRef(null);
 
   useEffect(() => {
     loadDataRef.current = loadData;
@@ -53,8 +58,44 @@ export const useAppLifecycleRefresh = ({
   }, [checkLastVerificationDate]);
 
   useEffect(() => {
-    debugLog('[INIT] useEffect initial (mount) declenche');
-    loadDataRef.current(false, 'init');
+    return () => {
+      if (initialLoadFrameRef.current !== null) {
+        cancelAnimationFrame(initialLoadFrameRef.current);
+        initialLoadFrameRef.current = null;
+      }
+
+      if (initialLoadTimeoutRef.current !== null) {
+        clearTimeout(initialLoadTimeoutRef.current);
+        initialLoadTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!enabled) {
+      if (initialLoadFrameRef.current !== null) {
+        cancelAnimationFrame(initialLoadFrameRef.current);
+        initialLoadFrameRef.current = null;
+      }
+
+      if (initialLoadTimeoutRef.current !== null) {
+        clearTimeout(initialLoadTimeoutRef.current);
+        initialLoadTimeoutRef.current = null;
+      }
+
+      return undefined;
+    }
+
+    debugLog('[INIT] Startup sync planifiee apres premier affichage');
+
+    initialLoadFrameRef.current = requestAnimationFrame(() => {
+      initialLoadFrameRef.current = null;
+      initialLoadTimeoutRef.current = setTimeout(() => {
+        initialLoadTimeoutRef.current = null;
+        debugLog('[INIT] Startup sync lancee en differe');
+        loadDataRef.current(false, 'startupDeferredInit');
+      }, INITIAL_LIBRARY_LOAD_DELAY_MS);
+    });
 
     const subscription = AppState.addEventListener('change', nextAppState => {
       if (
@@ -72,28 +113,30 @@ export const useAppLifecycleRefresh = ({
     });
 
     return () => {
+      if (initialLoadFrameRef.current !== null) {
+        cancelAnimationFrame(initialLoadFrameRef.current);
+        initialLoadFrameRef.current = null;
+      }
+
+      if (initialLoadTimeoutRef.current !== null) {
+        clearTimeout(initialLoadTimeoutRef.current);
+        initialLoadTimeoutRef.current = null;
+      }
+
       subscription.remove();
     };
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
-    debugLog('[useEffect[steamId]] Declenche');
-    debugLog('[useEffect[steamId]] steamId:', steamId || '(vide)');
-    debugLog('[useEffect[steamId]] games.length:', gamesLength);
-    debugLog('[useEffect[steamId]] loading:', loading);
-    debugLog('[useEffect[steamId]] refreshing:', refreshing);
+    if (!enabled) {
+      return;
+    }
 
     if (steamId && gamesLength === 0 && !loading && !refreshing) {
-      debugLog('[useEffect[steamId]] Condition remplie -> appel loadData()');
+      debugLog('[GAMES] Aucun cache librairie en memoire, chargement demande');
       loadData(false, 'steamIdEffect');
-    } else if (loading || refreshing) {
-      debugLog('[useEffect[steamId]] Skip (chargement en cours)');
-    } else if (steamId && gamesLength > 0) {
-      debugLog('[useEffect[steamId]] Skip (jeux deja charges)');
-    } else {
-      debugLog('[useEffect[steamId]] Skip (pas de steamId)');
     }
-  }, [gamesLength, loadData, loading, refreshing, steamId]);
+  }, [enabled, gamesLength, loadData, loading, refreshing, steamId]);
 
   return {
     checkLastVerificationDate,

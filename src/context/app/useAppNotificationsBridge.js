@@ -6,6 +6,8 @@ import {
   setupNotificationHandlers,
 } from '../../services/notificationService';
 
+const NOTIFICATION_REGISTRATION_DELAY_MS = 1500;
+
 export const useAppNotificationsBridge = ({
   steamId,
   handleFollowGameRef,
@@ -14,6 +16,7 @@ export const useAppNotificationsBridge = ({
   useEffect(() => {
     let cleanupNotifications;
     let canceled = false;
+    let registrationTimeout = null;
 
     async function initializeNotifications() {
       try {
@@ -95,11 +98,18 @@ export const useAppNotificationsBridge = ({
         onFollowPromptConfirm: appId =>
           notifyNotificationSync('followed', appId),
       });
-      initializeNotifications();
+      registrationTimeout = setTimeout(() => {
+        if (!canceled) {
+          initializeNotifications();
+        }
+      }, NOTIFICATION_REGISTRATION_DELAY_MS);
     }
 
     return () => {
       canceled = true;
+      if (registrationTimeout !== null) {
+        clearTimeout(registrationTimeout);
+      }
       if (cleanupNotifications) {
         debugLog('[FCM] Nettoyage des handlers de notifications');
         cleanupNotifications();

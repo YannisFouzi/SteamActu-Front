@@ -45,12 +45,12 @@ const sections = [
   {
     title: '8. Modifications de la politique',
     content:
-      "La presente Politique de confidentialite peut evoluer. Toute mise a jour sera publiee dans cette section de l'application. En continuant d'utiliser le service, vous acceptez ces modifications.",
+      'La presente Politique de confidentialite peut evoluer. Toute mise a jour sera publiee dans cette section de l\'application. En continuant d\'utiliser le service, vous acceptez ces modifications.',
   },
   {
     title: '9. Contact',
     content:
-      "Pour toute question relative a la protection de vos donnees, ecrivez a contact@fouzi-dev.fr. Nous faisons de notre mieux pour vous repondre rapidement.",
+      'Pour toute question relative a la protection de vos donnees, ecrivez a contact@fouzi-dev.fr. Nous faisons de notre mieux pour vous repondre rapidement.',
   },
 ];
 

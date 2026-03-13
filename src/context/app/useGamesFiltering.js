@@ -1,6 +1,5 @@
 import {useCallback, useEffect, useState} from 'react';
 import {useAsyncStorage} from '../../hooks/useAsyncStorage';
-import {debugLog} from '../../hooks/hooksLogger';
 import {
   getLastPlayedValue,
   getPlaytimeForeverValue,
@@ -13,13 +12,6 @@ export const useGamesFiltering = games => {
   const [sortOption, setSortOption] = useAsyncStorage('sortOption', 'default');
 
   const filterAndSortGames = useCallback(() => {
-    debugLog(
-      'filterAndSortGames appelee - searchQuery:',
-      searchQuery,
-      'games count:',
-      games?.length,
-    );
-
     if (!games || !Array.isArray(games)) {
       setFilteredGames([]);
       return;

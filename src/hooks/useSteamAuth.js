@@ -115,12 +115,11 @@ const logAuthTrace = (message, payload = null) => {
   }
 };
 
-export const useSteamAuth = navigation => {
-  const {loadData} = useAppContext();
+export const useSteamAuth = () => {
+  const {applySignedInSession} = useAppContext();
   const [loading, setLoading] = useState(false);
   const [authFlowState, setAuthFlowState] = useState(AUTH_FLOW_STATES.IDLE);
   const processedUrls = useRef(new Set());
-  const loadDataTimeoutRef = useRef(null);
   const isMountedRef = useRef(true);
   const appStateRef = useRef(AppState.currentState);
   const processingAuthRef = useRef(false);
@@ -130,9 +129,6 @@ export const useSteamAuth = navigation => {
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
-      if (loadDataTimeoutRef.current) {
-        clearTimeout(loadDataTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -258,18 +254,11 @@ export const useSteamAuth = navigation => {
         debugLog('[LOGIN] Saving steamId to AsyncStorage');
         await AsyncStorage.setItem('steamId', steamId);
 
-        debugLog('[LOGIN] Navigating to Home');
-        if (isMountedRef.current) {
-          navigation.replace('Home');
-        }
-
-        loadDataTimeoutRef.current = setTimeout(() => {
-          if (!isMountedRef.current) {
-            return;
-          }
-          loadData(false, 'steamAuthDelayed');
-          debugLog('[LOGIN] Auth flow and delayed reload finished');
-        }, 100);
+        applySignedInSession({
+          steamId,
+          user: response.data,
+        });
+        debugLog('[LOGIN] Auth flow finished, session applied');
       } catch (error) {
         debugError('[LOGIN] Authentication error:', error);
         showAlert(
@@ -284,7 +273,7 @@ export const useSteamAuth = navigation => {
         }
       }
     },
-    [loadData, navigation],
+    [applySignedInSession],
   );
 
   const pollAuthStatus = useCallback(
@@ -331,7 +320,11 @@ export const useSteamAuth = navigation => {
         setAuthFlowState(
           expired ? AUTH_FLOW_STATES.EXPIRED : AUTH_FLOW_STATES.PENDING,
         );
-        logAuthTrace(expired ? 'Auth poll: attempt expired' : 'Auth poll: timed out, still pending');
+        logAuthTrace(
+          expired
+            ? 'Auth poll: attempt expired'
+            : 'Auth poll: timed out, still pending',
+        );
       }
 
       return false;
@@ -339,26 +332,11 @@ export const useSteamAuth = navigation => {
     [handleSteamIdReceived],
   );
 
-  const checkExistingUser = useCallback(async () => {
+  const resumePendingAuthIfNeeded = useCallback(async () => {
     try {
-      debugLog('[STEAM AUTH] Checking for existing user session...');
-
-      const savedSteamId = await AsyncStorage.getItem('steamId');
-      if (savedSteamId) {
-        debugLog(
-          '[STEAM AUTH] Existing session found:',
-          maskSteamId(savedSteamId),
-        );
-        if (isMountedRef.current) {
-          navigation.replace('Home');
-        }
-        return true;
-      }
-
-      // Reprendre une tentative d'auth en cours si elle existe
       const pendingToken = await AsyncStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
       if (pendingToken) {
-        logAuthTrace('Found pending auth token on launch, polling status');
+        logAuthTrace('Found pending auth token on login screen, polling status');
         const resumed = await pollAuthStatus(pendingToken);
         if (resumed) {
           return true;
@@ -367,11 +345,10 @@ export const useSteamAuth = navigation => {
 
       return false;
     } catch (error) {
-      debugError('[STEAM AUTH] Failed to check existing session:', error);
+      debugError('[STEAM AUTH] Failed to resume pending authentication:', error);
       return false;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [navigation, pollAuthStatus]);
+  }, [pollAuthStatus]);
 
   const handleUrl = useCallback(
     async ({url}) => {
@@ -416,32 +393,29 @@ export const useSteamAuth = navigation => {
     [handleSteamIdReceived],
   );
 
-  const openSteamBrowser = useCallback(
-    async authUrl => {
-      const result = await InAppBrowser.openAuth(
-        authUrl,
-        steamAuthService.AUTH_REDIRECT_URL,
-        {
-          showTitle: true,
-          toolbarColor: COLORS.STEAM_DARK,
-          secondaryToolbarColor: COLORS.STEAM_BLUE,
-          navigationBarColor: COLORS.STEAM_DARK,
-          enableUrlBarHiding: true,
-          enableDefaultShare: false,
-          forceCloseOnRedirection: true,
-          ephemeralWebSession: false,
-        },
-      );
+  const openSteamBrowser = useCallback(async authUrl => {
+    const result = await InAppBrowser.openAuth(
+      authUrl,
+      steamAuthService.AUTH_REDIRECT_URL,
+      {
+        showTitle: true,
+        toolbarColor: COLORS.STEAM_DARK,
+        secondaryToolbarColor: COLORS.STEAM_BLUE,
+        navigationBarColor: COLORS.STEAM_DARK,
+        enableUrlBarHiding: true,
+        enableDefaultShare: false,
+        forceCloseOnRedirection: true,
+        ephemeralWebSession: false,
+      },
+    );
 
-      logAuthTrace('openAuth result', {
-        type: result?.type || 'unknown',
-        url: maskAuthUrl(result?.url || ''),
-      });
+    logAuthTrace('openAuth result', {
+      type: result?.type || 'unknown',
+      url: maskAuthUrl(result?.url || ''),
+    });
 
-      return result;
-    },
-    [handleUrl],
-  );
+    return result;
+  }, []);
 
   const handleSteamLogin = useCallback(async () => {
     try {
@@ -456,7 +430,7 @@ export const useSteamAuth = navigation => {
       logAuthTrace('Requesting auth start from backend');
       const {authToken, authUrl} = await steamAuthService.startAuth();
 
-      // Persister le token pour reprise si l'app est tuee
+      // Persiste le token pour reprendre le flow si l'app est tuee.
       await AsyncStorage.setItem(AUTH_TOKEN_STORAGE_KEY, authToken);
 
       logAuthTrace('Auth attempt started', {
@@ -529,12 +503,16 @@ export const useSteamAuth = navigation => {
       logAuthTrace("Linking 'url' event received", {
         url: maskAuthUrl(event?.url),
       });
-      void handleUrl(event);
+      handleUrl(event).catch(error => {
+        debugError('[STEAM AUTH] Erreur traitement url listener:', error);
+      });
     });
 
     Linking.getInitialURL().then(url => {
       if (url) {
-        void handleUrl({url});
+        handleUrl({url}).catch(error => {
+          debugError('[STEAM AUTH] Erreur traitement url initiale:', error);
+        });
       }
     });
 
@@ -544,13 +522,12 @@ export const useSteamAuth = navigation => {
   }, [handleUrl]);
 
   useEffect(() => {
-    checkExistingUser();
-  }, [checkExistingUser]);
+    resumePendingAuthIfNeeded();
+  }, [resumePendingAuthIfNeeded]);
 
   return {
     loading,
     authFlowState,
     handleSteamLogin,
-    checkExistingUser,
   };
 };

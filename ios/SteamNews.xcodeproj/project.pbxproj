@@ -30,6 +30,8 @@
 		B85E29BA871C496CA45E5869 /* Octicons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 89B01E1FDBAE441EB2DA15D6 /* Octicons.ttf */; };
 		A75E146764214A0589CD465B /* SimpleLineIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A8EEC7809BC24E1CBAAF02A2 /* SimpleLineIcons.ttf */; };
 		CE9DE982491D4645AB37D3EF /* Zocial.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 83D1013895884ACB86F04615 /* Zocial.ttf */; };
+		2D65038DF3C44FD7851FC226 /* BootSplash.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 15855B70FC224B5E9AC77138 /* BootSplash.storyboard */; };
+		4D60794F8A3A4DDE8DD54600 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8E0DC741F5CB414AAD655D17 /* Colors.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -73,6 +75,8 @@
 		89B01E1FDBAE441EB2DA15D6 /* Octicons.ttf */ = {isa = PBXFileReference; name = "Octicons.ttf"; path = "../node_modules/react-native-vector-icons/fonts/Octicons.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 		A8EEC7809BC24E1CBAAF02A2 /* SimpleLineIcons.ttf */ = {isa = PBXFileReference; name = "SimpleLineIcons.ttf"; path = "../node_modules/react-native-vector-icons/fonts/SimpleLineIcons.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 		83D1013895884ACB86F04615 /* Zocial.ttf */ = {isa = PBXFileReference; name = "Zocial.ttf"; path = "../node_modules/react-native-vector-icons/fonts/Zocial.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		15855B70FC224B5E9AC77138 /* BootSplash.storyboard */ = {isa = PBXFileReference; name = "BootSplash.storyboard"; path = "SteamNews/BootSplash.storyboard"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		8E0DC741F5CB414AAD655D17 /* Colors.xcassets */ = {isa = PBXFileReference; name = "Colors.xcassets"; path = "SteamNews/Colors.xcassets"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = folder.assetcatalog; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,6 +107,8 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
+				15855B70FC224B5E9AC77138 /* BootSplash.storyboard */,
+				8E0DC741F5CB414AAD655D17 /* Colors.xcassets */,
 			);
 			name = SteamNews;
 			sourceTree = "<group>";
@@ -270,6 +276,8 @@
 				B85E29BA871C496CA45E5869 /* Octicons.ttf in Resources */,
 				A75E146764214A0589CD465B /* SimpleLineIcons.ttf in Resources */,
 				CE9DE982491D4645AB37D3EF /* Zocial.ttf in Resources */,
+				2D65038DF3C44FD7851FC226 /* BootSplash.storyboard in Resources */,
+				4D60794F8A3A4DDE8DD54600 /* Colors.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -36,7 +36,7 @@ const TutorialProvider = ({ children }) => {
 
   const navigationRef = useRef(null);
   const layoutsRef = useRef({});
-  const [layoutVersion, setLayoutVersion] = useState(0);
+  const [, setLayoutVersion] = useState(0);
 
   const [resumeVisible, setResumeVisible] = useState(false);
 
@@ -48,7 +48,6 @@ const TutorialProvider = ({ children }) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.warn('[Tutorial] impossible de sauvegarder le statut', error);
     }
   }, []);
@@ -113,7 +112,6 @@ const TutorialProvider = ({ children }) => {
           params: nestedScreen ? {screen: nestedScreen} : undefined,
         });
       } catch (error) {
-        // eslint-disable-next-line no-console
         console.warn('[Tutorial] navigation error', error);
       }
     };
@@ -141,7 +139,6 @@ const TutorialProvider = ({ children }) => {
     try {
       ref.navigate(step.screen);
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.warn('[Tutorial] navigation error', error);
     }
   }, []);
@@ -214,25 +211,6 @@ const TutorialProvider = ({ children }) => {
       startTutorial(0, { force: true });
     }
   }, [hydrated, startTutorial]);
-
-  const goToStep = useCallback(
-    targetIndex => {
-      const clamped = Math.min(
-        Math.max(targetIndex, 0),
-        SUMMARY_STEP_INDEX,
-      );
-      const targetStep = TUTORIAL_STEPS[clamped];
-      ensureNavigationForStep(targetStep);
-
-      applyState(prev => ({
-        ...prev,
-        status: 'running',
-        stepIndex: clamped,
-        lastPausedAt: null,
-      }));
-    },
-    [applyState, ensureNavigationForStep],
-  );
 
   const goToNext = useCallback(() => {
     applyState(prev => {
@@ -362,12 +340,10 @@ const TutorialProvider = ({ children }) => {
     ? TUTORIAL_STEPS[state.stepIndex]
     : null;
 
-  const currentLayout = useMemo(() => {
-    if (!currentStep || !currentStep.targetId) {
-      return null;
-    }
-    return layoutsRef.current[currentStep.targetId] || null;
-  }, [currentStep, layoutVersion]);
+  const currentLayout =
+    currentStep && currentStep.targetId
+      ? layoutsRef.current[currentStep.targetId] || null
+      : null;
 
   const contextValue = useMemo(
     () => ({

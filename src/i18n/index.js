@@ -101,6 +101,4 @@ const languageInitializationPromise = loadStoredLanguagePreference()
 
 export const waitForI18nInitialization = () => languageInitializationPromise;
 
-void languageInitializationPromise;
-
 export default i18n;
