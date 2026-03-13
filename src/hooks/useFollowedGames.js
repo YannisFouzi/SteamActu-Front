@@ -1,37 +1,51 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { userService } from '../services/api';
-import { debugError, debugLog } from './hooksLogger';
-import {
-  buildStorageKey,
-  getJSONItem,
-  setJSONItem,
-} from './useAsyncStorage';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {userService} from '../services/api';
+import {debugError, debugLog} from './hooksLogger';
+import {buildStorageKey, getJSONItem, setJSONItem} from './useAsyncStorage';
 
-/**
- * Hook personnalisé pour gérer les jeux suivis
- * Centralise la logique de chargement, le cache et la synchronisation.
- */
-export const useFollowedGames = steamId => {
+const normalizeFollowedIds = followedAppIds =>
+  Array.isArray(followedAppIds)
+    ? followedAppIds
+        .map(appId => (appId ? appId.toString() : ''))
+        .filter(Boolean)
+    : [];
+
+const reconcileFollowedGames = (games, followedAppIds) => {
+  const followedSet = new Set(normalizeFollowedIds(followedAppIds));
+
+  if (followedSet.size === 0) {
+    return [];
+  }
+
+  if (!Array.isArray(games)) {
+    return [];
+  }
+
+  return games.filter(game => followedSet.has(game?.appId?.toString()));
+};
+
+export const useFollowedGames = ({
+  steamId,
+  followedAppIds = [],
+  registerSyncHandler,
+}) => {
   const [followedGames, setFollowedGames] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
   const isMountedRef = useRef(true);
   const followedGamesHydratedFromCacheRef = useRef(false);
   const fetchInFlightRef = useRef(false);
 
-  const safeSetState = useCallback((setter, value) => {
-    if (isMountedRef.current) {
-      setter(value);
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, []);
+  const normalizedFollowedIds = useMemo(
+    () => normalizeFollowedIds(followedAppIds),
+    [followedAppIds],
+  );
+  const followedSignature = useMemo(
+    () => normalizedFollowedIds.slice().sort().join('|'),
+    [normalizedFollowedIds],
+  );
 
   const persistFollowedGamesCache = useCallback(
     async (games, targetSteamId = steamId) => {
@@ -39,61 +53,127 @@ export const useFollowedGames = steamId => {
       if (!cacheKey) {
         return;
       }
+
       await setJSONItem(cacheKey, games);
-      debugLog('[FOLLOWED_GAMES] Cache sauvegardé', { count: games.length });
+      debugLog('[FOLLOWED_GAMES] Cache sauvegarde', {count: games.length});
     },
     [steamId],
   );
 
+  const safeSetValue = useCallback((setter, value) => {
+    if (isMountedRef.current) {
+      setter(value);
+    }
+  }, []);
+
+  const safeUpdateFollowedGames = useCallback(updater => {
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    setFollowedGames(currentGames => updater(currentGames));
+  }, []);
+
   const fetchFollowedGames = useCallback(
     async (options = {}) => {
+      const {silent = false} = options;
+
       if (!steamId) {
-        safeSetState(setFollowedGames, []);
-        safeSetState(setLoading, false);
-        return;
+        safeSetValue(setFollowedGames, []);
+        safeSetValue(setLoading, false);
+        safeSetValue(setRefreshing, false);
+        return [];
       }
 
       if (fetchInFlightRef.current) {
-        debugLog('[FOLLOWED_GAMES] Fetch déjà en cours, skip');
-        return;
+        debugLog('[FOLLOWED_GAMES] Fetch deja en cours, skip');
+        return [];
       }
 
       try {
         fetchInFlightRef.current = true;
 
-        if (!options.silent) {
-          safeSetState(setLoading, true);
+        if (silent) {
+          safeSetValue(setRefreshing, true);
+        } else {
+          safeSetValue(setLoading, true);
         }
 
         const response = await userService.getFollowedGamesDetails(steamId);
-        const games = response.data.followedGames || [];
+        const remoteGames = Array.isArray(response?.data?.followedGames)
+          ? response.data.followedGames
+          : [];
 
-        safeSetState(setFollowedGames, games);
-        safeSetState(setError, null);
+        safeSetValue(setFollowedGames, remoteGames);
+        safeSetValue(setError, null);
+        followedGamesHydratedFromCacheRef.current = true;
+        await persistFollowedGamesCache(remoteGames, steamId);
 
-        // Persister dans le cache
-        await persistFollowedGamesCache(games);
+        debugLog('[FOLLOWED_GAMES] Jeux suivis charges', {
+          count: remoteGames.length,
+        });
 
-        debugLog('[FOLLOWED_GAMES] Jeux suivis chargés', { count: games.length });
+        return remoteGames;
       } catch (err) {
-        debugError('[FOLLOWED_GAMES] Erreur récupération:', err);
-        safeSetState(setError, err);
-        safeSetState(setFollowedGames, []);
+        debugError('[FOLLOWED_GAMES] Erreur recuperation:', err);
+        safeSetValue(setError, err);
+        return [];
       } finally {
         fetchInFlightRef.current = false;
-        safeSetState(setLoading, false);
+        safeSetValue(setLoading, false);
+        safeSetValue(setRefreshing, false);
       }
     },
-    [steamId, safeSetState, persistFollowedGamesCache],
+    [persistFollowedGamesCache, safeSetValue, steamId],
   );
 
-  // Hydratation depuis le cache au montage
-  useEffect(() => {
-    const hydrateFromCache = async () => {
-      if (!steamId || followedGamesHydratedFromCacheRef.current) {
+  const removeFollowedGame = useCallback(
+    async appId => {
+      if (!appId) {
         return;
       }
 
+      const appIdString = appId.toString();
+
+      let nextGames = [];
+      safeUpdateFollowedGames(currentGames => {
+        nextGames = (currentGames || []).filter(
+          game => game?.appId?.toString() !== appIdString,
+        );
+        return nextGames;
+      });
+
+      await persistFollowedGamesCache(nextGames, steamId);
+      debugLog('[FOLLOWED_GAMES] Jeu retire du cache', {appId: appIdString});
+    },
+    [persistFollowedGamesCache, safeUpdateFollowedGames, steamId],
+  );
+
+  const handleRefresh = useCallback(async () => {
+    await fetchFollowedGames({silent: true});
+  }, [fetchFollowedGames]);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!steamId) {
+      followedGamesHydratedFromCacheRef.current = false;
+      fetchInFlightRef.current = false;
+      safeSetValue(setFollowedGames, []);
+      safeSetValue(setError, null);
+      safeSetValue(setLoading, false);
+      safeSetValue(setRefreshing, false);
+      return;
+    }
+
+    let isActive = true;
+    followedGamesHydratedFromCacheRef.current = false;
+
+    const hydrateFromCache = async () => {
       const cacheKey = buildStorageKey('followedGames', steamId);
       if (!cacheKey) {
         return;
@@ -101,11 +181,19 @@ export const useFollowedGames = steamId => {
 
       try {
         const cachedGames = await getJSONItem(cacheKey, null);
-        if (Array.isArray(cachedGames) && cachedGames.length > 0) {
+        if (!isActive || !isMountedRef.current) {
+          return;
+        }
+
+        if (Array.isArray(cachedGames)) {
+          const reconciledGames = reconcileFollowedGames(
+            cachedGames,
+            normalizedFollowedIds,
+          );
           followedGamesHydratedFromCacheRef.current = true;
-          safeSetState(setFollowedGames, cachedGames);
-          debugLog('[FOLLOWED_GAMES] Hydraté depuis le cache', {
-            count: cachedGames.length,
+          safeSetValue(setFollowedGames, reconciledGames);
+          debugLog('[FOLLOWED_GAMES] Hydrate depuis le cache', {
+            count: reconciledGames.length,
           });
         }
       } catch (err) {
@@ -114,45 +202,63 @@ export const useFollowedGames = steamId => {
     };
 
     hydrateFromCache();
-  }, [steamId, safeSetState]);
 
-  // Fetch initial après hydratation
+    return () => {
+      isActive = false;
+    };
+  }, [normalizedFollowedIds, safeSetValue, steamId]);
+
   useEffect(() => {
-    if (steamId && followedGamesHydratedFromCacheRef.current) {
-      // Fetch silencieux en arrière-plan après hydratation du cache
-      fetchFollowedGames({ silent: true });
-    } else if (steamId) {
-      // Pas de cache, fetch normal avec loader
-      fetchFollowedGames();
+    if (!steamId) {
+      return;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [steamId]);
 
-  const removeFollowedGame = useCallback(
-    async appId => {
-      if (!appId) {
+    if (normalizedFollowedIds.length === 0) {
+      safeSetValue(setFollowedGames, []);
+      persistFollowedGamesCache([], steamId).catch(err => {
+        debugError('[FOLLOWED_GAMES] Erreur purge cache:', err);
+      });
+      return;
+    }
+
+    safeUpdateFollowedGames(currentGames =>
+      reconcileFollowedGames(currentGames, normalizedFollowedIds),
+    );
+
+    void fetchFollowedGames({
+      silent: followedGamesHydratedFromCacheRef.current,
+    });
+  }, [
+    fetchFollowedGames,
+    followedSignature,
+    normalizedFollowedIds,
+    persistFollowedGamesCache,
+    safeSetValue,
+    safeUpdateFollowedGames,
+    steamId,
+  ]);
+
+  useEffect(() => {
+    if (typeof registerSyncHandler !== 'function') {
+      return undefined;
+    }
+
+    return registerSyncHandler('followed', () => {
+      if (!steamId) {
         return;
       }
 
-      // Mise à jour optimiste
-      const updatedGames = followedGames.filter(
-        game => game.appId?.toString() !== appId.toString(),
-      );
-      safeSetState(setFollowedGames, updatedGames);
-
-      // Persister dans le cache
-      await persistFollowedGamesCache(updatedGames);
-
-      debugLog('[FOLLOWED_GAMES] Jeu retiré du cache', { appId });
-    },
-    [followedGames, safeSetState, persistFollowedGamesCache],
-  );
+      void fetchFollowedGames({silent: true});
+    });
+  }, [fetchFollowedGames, registerSyncHandler, steamId]);
 
   return {
     followedGames,
     loading,
+    refreshing,
     error,
     fetchFollowedGames,
+    handleRefresh,
     removeFollowedGame,
   };
 };

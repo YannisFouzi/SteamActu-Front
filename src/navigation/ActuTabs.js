@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useRef} from 'react';
+import React, {useCallback, useEffect} from 'react';
 import {createMaterialTopTabNavigator} from '@react-navigation/material-top-tabs';
 import {useFocusEffect} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
@@ -23,7 +23,6 @@ const ActuTabs = () => {
     setFavoritesOnlyFilter,
     toggleNewsFavorite,
   } = useNewsManager(steamId);
-  const followedGamesExternalHandlerRef = useRef(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -44,29 +43,10 @@ const ActuTabs = () => {
       }
     });
 
-    const unregisterFollowed = registerNotificationSyncHandler(
-      'followed',
-      appId => {
-        if (appId && followedGamesExternalHandlerRef.current) {
-          followedGamesExternalHandlerRef.current(appId);
-        }
-      },
-    );
-
     return () => {
       unregisterNews();
-      unregisterFollowed();
     };
   }, [registerNotificationSyncHandler, removeNewsByAppId]);
-
-  const registerFollowedGamesExternalHandler = useCallback(handler => {
-    followedGamesExternalHandlerRef.current = handler;
-    return () => {
-      if (followedGamesExternalHandlerRef.current === handler) {
-        followedGamesExternalHandlerRef.current = null;
-      }
-    };
-  }, []);
 
   return (
     <SafeAreaView style={{flex: 1, backgroundColor: COLORS.STEAM_NAVY}} edges={['top']}>
@@ -94,13 +74,7 @@ const ActuTabs = () => {
         <Tab.Screen
           name="JeuxSuivis"
           options={{title: t('nav.followedGames')}}>
-          {() => (
-            <FollowedGamesScreen
-              registerExternalUnfollowHandler={
-                registerFollowedGamesExternalHandler
-              }
-            />
-          )}
+          {() => <FollowedGamesScreen />}
         </Tab.Screen>
       </Tab.Navigator>
     </SafeAreaView>

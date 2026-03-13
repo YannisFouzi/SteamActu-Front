@@ -1,79 +1,89 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {ActivityIndicator, FlatList, View} from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
+import React, {useCallback, useMemo, useState} from 'react';
+import {ActivityIndicator, FlatList, RefreshControl, View} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import GameCard from '../../../components/GameCard';
 import {COLORS} from '../../../constants';
 import {useAppContext} from '../../../context/AppContext';
 import {useFollowedGames} from '../../../hooks/useFollowedGames';
-import {getGameImageFallback, getGameImageUrl} from '../../../utils/steamHelpers';
+import {
+  getGameImageFallback,
+  getGameImageUrl,
+} from '../../../utils/steamHelpers';
 import EmptyStateMessage from './EmptyStateMessage';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
 import SearchInput from './SearchInput';
 
-const FollowedGamesTab = React.memo(({
-  styles,
-  onToggleFollowState,
-  registerExternalUnfollowHandler,
-}) => {
+const FollowedGamesTab = React.memo(({styles}) => {
   const {t} = useTranslation();
-  const {steamId} = useAppContext();
-  const {followedGames, loading, removeFollowedGame} = useFollowedGames(steamId);
+  const {steamId, user, registerNotificationSyncHandler} = useAppContext();
   const [searchQuery, setSearchQuery] = useState('');
+
+  const followedAppIds = useMemo(
+    () => (Array.isArray(user?.followedGames) ? user.followedGames : []),
+    [user],
+  );
+
+  const {
+    followedGames,
+    loading,
+    refreshing,
+    handleRefresh,
+    removeFollowedGame,
+  } = useFollowedGames({
+    steamId,
+    followedAppIds,
+    registerSyncHandler: registerNotificationSyncHandler,
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      if (steamId) {
+        handleRefresh();
+      }
+    }, [handleRefresh, steamId]),
+  );
 
   const filteredFollowedGames = useMemo(() => {
     if (!searchQuery || !searchQuery.trim()) {
       return followedGames;
     }
+
     const query = searchQuery.toLowerCase().trim();
     return followedGames.filter(
       game => game.name && game.name.toLowerCase().includes(query),
     );
   }, [followedGames, searchQuery]);
 
-  useEffect(() => {
-    if (typeof registerExternalUnfollowHandler !== 'function') {
-      return undefined;
-    }
+  const renderGameItem = useCallback(
+    ({item}) => {
+      const appId = item.appId?.toString();
+      const imageUrl = getGameImageUrl(item);
+      const fallbackImageUrl = getGameImageFallback(item);
 
-    const unregister = registerExternalUnfollowHandler(appId => {
-      if (!appId) {
-        return;
-      }
-      removeFollowedGame(appId);
-    });
+      return (
+        <GameCard
+          game={{name: item.name}}
+          imageUrl={imageUrl}
+          fallbackImageUrl={fallbackImageUrl}
+          followConfig={{
+            appId,
+            name: item.name,
+            imageUrl,
+            isFollowed: true,
+            onToggle: ({nextIsFollowed}) => {
+              if (!nextIsFollowed && appId) {
+                removeFollowedGame(appId);
+              }
+            },
+          }}
+        />
+      );
+    },
+    [removeFollowedGame],
+  );
 
-    return unregister;
-  }, [registerExternalUnfollowHandler, removeFollowedGame]);
-
-  const renderGameItem = useCallback(({item}) => {
-    const appId = item.appId?.toString();
-    const imageUrl = getGameImageUrl(item);
-    const fallbackImageUrl = getGameImageFallback(item);
-
-    return (
-      <GameCard
-        game={{name: item.name}}
-        imageUrl={imageUrl}
-        fallbackImageUrl={fallbackImageUrl}
-        followConfig={{
-          appId,
-          name: item.name,
-          imageUrl,
-          isFollowed: true,
-          onToggle: ({nextIsFollowed}) => {
-            if (!nextIsFollowed && appId) {
-              removeFollowedGame(appId);
-            }
-            if (typeof onToggleFollowState === 'function' && appId) {
-              onToggleFollowState(appId, nextIsFollowed);
-            }
-          },
-        }}
-      />
-    );
-  }, [onToggleFollowState, removeFollowedGame]);
-
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color={COLORS.STEAM_BLUE} />
@@ -105,6 +115,14 @@ const FollowedGamesTab = React.memo(({
         renderItem={renderGameItem}
         keyExtractor={item => item.appId?.toString()}
         contentContainerStyle={styles.followedGamesList}
+        refreshControl={
+          <RefreshControl
+            refreshing={Boolean(refreshing)}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.STEAM_BLUE}
+            colors={[COLORS.STEAM_BLUE]}
+          />
+        }
       />
     );
   };
