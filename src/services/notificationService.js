@@ -1,5 +1,6 @@
 import notifee, {
   AndroidImportance,
+  AndroidStyle,
   AuthorizationStatus,
   EventType,
 } from '@notifee/react-native';
@@ -281,11 +282,49 @@ function extractNotificationPayload(remoteMessage) {
     title,
     body,
     allowUnfollow: data.allowUnfollow === 'true',
+    imageUrl: data.imageUrl || '',
     data: {
       ...data,
       notificationId,
     },
     type: data.type || 'general',
+  };
+}
+
+function buildNotificationMediaOptions(payload) {
+  if (payload?.type !== 'news') {
+    return {
+      hasMedia: false,
+      android: {},
+      ios: {},
+    };
+  }
+
+  const imageUrl = payload?.imageUrl?.trim();
+
+  if (!imageUrl) {
+    return {
+      hasMedia: false,
+      android: {},
+      ios: {},
+    };
+  }
+
+  return {
+    hasMedia: true,
+    android: {
+      style: {
+        type: AndroidStyle.BIGPICTURE,
+        picture: imageUrl,
+      },
+    },
+    ios: {
+      attachments: [
+        {
+          url: imageUrl,
+        },
+      ],
+    },
   };
 }
 
@@ -373,8 +412,9 @@ export async function displayRemoteNotification(remoteMessage) {
 
     const pressActionId =
       payload.type === 'follow_prompt' ? ACTION_FOLLOW_GAME : ACTION_OPEN_NEWS;
+    const mediaOptions = buildNotificationMediaOptions(payload);
 
-    await notifee.displayNotification({
+    const baseNotification = {
       id: payload.id,
       title: payload.title,
       body: payload.body,
@@ -389,7 +429,31 @@ export async function displayRemoteNotification(remoteMessage) {
         categoryId: canUnfollow ? IOS_CATEGORY_ID : undefined,
         sound: 'default',
       },
-    });
+    };
+
+    if (mediaOptions.hasMedia) {
+      try {
+        await notifee.displayNotification({
+          ...baseNotification,
+          android: {
+            ...baseNotification.android,
+            ...mediaOptions.android,
+          },
+          ios: {
+            ...baseNotification.ios,
+            ...mediaOptions.ios,
+          },
+        });
+        return;
+      } catch (mediaError) {
+        debugError(
+          '[FCM] Erreur affichage notification avec image, fallback texte:',
+          mediaError,
+        );
+      }
+    }
+
+    await notifee.displayNotification(baseNotification);
   } catch (error) {
     debugError('[FCM] Erreur lors de l’affichage de la notification:', error);
   }
