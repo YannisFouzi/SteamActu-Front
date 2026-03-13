@@ -78,7 +78,12 @@ export const AppProvider = ({children, navigation = null}) => {
     filterAndSortGames,
   } = useGamesFiltering(games);
 
-  const {handleFollowGame, isGameFollowed, isFollowPending} =
+  const {
+    handleFollowGame,
+    getResolvedFollowState,
+    isGameFollowed,
+    isFollowPending,
+  } =
     useFollowedGamesActions({
       steamId,
       user,
@@ -191,6 +196,7 @@ export const AppProvider = ({children, navigation = null}) => {
       handleRefresh,
       handleLogout,
       handleFollowGame,
+      getResolvedFollowState,
       checkForNewGames,
       isRecentlyUpdated,
       filterAndSortGames,
@@ -206,6 +212,7 @@ export const AppProvider = ({children, navigation = null}) => {
       filteredGames,
       games,
       gamesVersion,
+      getResolvedFollowState,
       handleFollowGame,
       handleLogout,
       handleRefresh,

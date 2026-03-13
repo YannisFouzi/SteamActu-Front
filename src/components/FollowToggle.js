@@ -1,12 +1,12 @@
-import React, { useCallback, useMemo } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import React, {useCallback, useMemo} from 'react';
+import {StyleSheet, TouchableOpacity} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useAppContext } from '../context/AppContext';
-import { debugLog } from '../hooks/hooksLogger';
+import {useAppContext} from '../context/AppContext';
+import {debugLog} from '../hooks/hooksLogger';
 
 /**
- * Bouton générique de suivi/désuivi d'un jeu.
- * Centralise l'appel à handleFollowGame avec les métadonnées nécessaires.
+ * Bouton generique de suivi/desuivi d'un jeu.
+ * Centralise l'appel a handleFollowGame avec les metadonnees necessaires.
  */
 const FollowToggle = ({
   appId,
@@ -20,7 +20,12 @@ const FollowToggle = ({
   onToggle,
   testID,
 }) => {
-  const {handleFollowGame, isGameFollowed, isFollowPending} = useAppContext();
+  const {
+    handleFollowGame,
+    getResolvedFollowState,
+    isGameFollowed,
+    isFollowPending,
+  } = useAppContext();
 
   const appIdString = useMemo(() => (appId ? appId.toString() : ''), [appId]);
 
@@ -29,12 +34,16 @@ const FollowToggle = ({
       return false;
     }
 
+    if (typeof getResolvedFollowState === 'function') {
+      return getResolvedFollowState(appIdString, isFollowedProp);
+    }
+
     if (typeof isFollowedProp === 'boolean') {
       return isFollowedProp;
     }
 
     return isGameFollowed(appIdString);
-  }, [appIdString, isFollowedProp, isGameFollowed]);
+  }, [appIdString, getResolvedFollowState, isFollowedProp, isGameFollowed]);
 
   const safeName = useMemo(() => name || 'Jeu inconnu', [name]);
   const safeImageUrl = useMemo(() => imageUrl || null, [imageUrl]);
@@ -45,7 +54,11 @@ const FollowToggle = ({
 
   const handlePress = useCallback(async () => {
     if (!appIdString) {
-      debugLog('FollowToggle: appId manquant, action ignorée');
+      debugLog('FollowToggle: appId manquant, action ignoree');
+      return;
+    }
+
+    if (followPending) {
       return;
     }
 
@@ -66,6 +79,7 @@ const FollowToggle = ({
   }, [
     appIdString,
     derivedIsFollowed,
+    followPending,
     handleFollowGame,
     onToggle,
     safeImageUrl,
@@ -74,9 +88,8 @@ const FollowToggle = ({
 
   return (
     <TouchableOpacity
-      style={[styles.button, followPending && styles.buttonDisabled, style]}
+      style={[styles.button, style]}
       onPress={handlePress}
-      disabled={followPending}
       accessibilityState={{disabled: followPending}}
       testID={testID}>
       <Icon
@@ -93,9 +106,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 12,
-  },
-  buttonDisabled: {
-    opacity: 0.55,
   },
 });
 

@@ -1,4 +1,4 @@
-import {useCallback, useRef} from 'react';
+import {useCallback, useRef, useState} from 'react';
 import {showAlert, debugError, debugLog} from '../../hooks/hooksLogger';
 import {translate} from '../../i18n';
 import {userService} from '../../services/api';
@@ -15,10 +15,82 @@ export const useFollowedGamesActions = ({
   markSkipNextGamesRefresh,
 }) => {
   const followRequestsInFlightRef = useRef(new Set());
+  const [optimisticFollowStates, setOptimisticFollowStates] = useState({});
+
+  const setOptimisticFollowState = useCallback((appId, isFollowed) => {
+    if (!appId) {
+      return;
+    }
+
+    setOptimisticFollowStates(previousState => ({
+      ...previousState,
+      [String(appId)]: Boolean(isFollowed),
+    }));
+  }, []);
+
+  const clearOptimisticFollowState = useCallback(appId => {
+    if (!appId) {
+      return;
+    }
+
+    setOptimisticFollowStates(previousState => {
+      const appIdString = String(appId);
+      if (!Object.prototype.hasOwnProperty.call(previousState, appIdString)) {
+        return previousState;
+      }
+
+      const nextState = {...previousState};
+      delete nextState[appIdString];
+      return nextState;
+    });
+  }, []);
 
   const isGameFollowed = useCallback(
-    appId => !!user?.followedGames && user.followedGames.includes(appId),
-    [user],
+    appId => {
+      if (!appId) {
+        return false;
+      }
+
+      const appIdString = String(appId);
+
+      if (
+        Object.prototype.hasOwnProperty.call(
+          optimisticFollowStates,
+          appIdString,
+        )
+      ) {
+        return optimisticFollowStates[appIdString];
+      }
+
+      return !!user?.followedGames && user.followedGames.includes(appIdString);
+    },
+    [optimisticFollowStates, user],
+  );
+
+  const getResolvedFollowState = useCallback(
+    (appId, fallbackValue) => {
+      if (!appId) {
+        return typeof fallbackValue === 'boolean' ? fallbackValue : false;
+      }
+
+      const appIdString = String(appId);
+
+      if (
+        Object.prototype.hasOwnProperty.call(
+          optimisticFollowStates,
+          appIdString,
+        )
+      ) {
+        return optimisticFollowStates[appIdString];
+      }
+
+      if (Array.isArray(user?.followedGames)) {
+        return user.followedGames.includes(appIdString);
+      }
+
+      return typeof fallbackValue === 'boolean' ? fallbackValue : false;
+    },
+    [optimisticFollowStates, user],
   );
 
   const isFollowPending = useCallback(appId => {
@@ -50,7 +122,13 @@ export const useFollowedGamesActions = ({
           return false;
         }
 
+        const isFollowed =
+          typeof gameMeta.isFollowed === 'boolean'
+            ? gameMeta.isFollowed
+            : isGameFollowed(appIdString);
+
         followRequestsInFlightRef.current.add(appIdString);
+        setOptimisticFollowState(appIdString, !isFollowed);
 
         debugLog('=== Debut handleFollowGame ===');
         debugLog('AppID recu:', appIdString);
@@ -61,11 +139,6 @@ export const useFollowedGamesActions = ({
             : 'non fourni',
         );
         debugLog('Nombre total de jeux:', games.length);
-
-        const isFollowed =
-          typeof gameMeta.isFollowed === 'boolean'
-            ? gameMeta.isFollowed
-            : isGameFollowed(appIdString);
 
         const game = games.find(g => getGameAppId(g) === appIdString);
 
@@ -138,6 +211,8 @@ export const useFollowedGamesActions = ({
                 };
               });
             }
+
+            clearOptimisticFollowState(appIdString);
           } else {
             const unfollowResponse = await userService.unfollowGame(
               steamId,
@@ -169,6 +244,8 @@ export const useFollowedGamesActions = ({
                 };
               });
             }
+
+            clearOptimisticFollowState(appIdString);
           }
 
           if (typeof markSkipNextGamesRefresh === 'function') {
@@ -189,6 +266,8 @@ export const useFollowedGamesActions = ({
             await persistGamesCache(previousGames, steamId);
           }
 
+          clearOptimisticFollowState(appIdString);
+
           showAlert(
             translate('common.error'),
             translate('games.followUpdateError'),
@@ -197,6 +276,10 @@ export const useFollowedGamesActions = ({
         }
       } catch (error) {
         debugError('Erreur lors de la modification du suivi:', error);
+        const failedAppId = gameMeta?.appId ?? gameMeta?.appid;
+        if (failedAppId) {
+          clearOptimisticFollowState(failedAppId);
+        }
         showAlert(
           translate('common.error'),
           translate('games.followUpdateUnexpectedError'),
@@ -211,10 +294,12 @@ export const useFollowedGamesActions = ({
     },
     [
       games,
+      clearOptimisticFollowState,
       isGameFollowed,
       markSkipNextGamesRefresh,
       persistGamesCache,
       persistGamesVersion,
+      setOptimisticFollowState,
       setGames,
       setUser,
       steamId,
@@ -223,6 +308,7 @@ export const useFollowedGamesActions = ({
 
   return {
     handleFollowGame,
+    getResolvedFollowState,
     isGameFollowed,
     isFollowPending,
   };
