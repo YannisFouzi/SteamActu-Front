@@ -20,7 +20,7 @@ const FollowToggle = ({
   onToggle,
   testID,
 }) => {
-  const {handleFollowGame, isGameFollowed} = useAppContext();
+  const {handleFollowGame, isGameFollowed, isFollowPending} = useAppContext();
 
   const appIdString = useMemo(() => (appId ? appId.toString() : ''), [appId]);
 
@@ -38,6 +38,10 @@ const FollowToggle = ({
 
   const safeName = useMemo(() => name || 'Jeu inconnu', [name]);
   const safeImageUrl = useMemo(() => imageUrl || null, [imageUrl]);
+  const followPending = useMemo(
+    () => (appIdString ? isFollowPending?.(appIdString) : false),
+    [appIdString, isFollowPending],
+  );
 
   const handlePress = useCallback(async () => {
     if (!appIdString) {
@@ -70,8 +74,10 @@ const FollowToggle = ({
 
   return (
     <TouchableOpacity
-      style={[styles.button, style]}
+      style={[styles.button, followPending && styles.buttonDisabled, style]}
       onPress={handlePress}
+      disabled={followPending}
+      accessibilityState={{disabled: followPending}}
       testID={testID}>
       <Icon
         name={derivedIsFollowed ? 'notifications' : 'notifications-outline'}
@@ -87,6 +93,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 12,
+  },
+  buttonDisabled: {
+    opacity: 0.55,
   },
 });
 
