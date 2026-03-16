@@ -13,7 +13,11 @@ import {
   IOS_CATEGORY_ID,
   NOTIFICATION_CHANNEL_ID,
 } from './constants';
-import {canDisplayUnfollowAction, logCriticalNotificationError} from './helpers';
+import {
+  canDisplayUnfollowAction,
+  logCriticalNotificationError,
+  logNotificationWarning,
+} from './helpers';
 import {
   getAndroidChannelLanguage,
   getIosCategoriesLanguage,
@@ -210,18 +214,31 @@ async function buildNotificationMediaOptions(payload) {
   if (payload?.type !== 'news') {
     return {
       hasMedia: false,
-      imageRequired: false,
+      imageStatus: 'not_applicable',
       android: {},
       ios: {},
     };
   }
 
-  const validatedImageUrl = await validateNotificationImageUrl(payload.imageUrl);
+  const requestedImageUrl = payload.imageUrl?.trim();
+
+  if (!requestedImageUrl) {
+    return {
+      hasMedia: false,
+      imageStatus: 'missing',
+      imageUrl: null,
+      android: {},
+      ios: {},
+    };
+  }
+
+  const validatedImageUrl = await validateNotificationImageUrl(requestedImageUrl);
 
   if (!validatedImageUrl) {
     return {
       hasMedia: false,
-      imageRequired: true,
+      imageStatus: 'invalid',
+      imageUrl: requestedImageUrl,
       android: {},
       ios: {},
     };
@@ -229,7 +246,8 @@ async function buildNotificationMediaOptions(payload) {
 
   return {
     hasMedia: true,
-    imageRequired: true,
+    imageStatus: 'valid',
+    imageUrl: validatedImageUrl,
     android: {
       largeIcon: validatedImageUrl,
       style: {
@@ -259,35 +277,32 @@ export async function displayNotificationPayload(payload) {
     const baseNotification = buildBaseNotification(payload);
     const mediaOptions = await buildNotificationMediaOptions(payload);
 
-    if (mediaOptions.imageRequired && !mediaOptions.hasMedia) {
-      logCriticalNotificationError(
-        '[FCM] Notification news ignoree car image requise indisponible',
-        null,
+    if (payload.type === 'news' && mediaOptions.imageStatus === 'invalid') {
+      logNotificationWarning(
+        '[FCM] Notification news affichee sans image: image invalide',
         {
           notificationId: payload.id,
           appId: payload.data?.appId || null,
-          imageUrl: payload.imageUrl || null,
+          imageUrl: mediaOptions.imageUrl,
         },
       );
-      return;
     }
 
-    if (!mediaOptions.hasMedia) {
-      await notifee.displayNotification(baseNotification);
-      return;
-    }
-
-    await notifee.displayNotification({
-      ...baseNotification,
-      android: {
-        ...baseNotification.android,
-        ...mediaOptions.android,
-      },
-      ios: {
-        ...baseNotification.ios,
-        ...mediaOptions.ios,
-      },
-    });
+    await notifee.displayNotification(
+      mediaOptions.hasMedia
+        ? {
+            ...baseNotification,
+            android: {
+              ...baseNotification.android,
+              ...mediaOptions.android,
+            },
+            ios: {
+              ...baseNotification.ios,
+              ...mediaOptions.ios,
+            },
+          }
+        : baseNotification,
+    );
   } catch (error) {
     logCriticalNotificationError(
       "[FCM] Erreur lors de l'affichage de la notification",

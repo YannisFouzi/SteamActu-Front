@@ -10,6 +10,10 @@ export const logCriticalNotificationError = (message, error, extra = {}) => {
   });
 };
 
+export const logNotificationWarning = (message, extra = {}) => {
+  console.warn(message, extra);
+};
+
 export const isValidAppId = appId =>
   Boolean(appId && String(appId).trim() !== '' && !isNaN(parseInt(appId, 10)));
 
