@@ -42,7 +42,6 @@ export const AppProvider = ({children, navigation = null}) => {
   const [wishlistVersion, setWishlistVersion] = useState(null);
 
   const onLogoutRef = useRef(null);
-  const handleFollowGameRef = useRef(null);
 
   const {
     authStatus,
@@ -91,6 +90,7 @@ export const AppProvider = ({children, navigation = null}) => {
   } = useGamesFiltering(games);
 
   const {
+    applyNotificationUnfollowCommit,
     handleFollowGame,
     getResolvedFollowState,
     isGameFollowed,
@@ -106,8 +106,6 @@ export const AppProvider = ({children, navigation = null}) => {
       persistGamesVersion,
       markSkipNextGamesRefresh,
     });
-
-  handleFollowGameRef.current = handleFollowGame;
 
   const handleLogout = useCallback(async () => {
     try {
@@ -178,8 +176,8 @@ export const AppProvider = ({children, navigation = null}) => {
 
   useAppNotificationsBridge({
     steamId,
-    handleFollowGameRef,
     notifyNotificationSync,
+    onNotificationUnfollowCommitted: applyNotificationUnfollowCommit,
   });
 
   useAppLifecycleRefresh({

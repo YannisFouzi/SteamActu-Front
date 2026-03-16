@@ -101,6 +101,78 @@ export const useFollowedGamesActions = ({
     return followRequestsInFlightRef.current.has(String(appId));
   }, []);
 
+  const applyNotificationUnfollowCommit = useCallback(
+    async ({appId, followedGames = null, gamesVersion = null} = {}) => {
+      if (!appId) {
+        return;
+      }
+
+      const appIdString = String(appId);
+      let nextGames = null;
+
+      clearOptimisticFollowState(appIdString);
+
+      setGames(currentGames => {
+        if (!Array.isArray(currentGames) || currentGames.length === 0) {
+          return currentGames;
+        }
+
+        nextGames = currentGames.map(game => {
+          if (getGameAppId(game) !== appIdString) {
+            return game;
+          }
+
+          return {
+            ...game,
+            isFollowed: false,
+          };
+        });
+
+        return nextGames;
+      });
+
+      if (Array.isArray(nextGames)) {
+        await persistGamesCache(nextGames, steamId);
+      }
+
+      if (gamesVersion) {
+        await persistGamesVersion(gamesVersion, steamId, {
+          reason: 'notificationUnfollow',
+        });
+      }
+
+      setUser(prevUser => {
+        if (!prevUser) {
+          return prevUser;
+        }
+
+        const nextFollowedGames = Array.isArray(followedGames)
+          ? followedGames.map(id => String(id))
+          : Array.isArray(prevUser.followedGames)
+            ? prevUser.followedGames.filter(id => String(id) !== appIdString)
+            : [];
+
+        return {
+          ...prevUser,
+          followedGames: nextFollowedGames,
+        };
+      });
+
+      if (typeof markSkipNextGamesRefresh === 'function') {
+        markSkipNextGamesRefresh();
+      }
+    },
+    [
+      clearOptimisticFollowState,
+      markSkipNextGamesRefresh,
+      persistGamesCache,
+      persistGamesVersion,
+      setGames,
+      setUser,
+      steamId,
+    ],
+  );
+
   const handleFollowGame = useCallback(
     async (gameMeta = {}) => {
       try {
@@ -307,6 +379,7 @@ export const useFollowedGamesActions = ({
   );
 
   return {
+    applyNotificationUnfollowCommit,
     handleFollowGame,
     getResolvedFollowState,
     isGameFollowed,

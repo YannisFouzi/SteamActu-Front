@@ -5,13 +5,14 @@ import {
   registerFCMToken,
   setupNotificationHandlers,
 } from '../../services/notificationService';
+import {consumeNotificationActionsForSteamId} from '../../services/notifications/actionJournal';
 
 const NOTIFICATION_REGISTRATION_DELAY_MS = 1500;
 
 export const useAppNotificationsBridge = ({
   steamId,
-  handleFollowGameRef,
   notifyNotificationSync,
+  onNotificationUnfollowCommitted,
 }) => {
   useEffect(() => {
     let cleanupNotifications;
@@ -64,33 +65,47 @@ export const useAppNotificationsBridge = ({
 
     if (steamId) {
       debugLog('[FCM] Configuration des notifications pour:', steamId);
-      cleanupNotifications = setupNotificationHandlers(steamId, {
-        onUnfollowGame: async appId => {
-          if (!appId) {
-            return false;
+
+      consumeNotificationActionsForSteamId(steamId)
+        .then(async actions => {
+          if (canceled || !Array.isArray(actions) || actions.length === 0) {
+            return;
           }
 
-          const handler = handleFollowGameRef?.current;
-          if (!handler) {
-            return false;
-          }
+          for (const action of actions) {
+            if (action?.kind !== 'unfollow' || !action?.appId) {
+              continue;
+            }
 
-          debugLog(
-            '[FCM] Action "Ne plus suivre" recue depuis la notification',
-            appId,
+            try {
+              if (typeof onNotificationUnfollowCommitted === 'function') {
+                await onNotificationUnfollowCommitted({
+                  appId: action.appId,
+                  followedGames: action.followedGames,
+                  gamesVersion: action.gamesVersion,
+                });
+              }
+
+              notifyNotificationSync('news', action.appId);
+              notifyNotificationSync('wishlist', action.appId);
+              notifyNotificationSync('followed', action.appId);
+            } catch (syncError) {
+              debugError(
+                '[FCM] Erreur lors de la consommation des actions de notification:',
+                syncError,
+              );
+            }
+          }
+        })
+        .catch(error => {
+          debugError(
+            '[FCM] Erreur lecture journal d actions notification:',
+            error,
           );
+        });
 
-          try {
-            const result = await handler({appId, isFollowed: true});
-            return result !== false;
-          } catch (error) {
-            debugError(
-              '[FCM] Erreur lors du traitement "Ne plus suivre" depuis la notification:',
-              error,
-            );
-            return false;
-          }
-        },
+      cleanupNotifications = setupNotificationHandlers(steamId, {
+        onNotificationUnfollowCommitted,
         onNewsUnfollow: appId => notifyNotificationSync('news', appId),
         onWishlistUnfollow: appId => notifyNotificationSync('wishlist', appId),
         onFollowedGamesTabUnfollow: appId =>
@@ -98,6 +113,7 @@ export const useAppNotificationsBridge = ({
         onFollowPromptConfirm: appId =>
           notifyNotificationSync('followed', appId),
       });
+
       registrationTimeout = setTimeout(() => {
         if (!canceled) {
           initializeNotifications();
@@ -115,5 +131,5 @@ export const useAppNotificationsBridge = ({
         cleanupNotifications();
       }
     };
-  }, [handleFollowGameRef, notifyNotificationSync, steamId]);
+  }, [notifyNotificationSync, onNotificationUnfollowCommitted, steamId]);
 };

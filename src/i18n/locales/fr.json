@@ -97,6 +97,8 @@
     "disabledTitle": "Notifications desactivees",
     "followUnavailableMessage": "Impossible d'ajouter ce jeu aux suivis pour le moment. Reessayez plus tard.",
     "followUnavailableTitle": "Suivi impossible",
+    "unfollowUnavailableMessage": "Impossible de retirer ce jeu des suivis pour le moment. Reessayez plus tard.",
+    "unfollowUnavailableTitle": "Desuivi impossible",
     "unfollowAction": "Ne plus suivre ce jeu"
   },
   "news": {
