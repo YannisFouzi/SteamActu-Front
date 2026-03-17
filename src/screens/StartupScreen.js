@@ -9,7 +9,7 @@ const StartupScreen = () => {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../assets/steam-logo.webp')}
+        source={require('../assets/steam-logov2.png')}
         style={styles.logo}
         resizeMode="contain"
       />
