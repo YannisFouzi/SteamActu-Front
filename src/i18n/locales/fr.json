@@ -1,23 +1,26 @@
 {
   "common": {
-    "about": "A propos",
+    "about": "À propos",
+    "appName": "Steam Actu",
     "cancel": "Annuler",
     "contact": "Contact",
     "delete": "Supprimer",
-    "disabled": "Desactive",
+    "disabled": "Désactivé",
     "english": "Anglais",
     "error": "Erreur",
-    "french": "Francais",
+    "french": "Français",
     "gameWithId": "Jeu {{appId}}",
     "language": "Langue",
-    "legal": "Legal",
+    "autoFollow": "Suivi automatique",
+    "information": "Informations",
+    "legal": "Légal",
     "loading": "Chargement...",
     "notifications": "Notifications",
     "ok": "OK",
-    "openSettings": "Ouvrir les parametres",
-    "retry": "Reessayer",
+    "openSettings": "Ouvrir les paramètres",
+    "retry": "Réessayer",
     "searchPlaceholder": "Rechercher...",
-    "settings": "Parametres",
+    "settings": "Paramètres",
     "unknownGame": "Jeu inconnu",
     "unavailableLink": "Lien indisponible"
   },
@@ -29,133 +32,142 @@
     "followedGames": "Jeux suivis",
     "myGames": "Mes jeux",
     "news": "Actu",
-    "privacyPolicy": "Politique de confidentialite",
+    "privacyPolicy": "Politique de confidentialité",
     "search": "Rechercher",
-    "settings": "Parametres",
+    "settings": "Paramètres",
     "termsOfService": "Conditions d'utilisation",
     "wishlist": "Wishlist"
   },
   "auth": {
-    "connectivityErrorMessage": "Impossible de se connecter. Verifiez que le serveur est accessible.",
-    "launchErrorMessage": "Impossible de lancer la connexion Steam. Veuillez reessayer.",
-    "loggingIn": "Connexion a Steam...",
-    "loginCancelledMessage": "La fenetre de connexion Steam a ete fermee avant la fin du processus.",
-    "loginCancelledTitle": "Connexion annulee",
-    "loginButtonHint": "Ouvre l'authentification Steam dans le navigateur securise.",
-    "loginFeature1": "Uniquement les news des jeux que vous suivez",
+    "connectivityErrorMessage": "Impossible de se connecter. Vérifiez que le serveur est accessible.",
+    "launchErrorMessage": "Impossible de lancer la connexion Steam. Veuillez réessayer.",
+    "loggingIn": "Connexion à Steam...",
+    "loginCancelledMessage": "La fenêtre de connexion Steam a été fermée avant la fin du processus.",
+    "loginCancelledTitle": "Connexion annulée",
+    "loginButtonHint": "Ouvre l'authentification Steam dans le navigateur sécurisé.",
+    "loginFeature1": "Uniquement les actualités des jeux que vous suivez",
     "loginFeature2": "Notifications push personnalisables",
-    "loginFeature3": "Bibliotheque et wishlist synchronisees",
-    "loginSecurityNote": "Connexion securisee via Steam OpenID",
+    "loginFeature3": "Bibliothèque et wishlist synchronisées",
+    "loginSecurityNote": "Connexion sécurisée via Steam OpenID",
     "loginPendingMessage": "Finalisation de la connexion en cours, veuillez patienter...",
     "loginPendingTitle": "Connexion en cours",
-    "loginExpiredMessage": "La tentative de connexion a expire. Veuillez recommencer.",
-    "loginExpiredTitle": "Tentative expiree",
-    "loginSubtitle": "Restez informe des dernieres actualites de vos jeux Steam",
-    "loginTitle": "Ne ratez plus aucune news\nde vos jeux Steam",
+    "loginExpiredMessage": "La tentative de connexion a expiré. Veuillez recommencer.",
+    "loginExpiredTitle": "Tentative expirée",
+    "loginSubtitle": "Restez informé des dernières actualités de vos jeux Steam",
+    "loginTitle": "Ne ratez plus aucune actualité\nde vos jeux Steam",
     "loginWithSteam": "Se connecter avec Steam",
-    "logout": "Se deconnecter",
-    "logoutErrorMessage": "Une erreur est survenue lors de la deconnexion. Veuillez reessayer.",
-    "logoutErrorTitle": "Erreur de deconnexion",
-    "logoutSuccessMessage": "Vous avez ete deconnecte avec succes.",
-    "logoutSuccessTitle": "Deconnexion reussie",
-    "steamIdMissingMessage": "Impossible de recuperer votre identifiant Steam. Veuillez reessayer.",
+    "logout": "Se déconnecter",
+    "logoutConfirmTitle": "Se déconnecter",
+    "logoutConfirmMessage": "Êtes-vous sûr de vouloir vous déconnecter ?",
+    "logoutErrorMessage": "Une erreur est survenue lors de la déconnexion. Veuillez réessayer.",
+    "logoutErrorTitle": "Erreur de déconnexion",
+    "logoutSuccessMessage": "Vous avez été déconnecté avec succès.",
+    "logoutSuccessTitle": "Déconnexion réussie",
+    "steamIdMissingMessage": "Impossible de récupérer votre identifiant Steam. Veuillez réessayer.",
     "steamIdMissingTitle": "Erreur d'authentification"
   },
   "settings": {
-    "aboutBody": "Cette application vous permet de recevoir des notifications pour les actualites des jeux Steam que vous suivez.",
+    "aboutBody": "Cette application vous permet de recevoir des notifications pour les actualités des jeux Steam que vous suivez.",
     "aboutVersion": "Steam Notifications v1.0.0",
     "contactShortcut": "Mes infos de contact",
     "deleteAccount": "Supprimer mon compte",
-    "deleteAccountConfirmMessage": "Etes-vous sur de vouloir supprimer votre compte ? Cette action est irreversible. Toutes vos donnees seront definitivement supprimees.",
+    "deleteAccountConfirmMessage": "Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible. Toutes vos données seront définitivement supprimées.",
     "deleteAccountConfirmTitle": "Supprimer mon compte",
-    "deleteAccountError": "Une erreur est survenue lors de la suppression de votre compte. Veuillez reessayer.",
+    "deleteAccountError": "Une erreur est survenue lors de la suppression de votre compte. Veuillez réessayer.",
     "deleting": "Suppression...",
-    "deleteWarning": "Cette action est irreversible",
-    "languageDescription": "Choisissez la langue de l'interface, des news Steam demandees et des notifications.",
+    "deleteWarning": "Cette action est irréversible",
+    "languageDescription": "Choisissez la langue de l'interface, des actualités Steam demandées et des notifications.",
     "languageLabel": "Langue de l'application",
-    "languageSaveError": "Impossible de mettre a jour la langue pour le moment. Veuillez reessayer.",
-    "libraryDescription": "Choisissez comment gerer le suivi des jeux detectes dans votre bibliotheque.",
-    "libraryLabel": "Jeux achetes",
-    "newsNotificationsDescription": "Activez ce reglage pour recevoir une notification lorsqu'une nouvelle news est publiee sur vos jeux suivis.",
-    "newsNotificationsLabel": "Notifications d'actualites",
+    "languageSaveError": "Impossible de mettre à jour la langue pour le moment. Veuillez réessayer.",
+    "autoFollowDescription": "Choisissez comment gérer le suivi des jeux détectés dans votre bibliothèque et votre wishlist.",
+    "libraryDescription": "Choisissez comment gérer le suivi des jeux détectés dans votre bibliothèque.",
+    "libraryLabel": "Jeux achetés",
+    "newsNotificationsDescription": "Activez ce réglage pour recevoir une notification lorsqu'une nouvelle actualité est publiée sur vos jeux suivis.",
+    "newsNotificationsLabel": "Notifications d'actualités",
     "reviewTutorial": "Revoir le tutoriel",
-    "tutorialSummary": "Des que vos reglages vous conviennent, appuyez sur \"Terminer\" pour profiter pleinement des notifications et du suivi automatise.",
+    "tutorialSummary": "Dès que vos réglages vous conviennent, appuyez sur \"Terminer\" pour profiter pleinement des notifications et du suivi automatisé.",
     "tutorialFinish": "Terminer le tutoriel",
-    "wishlistDescription": "Decidez si les jeux ajoutes a votre wishlist doivent etre suivis automatiquement.",
-    "wishlistLabel": "Jeux wishlistes"
+    "wishlistDescription": "Décidez si les jeux ajoutés à votre wishlist doivent être suivis automatiquement.",
+    "wishlistLabel": "Jeux wishlistés"
   },
   "followModes": {
-    "autoSubtitleLibrary": "Chaque jeu achete est ajoute directement a vos jeux suivis.",
-    "autoSubtitleWishlist": "Chaque jeu ajoute a votre wishlist est suivi automatiquement.",
+    "autoSubtitleLibrary": "Chaque jeu acheté est ajouté directement à vos jeux suivis.",
+    "autoSubtitleWishlist": "Chaque jeu ajouté à votre wishlist est suivi automatiquement.",
     "autoTitle": "Ajout automatique",
-    "offSubtitleLibrary": "Les jeux achetes ne seront pas ajoutes aux suivis.",
-    "offSubtitleWishlist": "Les jeux wishlistes ne seront pas ajoutes aux suivis.",
-    "offTitle": "Desactive",
-    "promptSubtitleLibrary": "Recevez une notification pour confirmer le suivi de chaque jeu achete.",
-    "promptSubtitleWishlist": "Une notification vous demande de confirmer le suivi de chaque jeu wishliste.",
-    "promptTitle": "Demander confirmation"
+    "offSubtitleLibrary": "Les jeux achetés ne seront pas ajoutés aux suivis.",
+    "offSubtitleWishlist": "Les jeux wishlistés ne seront pas ajoutés aux suivis.",
+    "offTitle": "Désactivé",
+    "promptSubtitleLibrary": "Recevez une notification pour confirmer le suivi de chaque jeu acheté.",
+    "promptSubtitleWishlist": "Une notification vous demande de confirmer le suivi de chaque jeu wishlisté.",
+    "promptTitle": "Notif. de confirmation"
   },
   "notifications": {
-    "blockedMessage": "Android bloque les notifications pour Steam Actu. Activez-les dans les parametres.",
-    "blockedTitle": "Notifications bloquees",
-    "channelDescription": "Notifications push pour les actualites des jeux suivis",
-    "channelName": "Actualites Steam",
-    "disabledMessage": "Impossible d'activer les notifications pour le moment. Veuillez reessayer plus tard.",
-    "disabledTitle": "Notifications desactivees",
-    "followUnavailableMessage": "Impossible d'ajouter ce jeu aux suivis pour le moment. Reessayez plus tard.",
+    "blockedMessage": "Android bloque les notifications pour Steam Actu. Activez-les dans les paramètres.",
+    "blockedTitle": "Notifications bloquées",
+    "channelDescription": "Notifications push pour les actualités des jeux suivis",
+    "channelName": "Actualités Steam",
+    "disabledMessage": "Impossible d'activer les notifications pour le moment. Veuillez réessayer plus tard.",
+    "disabledTitle": "Notifications désactivées",
+    "followUnavailableMessage": "Impossible d'ajouter ce jeu aux suivis pour le moment. Réessayez plus tard.",
     "followUnavailableTitle": "Suivi impossible",
-    "unfollowUnavailableMessage": "Impossible de retirer ce jeu des suivis pour le moment. Reessayez plus tard.",
-    "unfollowUnavailableTitle": "Desuivi impossible",
+    "unfollowUnavailableMessage": "Impossible de retirer ce jeu des suivis pour le moment. Réessayez plus tard.",
+    "unfollowUnavailableTitle": "Désuivi impossible",
     "unfollowAction": "Ne plus suivre ce jeu"
   },
   "news": {
     "favoritesOnly": "Afficher uniquement les favoris",
-    "loadGameNewsError": "Impossible de charger les actualites du jeu. Veuillez reessayer.",
-    "loadingFeed": "Chargement du fil d'actualites...",
-    "loginForNewsSubtext": "Allez dans les parametres pour vous connecter a votre compte Steam.",
-    "loginForNewsText": "Identifiez-vous pour retrouver les actualites de vos jeux suivis.",
+    "loadGameNewsError": "Impossible de charger les actualités du jeu. Veuillez réessayer.",
+    "loadingFeed": "Chargement du fil d'actualités...",
+    "loginForNewsSubtext": "Allez dans les paramètres pour vous connecter à votre compte Steam.",
+    "loginForNewsText": "Identifiez-vous pour retrouver les actualités de vos jeux suivis.",
     "loginForNewsTitle": "Connectez-vous pour vos actus",
-    "noLinkMessage": "Aucun lien n'est disponible pour cette actualite.",
+    "noLinkMessage": "Aucun lien n'est disponible pour cette actualité.",
     "noLinkTitle": "Information",
-    "noRecentNewsText": "Vos jeux suivis n'ont pas publie de nouvelles actualites. Revenez plus tard ou suivez d'autres jeux pour elargir le flux.",
-    "noRecentNewsTitle": "Aucune actualite recente",
+    "noRecentNewsText": "Vos jeux suivis n'ont pas publié de nouvelles actualités. Revenez plus tard ou suivez d'autres jeux pour élargir le flux.",
+    "noRecentNewsTitle": "Aucune actualité récente",
     "openLinkError": "Impossible d'ouvrir le lien sur Steam."
   },
   "games": {
     "followedEmptySubtext": "Vous pouvez ajouter un suivi depuis une fiche jeu ou les actus.",
     "followedEmptyText": "Activez la cloche sur vos jeux pour recevoir les notifications ici.",
     "followedEmptyTitle": "Aucun jeu suivi",
-    "followUpdateError": "Impossible de modifier le suivi du jeu. Veuillez reessayer.",
-    "followUpdateUnexpectedError": "Une erreur inattendue est survenue. Veuillez reessayer.",
+    "followUpdateError": "Impossible de modifier le suivi du jeu. Veuillez réessayer.",
+    "followUpdateUnexpectedError": "Une erreur inattendue est survenue. Veuillez réessayer.",
     "loadingGames": "Chargement des jeux...",
-    "newGamesDetectedMessage_one": "{{count}} nouveau jeu a ete ajoute a votre bibliotheque.",
-    "newGamesDetectedMessage_other": "{{count}} nouveaux jeux ont ete ajoutes a votre bibliotheque.",
-    "newGamesDetectedTitle": "Nouveaux jeux detectes",
-    "recents": "Recents",
-    "recentsPlus": "Recents ++",
-    "recentTwoWeeks": "Lances 2 semaines",
-    "wishlistAccessDenied": "Acces a la wishlist refuse (profil prive).",
+    "newGamesDetectedMessage_one": "{{count}} nouveau jeu a été ajouté à votre bibliothèque.",
+    "newGamesDetectedMessage_other": "{{count}} nouveaux jeux ont été ajoutés à votre bibliothèque.",
+    "newGamesDetectedTitle": "Nouveaux jeux détectés",
+    "recents": "Récents",
+    "recentsPlus": "Récents+",
+    "recentTwoWeeks": "2 dernières semaines",
+    "recentsPlusEmptyTitle": "Aucun jeu récent",
+    "recentsPlusEmptyText": "Aucun jeu lancé récemment selon les données synchronisées.",
+    "lastTwoWeeksEmptyTitle": "Aucun jeu sur 2 semaines",
+    "lastTwoWeeksEmptyText": "Aucun jeu n'a été lancé dans les 14 derniers jours.",
+    "libraryEmptyTitle": "Aucun jeu disponible",
+    "libraryEmptyText": "Aucun jeu de votre bibliothèque n'a été importé pour le moment.",
+    "wishlistAccessDenied": "Accès à la wishlist refusé (profil privé).",
     "searchMyGamesPlaceholder": "Rechercher dans mes jeux...",
     "searchSteamPlaceholder": "Rechercher un jeu Steam...",
     "searchWishlistPlaceholder": "Rechercher dans ma wishlist...",
     "sortAZ": "A-Z",
-    "topPlayed": "Plus joues",
-    "wishlistEmptyText": "Ajoutez les jeux qui vous interessent pour les suivre ici.",
+    "topPlayed": "Plus joués",
+    "wishlistEmptyText": "Ajoutez les jeux qui vous intéressent pour les suivre ici.",
     "wishlistEmptyTitle": "Wishlist vide",
     "wishlistLoadError": "Erreur lors du chargement de la wishlist.",
     "wishlistLoading": "Chargement de la wishlist...",
-    "wishlistNotFoundOrPrivate": "Wishlist introuvable ou privee.",
+    "wishlistNotFoundOrPrivate": "Wishlist introuvable ou privée.",
     "wishlistProfilePublicHint": "Impossible de charger votre wishlist. Assurez-vous que votre profil Steam est public."
   },
   "search": {
-    "hint": "Tapez au moins 2 caracteres pour commencer",
+    "hint": "Tapez au moins 2 caractères pour commencer",
     "loading": "Recherche en cours...",
     "placeholderFollowed": "Rechercher dans les jeux suivis...",
     "title": "Rechercher un jeu"
   },
   "emptyStates": {
-    "noResultsText": "Essayez avec d'autres mots-cles",
-    "noResultsTitle": "Aucun resultat"
+    "noResultsText": "Essayez avec d'autres mots-clés",
+    "noResultsTitle": "Aucun résultat"
   },
   "contact": {
     "directTitle": "Contact direct",
@@ -165,41 +177,133 @@
     "website": "Site web"
   },
   "legal": {
-    "frenchOnlyNotice": "Ce contenu legal est actuellement disponible en francais uniquement.",
-    "lastUpdated": "Derniere mise a jour : {{date}}",
-    "privacyTitle": "Politique de confidentialite",
-    "termsTitle": "Conditions d'utilisation"
+    "frenchOnlyNotice": "Ce contenu légal est actuellement disponible en français uniquement.",
+    "lastUpdated": "Dernière mise à jour : {{date}}",
+    "privacyTitle": "Politique de confidentialité",
+    "termsTitle": "Conditions d'utilisation",
+    "documents": {
+      "terms": {
+        "updatedAt": "2025-11-11T12:00:00.000Z",
+        "sections": [
+          {
+            "title": "1. Acceptation des conditions",
+            "content": "En accédant à l'application Steam Notifications, vous acceptez l'intégralité des présentes Conditions d'utilisation. Si vous refusez une quelconque disposition, veuillez cesser d'utiliser l'application et supprimer votre compte depuis l'écran Paramètres."
+          },
+          {
+            "title": "2. Description du service",
+            "content": "Steam Notifications agrège et vous diffuse des actualités provenant de l'écosystème Steam pour les jeux que vous suivez. Le service est proposé à titre informatif et peut évoluer ou être interrompu à tout moment."
+          },
+          {
+            "title": "3. Utilisation de l'application",
+            "content": "Vous vous engagez à ne pas détourner l'application de sa finalité, à ne pas tenter d'en compromettre la sécurité et à ne pas collecter ou exploiter les données d'autres utilisateurs. Toute utilisation abusive pourra conduire à une suspension ou une suppression d'accès."
+          },
+          {
+            "title": "4. Comptes et authentification Steam",
+            "content": "La connexion repose sur votre compte Steam. Vous êtes responsable de la confidentialité de vos identifiants Steam et des actions effectuées via votre compte au sein de l'application."
+          },
+          {
+            "title": "5. Notifications et contenu",
+            "content": "Les notifications sont générées à partir de sources publiques ou de flux officiels liés à Steam. Leur exactitude ou disponibilité n'est pas garantie. Steam Notifications ne saurait être tenue responsable des contenus publiés par des tiers."
+          },
+          {
+            "title": "6. Disponibilité du service",
+            "content": "Nous nous efforçons d'assurer une disponibilité continue de l'application, sans garantie. Des interruptions temporaires peuvent survenir pour maintenance, mise à jour ou cas de force majeure."
+          },
+          {
+            "title": "7. Propriété intellectuelle",
+            "content": "L'ensemble des éléments graphiques, textes, logos et fonctionnalités propres à Steam Notifications demeurent la propriété de leur auteur. Steam et les éléments associés sont la propriété de Valve Corporation."
+          },
+          {
+            "title": "8. Limitation de responsabilité",
+            "content": "Steam Notifications est fournie \"telle quelle\". Nous ne saurions être tenus responsables des dommages directs ou indirects résultant de l'utilisation ou de l'impossibilité d'utiliser l'application."
+          },
+          {
+            "title": "9. Modifications des conditions",
+            "content": "Les présentes Conditions d'utilisation peuvent être modifiées à tout moment. La version la plus récente est toujours disponible dans l'application. L'utilisation continue de l'application vaut acceptation des nouvelles conditions."
+          },
+          {
+            "title": "10. Contact",
+            "content": "Pour toute question relative à ces Conditions d'utilisation, vous pouvez écrire à l'adresse suivante : contact@fouzi-dev.fr."
+          }
+        ]
+      },
+      "privacy": {
+        "updatedAt": "2025-11-11T12:00:00.000Z",
+        "sections": [
+          {
+            "title": "1. Données collectées",
+            "content": "Nous stockons uniquement les informations nécessaires au fonctionnement de Steam Notifications : votre identifiant Steam, votre bibliothèque synchronisée (liste des jeux avec leurs temps de jeu), l'historique des jeux récemment actifs, votre wishlist, les paramètres de notification que vous définissez dans l'application (activation, auto-follow, token de notification pour l'envoi push) ainsi que des journaux techniques indispensables à la stabilité du service."
+          },
+          {
+            "title": "2. Utilisation des données",
+            "content": "Ces données servent à synchroniser vos jeux, gérer vos suivis, envoyer des notifications pertinentes et améliorer les performances de l'application. Elles ne sont jamais vendues ni utilisées à des fins publicitaires."
+          },
+          {
+            "title": "3. Stockage et conservation",
+            "content": "Les informations sont stockées de manière sécurisée sur nos serveurs. Elles sont conservées tant que votre compte reste actif. Vous pouvez supprimer votre compte directement depuis l'application pour effacer vos données."
+          },
+          {
+            "title": "4. Partage avec des tiers",
+            "content": "Aucun partage commercial n'est effectué. Nous pouvons faire transiter certaines données via les APIs officielles de Steam pour assurer le service. Ces échanges respectent les politiques de Valve Corporation."
+          },
+          {
+            "title": "5. Vos droits",
+            "content": "Conformément à la réglementation en vigueur, vous disposez d'un droit d'accès, de rectification, d'opposition et de suppression de vos données personnelles. Contactez contact@fouzi-dev.fr pour exercer ces droits."
+          },
+          {
+            "title": "6. Sécurité",
+            "content": "Des mesures techniques et organisationnelles sont mises en place pour protéger vos données contre tout accès non autorisé, perte ou divulgation. Malgré nos efforts, aucun système n'est totalement invulnérable."
+          },
+          {
+            "title": "7. Cookies et technologies similaires",
+            "content": "Steam Notifications n'utilise ni cookies, ni outils de suivi publicitaires. L'application conserve uniquement un cache technique local (sur votre appareil) pour accélérer l'affichage de vos données."
+          },
+          {
+            "title": "8. Modifications de la politique",
+            "content": "La présente Politique de confidentialité peut évoluer. Toute mise à jour sera publiée dans cette section de l'application. En continuant d'utiliser le service, vous acceptez ces modifications."
+          },
+          {
+            "title": "9. Contact",
+            "content": "Pour toute question relative à la protection de vos données, écrivez à contact@fouzi-dev.fr. Nous faisons de notre mieux pour vous répondre rapidement."
+          }
+        ]
+      }
+    }
   },
   "dates": {
     "fallbackNever": "Jamais",
-    "fallbackNow": "A l'instant"
+    "fallbackNow": "À l'instant"
   },
   "errors": {
-    "connectionDataMessage": "Impossible de recuperer vos donnees. Veuillez verifier votre connexion et reessayer.",
-    "connectionGamesMessage": "Impossible de recuperer vos jeux. Veuillez verifier votre connexion et reessayer.",
+    "connectionDataMessage": "Impossible de récupérer vos données. Veuillez vérifier votre connexion et réessayer.",
+    "connectionGamesMessage": "Impossible de récupérer vos jeux. Veuillez vérifier votre connexion et réessayer.",
     "connectionTitle": "Erreur de connexion",
     "genericTitle": "Erreur",
-    "loadSettingsMessage": "Impossible de charger vos parametres. Veuillez reessayer.",
-    "notConnectedMessage": "Utilisateur non connecte.",
-    "saveSettingsMessage": "Impossible de sauvegarder vos parametres. Veuillez reessayer.",
-    "sessionExpiredMessage": "Votre session a expire ou votre compte a ete supprime. Veuillez vous reconnecter.",
-    "sessionExpiredTitle": "Session expiree",
-    "unexpectedRetryOrLogout": "Une erreur inattendue s'est produite. Voulez-vous vous deconnecter et reessayer?"
+    "genericRetryMessage": "Une erreur est survenue. Veuillez réessayer.",
+    "loadSettingsMessage": "Impossible de charger vos paramètres. Veuillez réessayer.",
+    "missingGameId": "Identifiant du jeu introuvable.",
+    "missingSteamId": "Identifiant Steam introuvable.",
+    "networkFallbackMessage": "Erreur réseau, veuillez vérifier votre connexion.",
+    "notConnectedMessage": "Utilisateur non connecté.",
+    "saveSettingsMessage": "Impossible de sauvegarder vos paramètres. Veuillez réessayer.",
+    "sessionExpiredMessage": "Votre session a expiré ou votre compte a été supprimé. Veuillez vous reconnecter.",
+    "sessionExpiredTitle": "Session expirée",
+    "unexpectedRetryOrLogout": "Une erreur inattendue s'est produite. Voulez-vous vous déconnecter et réessayer ?"
   },
   "tutorial": {
-    "resumeMessage": "Vous avez interrompu le guide. Souhaitez-vous reprendre ou vous en etiez, recommencer depuis le debut ou le passer pour le moment ?",
+    "resumeMessage": "Vous avez interrompu le guide. Souhaitez-vous reprendre où vous en étiez, recommencer depuis le début ou le passer pour le moment ?",
     "resumeTitle": "Reprendre le tutoriel ?",
     "resumeButton": "Reprendre",
     "restartButton": "Recommencer",
     "skipButton": "Passer",
-    "stepLabel": "Etape {{current}}/{{total}}",
-    "previous": "Precedent",
+    "stepLabel": "Étape {{current}}/{{total}}",
+    "previous": "Précédent",
     "next": "Suivant",
     "finish": "Terminer",
     "steps": {
       "homeIntro": {
         "title": "Premier pas",
-        "description": "Ici, vous retrouvez les actualites correspondant aux jeux que vous allez suivre."
+        "description": "Ici, vous retrouvez les actualités correspondant aux jeux que vous allez suivre."
       },
       "homeNewsFollowed": {
         "title": "Jeux suivis",
@@ -207,7 +311,7 @@
       },
       "homeMyGames": {
         "title": "Mes jeux",
-        "description": "Retrouvez la liste des jeux deja presents dans votre bibliotheque et gerez leur suivi."
+        "description": "Retrouvez la liste des jeux déjà présents dans votre bibliothèque et gérez leur suivi."
       },
       "homeWishlist": {
         "title": "Wishlist",
@@ -215,27 +319,27 @@
       },
       "homeSearch": {
         "title": "Chercher un jeu",
-        "description": "Utilisez la recherche Steam pour ajouter de nouveaux jeux a votre suivi."
+        "description": "Utilisez la recherche Steam pour ajouter de nouveaux jeux à votre suivi."
       },
       "homeSettings": {
-        "title": "Acceder aux parametres",
-        "description": "Appuyez ici pour regler vos notifications et vos preferences de suivi."
+        "title": "Accéder aux paramètres",
+        "description": "Appuyez ici pour régler vos notifications et vos préférences de suivi."
       },
       "settingsNotifications": {
-        "title": "Notifications d'actualites",
-        "description": "Activez ce bouton pour recevoir les news des jeux que vous suivez."
+        "title": "Notifications d'actualités",
+        "description": "Activez ce bouton pour recevoir les actualités des jeux que vous suivez."
       },
       "settingsLibrary": {
-        "title": "Jeux achetes",
-        "description": "Choisissez si les nouveaux jeux detectes dans votre bibliotheque sont ajoutes dans votre liste de jeux suivis automatiquement ou sur confirmation."
+        "title": "Jeux achetés",
+        "description": "Choisissez si les nouveaux jeux détectés dans votre bibliothèque sont ajoutés dans votre liste de jeux suivis automatiquement ou sur confirmation."
       },
       "settingsWishlist": {
         "title": "Wishlist Steam",
-        "description": "Meme principe pour les jeux ajoutes a votre wishlist : suivi automatique ou via une notification de confirmation."
+        "description": "Même principe pour les jeux ajoutés à votre wishlist : suivi automatique ou via une notification de confirmation."
       },
       "settingsSummary": {
         "title": "C'est tout bon !",
-        "description": "Vous pouvez modifier ces options a tout moment depuis les parametres."
+        "description": "Vous pouvez modifier ces options à tout moment depuis les paramètres."
       }
     }
   }

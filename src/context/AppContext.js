@@ -109,16 +109,16 @@ export const AppProvider = ({children, navigation = null}) => {
 
   const handleLogout = useCallback(async () => {
     try {
-      debugLog('\n[LOGOUT] Debut de la deconnexion...');
-      debugLog('[LOGOUT] steamId avant reset:', steamId || '(vide)');
-      debugLog('[LOGOUT] games count avant reset:', games.length);
+      debugLog('\n[LOGOUT] Starting sign-out...');
+      debugLog('[LOGOUT] steamId before reset:', steamId || '(empty)');
+      debugLog('[LOGOUT] games count before reset:', games.length);
 
       if (steamId) {
         try {
           await unregisterFCMToken(steamId);
-          debugLog('[LOGOUT] Token FCM supprime du backend');
+          debugLog('[LOGOUT] FCM token removed from backend');
         } catch (fcmError) {
-          debugError('[LOGOUT] Erreur suppression token FCM:', fcmError);
+          debugError('[LOGOUT] Failed to remove FCM token:', fcmError);
         }
       }
 
@@ -139,7 +139,7 @@ export const AppProvider = ({children, navigation = null}) => {
       ].filter(Boolean);
 
       await AsyncStorage.multiRemove(storageKeys);
-      debugLog('[LOGOUT] AsyncStorage nettoye', storageKeys);
+      debugLog('[LOGOUT] AsyncStorage cleared', storageKeys);
 
       resetGamesLibraryState();
       applySignedOutSession();
@@ -154,9 +154,9 @@ export const AppProvider = ({children, navigation = null}) => {
         );
       }
 
-      debugLog('[LOGOUT] Deconnexion terminee\n');
+      debugLog('[LOGOUT] Sign-out completed\n');
     } catch (error) {
-      debugError('[LOGOUT] Erreur lors de la deconnexion:', error);
+      debugError('[LOGOUT] Sign-out failed:', error);
       showAlert(
         translate('auth.logoutErrorTitle'),
         translate('auth.logoutErrorMessage'),

@@ -1,14 +1,16 @@
 import React from 'react';
-import { FlatList, RefreshControl } from 'react-native';
-import { COLORS } from '../../../constants';
-import { useAppContext } from '../../../context/AppContext';
-import { getGameAppId } from '../../../utils';
+import {FlatList, RefreshControl} from 'react-native';
+import {useTranslation} from 'react-i18next';
+import {COLORS} from '../../../constants';
+import {useAppContext} from '../../../context/AppContext';
+import {getGameAppId} from '../../../utils';
 import styles from '../styles';
 import EmptyStateMessage from './EmptyStateMessage';
 import GameItemAlt from './GameItemAlt';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
 
 const GamesList = React.memo(({listRef}) => {
+  const {t} = useTranslation();
   const {filteredGames, refreshing, handleRefresh, searchQuery, sortOption} =
     useAppContext();
 
@@ -19,24 +21,24 @@ const GamesList = React.memo(({listRef}) => {
       <EmptyStateMessage
         styles={styles}
         iconName="time-outline"
-        title="Aucun jeu recent"
-        text="Aucun jeu lance recemment selon les donnees synchronisees."
+        title={t('games.recentsPlusEmptyTitle')}
+        text={t('games.recentsPlusEmptyText')}
         align="top"
       />
     ) : sortOption === 'lastTwoWeeks' ? (
       <EmptyStateMessage
         styles={styles}
         iconName="calendar-outline"
-        title="Aucun jeu sur 2 semaines"
-        text="Aucun jeu n'a ete lance dans les 14 derniers jours."
+        title={t('games.lastTwoWeeksEmptyTitle')}
+        text={t('games.lastTwoWeeksEmptyText')}
         align="top"
       />
     ) : (
       <EmptyStateMessage
         styles={styles}
         iconName="sad-outline"
-        title="Aucun jeu disponible"
-        text="Aucun jeu de votre bibliothèque n'a été importé pour le moment."
+        title={t('games.libraryEmptyTitle')}
+        text={t('games.libraryEmptyText')}
         align="top"
       />
     );

@@ -1,6 +1,7 @@
 {
   "common": {
     "about": "About",
+    "appName": "Steam Actu",
     "cancel": "Cancel",
     "contact": "Contact",
     "delete": "Delete",
@@ -10,6 +11,8 @@
     "french": "French",
     "gameWithId": "Game {{appId}}",
     "language": "Language",
+    "autoFollow": "Auto-follow",
+    "information": "Information",
     "legal": "Legal",
     "loading": "Loading...",
     "notifications": "Notifications",
@@ -44,16 +47,18 @@
     "loginButtonHint": "Opens Steam authentication in a secure browser.",
     "loginFeature1": "Only news from the games you follow",
     "loginFeature2": "Customizable push notifications",
-    "loginFeature3": "Library and wishlist synchronized",
+    "loginFeature3": "Synced library and wishlist",
     "loginSecurityNote": "Secure sign-in via Steam OpenID",
     "loginPendingMessage": "Completing sign-in, please wait...",
     "loginPendingTitle": "Signing in",
     "loginExpiredMessage": "The sign-in attempt has expired. Please try again.",
     "loginExpiredTitle": "Attempt expired",
-    "loginSubtitle": "Stay informed about the latest news for your Steam games",
-    "loginTitle": "Never miss a news update\nfrom your Steam games",
+    "loginSubtitle": "Stay up to date with the latest news for your Steam games",
+    "loginTitle": "Never miss news from\nyour Steam games",
     "loginWithSteam": "Sign in with Steam",
     "logout": "Sign out",
+    "logoutConfirmTitle": "Sign out",
+    "logoutConfirmMessage": "Are you sure you want to sign out?",
     "logoutErrorMessage": "An error occurred while signing out. Please try again.",
     "logoutErrorTitle": "Sign-out error",
     "logoutSuccessMessage": "You have been signed out successfully.",
@@ -62,7 +67,7 @@
     "steamIdMissingTitle": "Authentication error"
   },
   "settings": {
-    "aboutBody": "This app lets you receive notifications for news about the Steam games you follow.",
+    "aboutBody": "This app lets you receive notifications about the Steam games you follow.",
     "aboutVersion": "Steam Notifications v1.0.0",
     "contactShortcut": "My contact info",
     "deleteAccount": "Delete my account",
@@ -74,14 +79,15 @@
     "languageDescription": "Choose the language for the interface, requested Steam news, and notifications.",
     "languageLabel": "App language",
     "languageSaveError": "Unable to update the language right now. Please try again.",
-    "libraryDescription": "Choose how to handle follow tracking for games detected in your library.",
+    "autoFollowDescription": "Choose how to manage games detected in your library and wishlist.",
+    "libraryDescription": "Choose how to manage games detected in your library.",
     "libraryLabel": "Purchased games",
     "newsNotificationsDescription": "Enable this setting to receive a notification when new news is published for your followed games.",
     "newsNotificationsLabel": "News notifications",
     "reviewTutorial": "Review tutorial",
     "tutorialSummary": "Once your settings look right, tap \"Finish\" to fully enable notifications and automatic tracking.",
     "tutorialFinish": "Finish tutorial",
-    "wishlistDescription": "Decide whether games added to your wishlist should be followed automatically.",
+    "wishlistDescription": "Choose whether games added to your wishlist should be followed automatically.",
     "wishlistLabel": "Wishlisted games"
   },
   "followModes": {
@@ -93,12 +99,12 @@
     "offTitle": "Disabled",
     "promptSubtitleLibrary": "Receive a notification to confirm following each purchased game.",
     "promptSubtitleWishlist": "A notification asks you to confirm following each wishlisted game.",
-    "promptTitle": "Ask for confirmation"
+    "promptTitle": "Confirmation alert"
   },
   "notifications": {
     "blockedMessage": "Android is blocking notifications for Steam Actu. Enable them in settings.",
     "blockedTitle": "Notifications blocked",
-    "channelDescription": "Push notifications for followed games news",
+    "channelDescription": "Push notifications for news about followed games",
     "channelName": "Steam news",
     "disabledMessage": "Unable to enable notifications right now. Please try again later.",
     "disabledTitle": "Notifications disabled",
@@ -132,11 +138,17 @@
     "newGamesDetectedMessage_other": "{{count}} new games were added to your library.",
     "newGamesDetectedTitle": "New games detected",
     "recents": "Recent",
-    "recentsPlus": "Recent ++",
-    "recentTwoWeeks": "Played 2 weeks",
+    "recentsPlus": "Recent+",
+    "recentTwoWeeks": "Last 2 weeks",
+    "recentsPlusEmptyTitle": "No recent game",
+    "recentsPlusEmptyText": "No game was launched recently based on synced data.",
+    "lastTwoWeeksEmptyTitle": "No game in the last 2 weeks",
+    "lastTwoWeeksEmptyText": "No game has been launched in the last 14 days.",
+    "libraryEmptyTitle": "No available game",
+    "libraryEmptyText": "No game from your library has been imported yet.",
     "wishlistAccessDenied": "Access to the wishlist was denied (private profile).",
     "searchMyGamesPlaceholder": "Search in my games...",
-    "searchSteamPlaceholder": "Search a Steam game...",
+    "searchSteamPlaceholder": "Search for a Steam game...",
     "searchWishlistPlaceholder": "Search in my wishlist...",
     "sortAZ": "A-Z",
     "topPlayed": "Most played",
@@ -168,7 +180,95 @@
     "frenchOnlyNotice": "This legal content is currently available in French only.",
     "lastUpdated": "Last updated: {{date}}",
     "privacyTitle": "Privacy policy",
-    "termsTitle": "Terms of service"
+    "termsTitle": "Terms of service",
+    "documents": {
+      "terms": {
+        "updatedAt": "2025-11-11T12:00:00.000Z",
+        "sections": [
+          {
+            "title": "1. Acceptance of terms",
+            "content": "By accessing the Steam Notifications application, you accept these Terms of Service in full. If you do not agree with any provision, please stop using the application and delete your account from the Settings screen."
+          },
+          {
+            "title": "2. Service description",
+            "content": "Steam Notifications aggregates and delivers news from the Steam ecosystem for the games you follow. The service is provided for informational purposes and may change or be discontinued at any time."
+          },
+          {
+            "title": "3. Use of the application",
+            "content": "You agree not to misuse the application, not to attempt to compromise its security, and not to collect or exploit data belonging to other users. Any abusive use may lead to suspension or removal of access."
+          },
+          {
+            "title": "4. Accounts and Steam authentication",
+            "content": "Sign-in relies on your Steam account. You are responsible for keeping your Steam credentials confidential and for any actions performed through your account within the application."
+          },
+          {
+            "title": "5. Notifications and content",
+            "content": "Notifications are generated from public sources or official Steam-related feeds. Their accuracy and availability are not guaranteed. Steam Notifications cannot be held responsible for content published by third parties."
+          },
+          {
+            "title": "6. Service availability",
+            "content": "We strive to keep the application available at all times, without guarantee. Temporary interruptions may occur for maintenance, updates, or force majeure."
+          },
+          {
+            "title": "7. Intellectual property",
+            "content": "All graphics, text, logos, and features specific to Steam Notifications remain the property of their respective author. Steam and related assets are the property of Valve Corporation."
+          },
+          {
+            "title": "8. Limitation of liability",
+            "content": "Steam Notifications is provided \"as is\". We cannot be held liable for any direct or indirect damages resulting from the use of, or inability to use, the application."
+          },
+          {
+            "title": "9. Changes to the terms",
+            "content": "These Terms of Service may be changed at any time. The most recent version is always available in the application. Continued use of the application constitutes acceptance of the updated terms."
+          },
+          {
+            "title": "10. Contact",
+            "content": "If you have any questions about these Terms of Service, you can write to: contact@fouzi-dev.fr."
+          }
+        ]
+      },
+      "privacy": {
+        "updatedAt": "2025-11-11T12:00:00.000Z",
+        "sections": [
+          {
+            "title": "1. Data collected",
+            "content": "We store only the information necessary to operate Steam Notifications: your Steam ID, your synced library (list of games with playtime), your recently active games history, your wishlist, the notification settings you configure in the application (enabled state, auto-follow, push notification token), as well as technical logs required to keep the service stable."
+          },
+          {
+            "title": "2. Use of data",
+            "content": "This data is used to sync your games, manage your follows, send relevant notifications, and improve the application's performance. It is never sold or used for advertising purposes."
+          },
+          {
+            "title": "3. Storage and retention",
+            "content": "Information is stored securely on our servers. It is kept for as long as your account remains active. You can delete your account directly from the application to erase your data."
+          },
+          {
+            "title": "4. Sharing with third parties",
+            "content": "No commercial sharing is carried out. Some data may transit through official Steam APIs in order to provide the service. These exchanges comply with Valve Corporation's policies."
+          },
+          {
+            "title": "5. Your rights",
+            "content": "In accordance with applicable regulations, you have the right to access, correct, object to, and delete your personal data. Contact contact@fouzi-dev.fr to exercise these rights."
+          },
+          {
+            "title": "6. Security",
+            "content": "Technical and organizational measures are implemented to protect your data against unauthorized access, loss, or disclosure. Despite our efforts, no system is completely invulnerable."
+          },
+          {
+            "title": "7. Cookies and similar technologies",
+            "content": "Steam Notifications does not use cookies or advertising trackers. The application keeps only a local technical cache on your device in order to speed up data display."
+          },
+          {
+            "title": "8. Changes to this policy",
+            "content": "This Privacy Policy may evolve. Any update will be published in this section of the application. By continuing to use the service, you accept these changes."
+          },
+          {
+            "title": "9. Contact",
+            "content": "If you have any questions about the protection of your data, write to contact@fouzi-dev.fr. We will do our best to respond quickly."
+          }
+        ]
+      }
+    }
   },
   "dates": {
     "fallbackNever": "Never",
@@ -179,7 +279,11 @@
     "connectionGamesMessage": "Unable to retrieve your games. Please check your connection and try again.",
     "connectionTitle": "Connection error",
     "genericTitle": "Error",
+    "genericRetryMessage": "An error occurred. Please try again.",
     "loadSettingsMessage": "Unable to load your settings. Please try again.",
+    "missingGameId": "Game ID not found.",
+    "missingSteamId": "Steam ID not found.",
+    "networkFallbackMessage": "Network error, please check your connection.",
     "notConnectedMessage": "User is not signed in.",
     "saveSettingsMessage": "Unable to save your settings. Please try again.",
     "sessionExpiredMessage": "Your session expired or your account was deleted. Please sign in again.",

@@ -46,8 +46,6 @@ const SettingSection = ({
 const styles = StyleSheet.create({
   section: {
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.STEAM_GRAY,
   },
   settingRow: {
     flexDirection: 'row',

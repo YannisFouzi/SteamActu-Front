@@ -1,15 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { newsService } from '../services/api';
-import { getGameAppId } from '../utils';
-import { debugError, debugLog, showAlert } from './hooksLogger';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import {useTranslation} from 'react-i18next';
+import {newsService} from '../services/api';
+import {getGameAppId} from '../utils';
+import {debugError, debugLog, showAlert} from './hooksLogger';
 
 /**
- * Hook personnalisé pour la gestion des actualités d'un jeu
- * Centralise la logique de chargement et de rafraîchissement des actualités
+ * Hook personnalise pour la gestion des actualites d'un jeu.
+ * Centralise la logique de chargement et de rafraichissement des actualites.
  */
 export const useGameNews = game => {
-  const { t } = useTranslation();
+  const {t} = useTranslation();
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -22,7 +22,6 @@ export const useGameNews = game => {
     };
   }, []);
 
-  // Fonction pour charger les actualités d'un jeu
   const loadNews = useCallback(async () => {
     const requestId = ++requestIdRef.current;
     const shouldProcess = () =>
@@ -36,10 +35,10 @@ export const useGameNews = game => {
       const gameId = getGameAppId(game);
 
       if (!gameId) {
-        throw new Error('ID du jeu non trouvé');
+        throw new Error(t('errors.missingGameId'));
       }
 
-      debugLog('[GAME NEWS] Chargement pour le jeu', gameId);
+      debugLog('[GAME NEWS] Loading game news', gameId);
       const response = await newsService.getGameNews(gameId, 10, 500);
       const nextNews = response.data || [];
 
@@ -49,16 +48,13 @@ export const useGameNews = game => {
 
       setNews(Array.isArray(nextNews) ? nextNews : []);
     } catch (error) {
-      debugError('Erreur lors du chargement des actualités:', error);
+      debugError('[GAME NEWS] Failed to load game news:', error);
 
       if (!shouldProcess()) {
         return;
       }
 
-      showAlert(
-        t('common.error'),
-        t('news.loadGameNewsError'),
-      );
+      showAlert(t('common.error'), t('news.loadGameNewsError'));
     } finally {
       if (!shouldProcess()) {
         return;
@@ -69,7 +65,6 @@ export const useGameNews = game => {
     }
   }, [game, t]);
 
-  // Fonction pour rafraîchir les données
   const handleRefresh = useCallback(() => {
     if (isMountedRef.current) {
       setRefreshing(true);
@@ -77,12 +72,10 @@ export const useGameNews = game => {
     loadNews();
   }, [loadNews]);
 
-  // Charger les actualités au démarrage
   useEffect(() => {
     loadNews();
   }, [loadNews]);
 
-  // Vérifier si nous avons des actualités à afficher
   const hasNews = news && Array.isArray(news) && news.length > 0;
 
   return {

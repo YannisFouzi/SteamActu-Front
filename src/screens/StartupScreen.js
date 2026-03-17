@@ -13,7 +13,7 @@ const StartupScreen = () => {
         style={styles.logo}
         resizeMode="contain"
       />
-      <Text style={styles.title}>Steam Actu</Text>
+      <Text style={styles.title}>{t('common.appName')}</Text>
       <Text style={styles.subtitle}>{t('common.loading')}</Text>
     </View>
   );

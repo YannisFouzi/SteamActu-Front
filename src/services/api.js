@@ -1,7 +1,7 @@
 import axios from 'axios';
 import {APP_CONFIG} from '../config/env';
 import {debugError} from '../hooks/hooksLogger';
-import {getCurrentAppLanguage} from '../i18n';
+import {getCurrentAppLanguage, translate} from '../i18n';
 
 const DEFAULT_CONFIG = {
   API_URL: APP_CONFIG.API_BASE_URL,
@@ -35,8 +35,8 @@ const normalizeError = error => {
     data?.message ||
     error?.message ||
     (status === 0
-      ? 'Erreur reseau, veuillez verifier votre connexion.'
-      : 'Une erreur est survenue, veuillez reessayer.');
+      ? translate('errors.networkFallbackMessage')
+      : translate('errors.genericRetryMessage'));
 
   return {
     status,
@@ -131,6 +131,7 @@ const steamService = {
     api.get(`/steam/games/${steamId}`, config),
   getUserWishlist: (steamId, config = {}) =>
     api.get(`/steam/wishlist/${steamId}`, config),
+  getProfile: steamId => api.get(`/steam/profile/${steamId}`),
   searchGames: (query, limit = 5) =>
     api.get('/steam/search', {params: {q: query, limit}}),
   fetchStatus: (steamId, config = {}) =>

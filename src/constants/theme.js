@@ -3,7 +3,7 @@ import {MD3DarkTheme, adaptNavigationTheme} from 'react-native-paper';
 
 /**
  * Theme global de l'application Steam Notifications.
- * Centralise les couleurs, styles et configurations de navigation.
+ * Centralise les couleurs, les espacements et les styles visuels partages.
  */
 export const COLORS = {
   // Couleurs principales Steam
@@ -255,42 +255,5 @@ export const NAVIGATION_THEME = {
       fontFamily: 'System',
       fontWeight: 'normal',
     },
-  },
-};
-
-export const DEFAULT_SCREEN_OPTIONS = {
-  headerStyle: {
-    backgroundColor: COLORS.STEAM_NAVY,
-  },
-  headerTintColor: COLORS.WHITE,
-  headerTitleStyle: {
-    fontWeight: 'bold',
-  },
-};
-
-export const SCREEN_CONFIGS = {
-  Login: {
-    headerShown: false,
-  },
-  Home: {
-    headerBackVisible: false,
-    headerShown: false,
-  },
-  Settings: {
-    title: 'Parametres',
-  },
-  Contact: {
-    title: 'Contact',
-  },
-  TermsOfService: {
-    title: "Conditions d'utilisation",
-  },
-  PrivacyPolicy: {
-    title: 'Politique de confidentialite',
-  },
-  GameDetails: {
-    getDynamicOptions: ({route}) => ({
-      title: route?.params?.game?.name || 'Details du jeu',
-    }),
   },
 };

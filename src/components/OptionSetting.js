@@ -71,8 +71,6 @@ const styles = StyleSheet.create({
   section: {
     paddingHorizontal: 16,
     paddingVertical: 18,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.STEAM_GRAY,
   },
   settingLabel: {
     ...TEXT_STYLES.subtitle,
@@ -93,7 +91,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 12,
-    backgroundColor: COLORS.STEAM_NAVY,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderWidth: 1,
     borderColor: COLORS.STEAM_BORDER,
     marginBottom: 12,

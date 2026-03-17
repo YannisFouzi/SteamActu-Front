@@ -6,16 +6,16 @@ import {createStackNavigator} from '@react-navigation/stack';
 import React from 'react';
 import BootSplash from 'react-native-bootsplash';
 import {APP_CONFIG} from '../config/env';
-import {
-  DEFAULT_SCREEN_OPTIONS,
-  NAVIGATION_THEME,
-  SCREEN_CONFIGS,
-} from '../constants';
+import {NAVIGATION_THEME} from '../constants';
 import {useAppContext} from '../context/AppContext';
 import {debugError} from '../hooks/hooksLogger';
 import LoginScreen from '../screens/LoginScreen';
 import StartupScreen from '../screens/StartupScreen';
 import {useTutorial} from '../tutorial/useTutorial';
+import {
+  DEFAULT_STACK_SCREEN_OPTIONS,
+  ROOT_STACK_SCREEN_OPTIONS,
+} from './options';
 import MainTabNavigator from './MainTabNavigator';
 
 const Stack = createStackNavigator();
@@ -105,24 +105,26 @@ const AppNavigator = () => {
         navigationReadyRef.current = true;
         hideBootSplashIfReady();
       }}>
-      <Stack.Navigator key={navigatorKey} screenOptions={DEFAULT_SCREEN_OPTIONS}>
+      <Stack.Navigator
+        key={navigatorKey}
+        screenOptions={DEFAULT_STACK_SCREEN_OPTIONS}>
         {isBootstrapping ? (
           <Stack.Screen
             name="Startup"
             component={StartupScreen}
-            options={{headerShown: false}}
+            options={ROOT_STACK_SCREEN_OPTIONS.startup}
           />
         ) : isAuthenticated ? (
           <Stack.Screen
             name="Home"
             component={MainTabNavigator}
-            options={SCREEN_CONFIGS.Home}
+            options={ROOT_STACK_SCREEN_OPTIONS.home}
           />
         ) : (
           <Stack.Screen
             name="Login"
             component={LoginScreen}
-            options={SCREEN_CONFIGS.Login}
+            options={ROOT_STACK_SCREEN_OPTIONS.login}
           />
         )}
       </Stack.Navigator>
