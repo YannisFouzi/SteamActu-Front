@@ -1,4 +1,5 @@
 import React from 'react';
+import {Pressable} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -14,6 +15,13 @@ const TAB_ICONS = {
   SuivreUnJeu: 'game-controller-outline',
   MonCompte: 'person-circle-outline',
 };
+
+const TabBarButton = (props) => (
+  <Pressable
+    {...props}
+    android_ripple={{color: 'rgba(102, 192, 244, 0.12)', borderless: false}}
+  />
+);
 
 const createScreenOptions = ({route}) => ({
   headerShown: false,
@@ -32,6 +40,7 @@ const createScreenOptions = ({route}) => ({
     fontSize: 12,
     fontWeight: '600',
   },
+  tabBarButton: TabBarButton,
 });
 
 const MainTabNavigator = () => {
