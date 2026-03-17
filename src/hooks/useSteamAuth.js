@@ -5,6 +5,15 @@ import InAppBrowser from 'react-native-inappbrowser-reborn';
 import {COLORS} from '../constants';
 import {useAppContext} from '../context/AppContext';
 import {
+  normalizeFollowMode,
+  persistUserSettingsToStorage,
+  resolveNewsNotifications,
+} from '../context/app/userSettingsHelpers';
+import {
+  fetchSteamProfile,
+  persistSteamProfile,
+} from '../context/app/sessionHelpers';
+import {
   getCurrentAppLanguage,
   translate,
   waitForI18nInitialization,
@@ -18,7 +27,6 @@ import {
   showInfoMessage,
 } from './hooksLogger';
 
-const FOLLOW_MODES = ['off', 'auto', 'prompt'];
 const AUTH_FLOW_STATES = {
   IDLE: 'idle',
   PENDING: 'pending',
@@ -32,32 +40,6 @@ const sleep = durationMs =>
   new Promise(resolve => {
     setTimeout(resolve, durationMs);
   });
-
-const normalizeFollowMode = (value, legacyValue) => {
-  if (typeof value === 'string') {
-    const normalized = value.toLowerCase();
-    if (FOLLOW_MODES.includes(normalized)) {
-      return normalized;
-    }
-  }
-
-  if (typeof legacyValue === 'string') {
-    try {
-      const parsed = JSON.parse(legacyValue);
-      if (typeof parsed === 'boolean') {
-        return parsed ? 'auto' : 'off';
-      }
-    } catch {
-      // ignore parsing errors
-    }
-  }
-
-  if (typeof legacyValue === 'boolean') {
-    return legacyValue ? 'auto' : 'off';
-  }
-
-  return 'off';
-};
 
 const isSteamAuthRedirect = url =>
   typeof url === 'string' && url.startsWith(steamAuthService.AUTH_REDIRECT_URL);
@@ -216,30 +198,20 @@ export const useSteamAuth = () => {
             autoFollowWishlistGames,
           } = notificationSettings;
 
-          const resolvedNews =
-            typeof newsNotifications === 'boolean'
-              ? newsNotifications
-              : typeof enabled === 'boolean'
-              ? enabled
-              : false;
-
-          await AsyncStorage.multiSet([
-            ['newsNotifications', JSON.stringify(resolvedNews)],
-            [
-              'libraryFollowMode',
-              normalizeFollowMode(libraryFollowMode, autoFollowNewGames),
-            ],
-            [
-              'wishlistFollowMode',
-              normalizeFollowMode(wishlistFollowMode, autoFollowWishlistGames),
-            ],
-          ]);
-
-          await AsyncStorage.multiRemove([
-            'notificationsEnabled',
-            'autoFollowEnabled',
-            'autoFollowWishlistEnabled',
-          ]);
+          await persistUserSettingsToStorage({
+            newsNotifications: resolveNewsNotifications(
+              newsNotifications,
+              enabled,
+            ),
+            libraryFollowMode: normalizeFollowMode(
+              libraryFollowMode,
+              autoFollowNewGames,
+            ),
+            wishlistFollowMode: normalizeFollowMode(
+              wishlistFollowMode,
+              autoFollowWishlistGames,
+            ),
+          });
         } else {
           await AsyncStorage.multiRemove([
             'newsNotifications',
@@ -254,9 +226,18 @@ export const useSteamAuth = () => {
         debugLog('[LOGIN] Saving steamId to AsyncStorage');
         await AsyncStorage.setItem('steamId', steamId);
 
+        let steamProfile = null;
+        try {
+          steamProfile = await fetchSteamProfile(steamId);
+          await persistSteamProfile(steamId, steamProfile);
+        } catch (profileError) {
+          debugError('[LOGIN] Failed to load Steam profile:', profileError);
+        }
+
         applySignedInSession({
           steamId,
           user: response.data,
+          steamProfile,
         });
         debugLog('[LOGIN] Auth flow finished, session applied');
       } catch (error) {

@@ -1,4 +1,3 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useEffect} from 'react';
 import {debugError, debugLog} from '../../hooks/hooksLogger';
 import {
@@ -6,11 +5,19 @@ import {
   setupNotificationHandlers,
 } from '../../services/notificationService';
 import {consumeNotificationActionsForSteamId} from '../../services/notifications/actionJournal';
+import {
+  requiresNotifications,
+  USER_SETTINGS_STATUS,
+} from './userSettingsHelpers';
 
 const NOTIFICATION_REGISTRATION_DELAY_MS = 1500;
 
 export const useAppNotificationsBridge = ({
   steamId,
+  settingsStatus,
+  newsNotifications,
+  libraryFollowMode,
+  wishlistFollowMode,
   notifyNotificationSync,
   onNotificationUnfollowCommitted,
 }) => {
@@ -21,23 +28,17 @@ export const useAppNotificationsBridge = ({
 
     async function initializeNotifications() {
       try {
-        const storedNews = await AsyncStorage.getItem('newsNotifications');
-        const storedLibraryMode = await AsyncStorage.getItem(
-          'libraryFollowMode',
-        );
-        const storedWishlistMode = await AsyncStorage.getItem(
-          'wishlistFollowMode',
+        const needsNotifications = requiresNotifications(
+          newsNotifications,
+          libraryFollowMode,
+          wishlistFollowMode,
         );
 
-        const newsEnabled =
-          storedNews !== null ? JSON.parse(storedNews) : false;
-        const libraryMode = storedLibraryMode || 'off';
-        const wishlistMode = storedWishlistMode || 'off';
-
-        const needsNotifications =
-          newsEnabled || libraryMode === 'prompt' || wishlistMode === 'prompt';
-
-        if (canceled || !steamId) {
+        if (
+          canceled ||
+          !steamId ||
+          settingsStatus !== USER_SETTINGS_STATUS.READY
+        ) {
           return;
         }
 
@@ -115,7 +116,10 @@ export const useAppNotificationsBridge = ({
       });
 
       registrationTimeout = setTimeout(() => {
-        if (!canceled) {
+        if (
+          !canceled &&
+          settingsStatus === USER_SETTINGS_STATUS.READY
+        ) {
           initializeNotifications();
         }
       }, NOTIFICATION_REGISTRATION_DELAY_MS);
@@ -131,5 +135,13 @@ export const useAppNotificationsBridge = ({
         cleanupNotifications();
       }
     };
-  }, [notifyNotificationSync, onNotificationUnfollowCommitted, steamId]);
+  }, [
+    libraryFollowMode,
+    newsNotifications,
+    notifyNotificationSync,
+    onNotificationUnfollowCommitted,
+    settingsStatus,
+    steamId,
+    wishlistFollowMode,
+  ]);
 };

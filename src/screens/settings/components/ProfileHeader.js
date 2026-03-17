@@ -1,27 +1,23 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {Image, StyleSheet, Text, View} from 'react-native';
+import {useTranslation} from 'react-i18next';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {COLORS, SPACING} from '../../../constants';
-import {steamService} from '../../../services/api';
+import {useAppContext} from '../../../context/AppContext';
 
 const AVATAR_SIZE = 72;
 
-const ProfileHeader = ({steamId}) => {
-  const [profile, setProfile] = useState(null);
+const ProfileHeader = () => {
+  const {t} = useTranslation();
+  const {steamId, steamProfile} = useAppContext();
 
-  useEffect(() => {
-    if (!steamId) {
-      return;
-    }
+  if (!steamId) {
+    return null;
+  }
 
-    steamService
-      .getProfile(steamId)
-      .then(res => setProfile(res.data))
-      .catch(() => setProfile(null));
-  }, [steamId]);
-
-  const displayName = profile?.personaname || 'Steam User';
-  const avatarUrl = profile?.avatarfull;
+  const avatarUrl = steamProfile?.avatarfull;
+  const displayName =
+    steamProfile?.personaname || t('settings.steamAccountLabel');
 
   return (
     <View style={styles.container}>
@@ -29,7 +25,11 @@ const ProfileHeader = ({steamId}) => {
         <Image source={{uri: avatarUrl}} style={styles.avatar} />
       ) : (
         <View style={styles.avatarPlaceholder}>
-          <Ionicons name="person" size={32} color={COLORS.STEAM_TEXT_GRAY} />
+          <Ionicons
+            name="person"
+            size={32}
+            color={COLORS.STEAM_TEXT_GRAY}
+          />
         </View>
       )}
 

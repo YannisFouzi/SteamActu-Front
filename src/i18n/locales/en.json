@@ -85,6 +85,7 @@
     "newsNotificationsDescription": "Enable this setting to receive a notification when new news is published for your followed games.",
     "newsNotificationsLabel": "News notifications",
     "reviewTutorial": "Review tutorial",
+    "steamAccountLabel": "Steam account",
     "tutorialSummary": "Once your settings look right, tap \"Finish\" to fully enable notifications and automatic tracking.",
     "tutorialFinish": "Finish tutorial",
     "wishlistDescription": "Choose whether games added to your wishlist should be followed automatically.",

@@ -26,6 +26,7 @@ import {useFollowedGamesActions} from './app/useFollowedGamesActions';
 import {useGamesFiltering} from './app/useGamesFiltering';
 import {useGamesLibraryController} from './app/useGamesLibraryController';
 import {useNotificationSyncBus} from './app/useNotificationSyncBus';
+import {useUserSettingsController} from './app/useUserSettingsController';
 
 const AppContext = createContext();
 
@@ -39,19 +40,21 @@ export const AppProvider = ({children, navigation = null}) => {
 
   const [steamId, setSteamId] = useState('');
   const [user, setUser] = useState(null);
+  const [steamProfile, setSteamProfile] = useState(null);
   const [wishlistVersion, setWishlistVersion] = useState(null);
 
   const onLogoutRef = useRef(null);
 
   const {
     authStatus,
-    isBootstrapping,
+    isBootstrapping: isAuthBootstrapping,
     isAuthenticated,
     applySignedInSession,
     applySignedOutSession,
   } = useAppBootstrap({
     setSteamId,
     setUser,
+    setSteamProfile,
   });
 
   const {
@@ -107,6 +110,25 @@ export const AppProvider = ({children, navigation = null}) => {
       markSkipNextGamesRefresh,
     });
 
+  const {
+    settingsStatus,
+    isUserSettingsReady,
+    loading: settingsLoading,
+    saving: settingsSaving,
+    newsNotifications,
+    libraryFollowMode,
+    wishlistFollowMode,
+    resetUserSettingsState,
+    hydrateUserSettings,
+    handleToggleNews,
+    handleLibraryModeChange,
+    handleWishlistModeChange,
+  } = useUserSettingsController({
+    steamId,
+    user,
+    isAuthenticated,
+  });
+
   const handleLogout = useCallback(async () => {
     try {
       debugLog('\n[LOGOUT] Starting sign-out...');
@@ -142,6 +164,7 @@ export const AppProvider = ({children, navigation = null}) => {
       debugLog('[LOGOUT] AsyncStorage cleared', storageKeys);
 
       resetGamesLibraryState();
+      resetUserSettingsState();
       applySignedOutSession();
       setWishlistVersion(null);
       setSearchQuery('');
@@ -166,6 +189,7 @@ export const AppProvider = ({children, navigation = null}) => {
     applySignedOutSession,
     games.length,
     navigation,
+    resetUserSettingsState,
     resetGamesLibraryState,
     setSearchQuery,
     setSortOption,
@@ -176,6 +200,10 @@ export const AppProvider = ({children, navigation = null}) => {
 
   useAppNotificationsBridge({
     steamId,
+    settingsStatus,
+    newsNotifications,
+    libraryFollowMode,
+    wishlistFollowMode,
     notifyNotificationSync,
     onNotificationUnfollowCommitted: applyNotificationUnfollowCommit,
   });
@@ -199,10 +227,18 @@ export const AppProvider = ({children, navigation = null}) => {
       loading,
       refreshing,
       authStatus,
-      isBootstrapping,
+      isBootstrapping: isAuthBootstrapping,
       isAuthenticated,
       steamId,
       user,
+      settingsStatus,
+      isUserSettingsReady,
+      settingsLoading,
+      settingsSaving,
+      steamProfile,
+      newsNotifications,
+      libraryFollowMode,
+      wishlistFollowMode,
       searchQuery,
       sortOption,
       gamesVersion,
@@ -214,6 +250,10 @@ export const AppProvider = ({children, navigation = null}) => {
       loadData,
       handleRefresh,
       handleLogout,
+      hydrateUserSettings,
+      handleToggleNews,
+      handleLibraryModeChange,
+      handleWishlistModeChange,
       applySignedInSession,
       handleFollowGame,
       getResolvedFollowState,
@@ -236,26 +276,38 @@ export const AppProvider = ({children, navigation = null}) => {
       authStatus,
       applySignedInSession,
       handleFollowGame,
+      handleLibraryModeChange,
       handleLogout,
       handleRefresh,
+      handleToggleNews,
+      handleWishlistModeChange,
+      hydrateUserSettings,
       isAuthenticated,
       isGameFollowed,
-      isBootstrapping,
+      isAuthBootstrapping,
       isFollowPending,
+      isUserSettingsReady,
+      libraryFollowMode,
       loadData,
       loading,
       maybeRefreshGames,
+      newsNotifications,
       refreshRecentsPlus,
       refreshing,
       registerNotificationSyncHandler,
       searchQuery,
+      settingsLoading,
+      settingsSaving,
+      settingsStatus,
       setGamesVersion,
       setSearchQuery,
       setSortOption,
       sortOption,
       steamId,
+      steamProfile,
       user,
       wishlistVersion,
+      wishlistFollowMode,
     ],
   );
 

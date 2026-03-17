@@ -3,6 +3,7 @@ import {debugError, debugLog, showAlert} from '../../hooks/hooksLogger';
 import {translate} from '../../i18n';
 import {steamService, userService} from '../../services/api';
 import {getLastPlayedValue} from '../../utils';
+import {getSteamProfileCacheKey} from './sessionHelpers';
 
 export class GamesFetchError extends Error {
   constructor(originalError) {
@@ -35,6 +36,7 @@ export const getUserScopedStorageKeys = steamId => {
     getGamesVersionKey(steamId),
     getWishlistCacheKey(steamId),
     getWishlistVersionKey(steamId),
+    getSteamProfileCacheKey(steamId),
   ].filter(Boolean);
 };
 

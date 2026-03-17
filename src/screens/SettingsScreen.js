@@ -4,6 +4,7 @@ import {useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FollowModeSetting from '../components/FollowModeSetting';
+import LoadingContainer from '../components/LoadingContainer';
 import OptionSetting from '../components/OptionSetting';
 import SettingSection from '../components/SettingSection';
 import {COLORS} from '../constants';
@@ -32,6 +33,7 @@ const SettingsScreen = () => {
   const [deleting, setDeleting] = useState(false);
 
   const {
+    loading: settingsLoading,
     saving,
     newsNotifications,
     libraryFollowMode,
@@ -132,11 +134,19 @@ const SettingsScreen = () => {
   const followModeDisabled = saving || loggingOut;
   const languageDisabled = savingLanguage || loggingOut || deleting;
 
+  if (settingsLoading) {
+    return (
+      <View style={styles.container}>
+        <LoadingContainer />
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.scrollContent}>
-      <ProfileHeader steamId={steamId} />
+      <ProfileHeader />
 
       <SettingsGroup>
         <SettingSection
