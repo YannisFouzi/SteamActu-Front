@@ -33,6 +33,7 @@ export const useGamesLibraryController = ({
   const gamesFetchAbortControllerRef = useRef(null);
   const statusDebounceTimeoutRef = useRef(null);
   const gamesHydratedFromCacheRef = useRef(false);
+  const gamesFetchedOnceRef = useRef(false);
   const skipNextGamesRefreshRef = useRef(false);
 
   useEffect(() => {
@@ -166,7 +167,7 @@ export const useGamesLibraryController = ({
         forceReload,
         isReconnection,
         games.length,
-        gamesHydratedFromCacheRef.current,
+        gamesFetchedOnceRef.current,
       );
       debugLog('[LOADDATA] shouldReload:', mustReload);
 
@@ -212,6 +213,7 @@ export const useGamesLibraryController = ({
 
         setGames(normalizedGames);
         gamesHydratedFromCacheRef.current = true;
+        gamesFetchedOnceRef.current = true;
         syncRecentActiveGames(normalizedGames, savedSteamId);
         debugLog(
           '[LOADDATA] setGames ->',
@@ -443,6 +445,7 @@ export const useGamesLibraryController = ({
     gamesFetchInFlightRef.current = false;
     gamesLastRequestIdRef.current = null;
     gamesHydratedFromCacheRef.current = false;
+    gamesFetchedOnceRef.current = false;
     skipNextGamesRefreshRef.current = false;
 
     setGames([]);

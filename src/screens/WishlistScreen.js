@@ -5,6 +5,9 @@ import {useTranslation} from 'react-i18next';
 import GameCard from '../components/GameCard';
 import LoadingContainer from '../components/LoadingContainer';
 import {COLORS} from '../constants';
+import {useAppContext} from '../context/AppContext';
+import {steamService} from '../services/api';
+import {showDialog} from '../hooks/hooksLogger';
 import {getGameImageFallback, getGameImageUrl} from '../utils/steamHelpers';
 import EmptyStateMessage from './Home/components/EmptyStateMessage';
 import NoResultsPlaceholder from './Home/components/NoResultsPlaceholder';
@@ -24,8 +27,10 @@ const WishlistScreen = ({
   maybeRefreshWishlist,
 }) => {
   const {t} = useTranslation();
+  const {steamId} = useAppContext();
   const [wishlistSearchQuery, setWishlistSearchQuery] = useState('');
   const [wishlistSortBy, setWishlistSortBy] = useState('recent');
+  const [checking, setChecking] = useState(false);
   const listRef = useRef(null);
 
   const sortOptions = useMemo(
@@ -68,6 +73,42 @@ const WishlistScreen = ({
     return filtered;
   }, [filterWishlist, wishlist, wishlistSearchQuery, wishlistSortBy]);
 
+  const checkVisibility = useCallback(async () => {
+    if (!steamId || checking) {
+      return;
+    }
+
+    setChecking(true);
+    try {
+      const response = await steamService.checkVisibility(steamId);
+      if (response.data?.visible) {
+        showDialog({
+          title: t('common.success'),
+          message: t('games.checkVisibilityWishlistSuccess'),
+          tone: 'success',
+          buttons: [{text: 'OK'}],
+        });
+        handleRefresh();
+      } else {
+        showDialog({
+          title: t('common.info'),
+          message: t('games.checkVisibilityStillPrivate'),
+          tone: 'warning',
+          buttons: [{text: 'OK'}],
+        });
+      }
+    } catch (error) {
+      showDialog({
+        title: t('common.info'),
+        message: t('games.checkVisibilityStillPrivate'),
+        tone: 'warning',
+        buttons: [{text: 'OK'}],
+      });
+    } finally {
+      setChecking(false);
+    }
+  }, [checking, handleRefresh, steamId, t]);
+
   const wishlistEmptyComponent = useMemo(() => {
     if (wishlistSearchQuery !== '') {
       return <NoResultsPlaceholder styles={styles} />;
@@ -81,10 +122,13 @@ const WishlistScreen = ({
         text={t('games.wishlistEmptyText')}
         actionText={t('games.wishlistEmptyPrivacyAction')}
         onAction={() => Linking.openURL(STEAM_PRIVACY_URL)}
+        secondaryActionText={t('games.checkVisibilityAction')}
+        onSecondaryAction={checkVisibility}
+        secondaryActionLoading={checking}
         align="top"
       />
     );
-  }, [t, wishlistSearchQuery]);
+  }, [checkVisibility, checking, t, wishlistSearchQuery]);
 
   const renderWishlistItem = useCallback(
     ({item}) => {

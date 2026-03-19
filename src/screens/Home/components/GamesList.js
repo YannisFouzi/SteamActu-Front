@@ -1,8 +1,10 @@
-import React, {useCallback} from 'react';
+import React, {useCallback, useState} from 'react';
 import {FlatList, Linking, RefreshControl} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import {COLORS} from '../../../constants';
 import {useAppContext} from '../../../context/AppContext';
+import {steamService} from '../../../services/api';
+import {showDialog} from '../../../hooks/hooksLogger';
 import {getGameAppId} from '../../../utils';
 import styles from '../styles';
 import EmptyStateMessage from './EmptyStateMessage';
@@ -13,12 +15,49 @@ const STEAM_PRIVACY_URL = 'https://steamcommunity.com/my/edit/settings';
 
 const GamesList = React.memo(({listRef}) => {
   const {t} = useTranslation();
-  const {filteredGames, refreshing, handleRefresh, searchQuery, sortOption} =
+  const {filteredGames, refreshing, handleRefresh, searchQuery, sortOption, steamId, loadData} =
     useAppContext();
+  const [checking, setChecking] = useState(false);
 
   const openSteamPrivacy = useCallback(() => {
     Linking.openURL(STEAM_PRIVACY_URL);
   }, []);
+
+  const checkVisibility = useCallback(async () => {
+    if (!steamId || checking) {
+      return;
+    }
+
+    setChecking(true);
+    try {
+      const response = await steamService.checkVisibility(steamId);
+      if (response.data?.visible) {
+        showDialog({
+          title: t('common.success'),
+          message: t('games.checkVisibilitySuccess'),
+          tone: 'success',
+          buttons: [{text: 'OK'}],
+        });
+        loadData(true, 'checkVisibility');
+      } else {
+        showDialog({
+          title: t('common.info'),
+          message: t('games.checkVisibilityStillPrivate'),
+          tone: 'warning',
+          buttons: [{text: 'OK'}],
+        });
+      }
+    } catch (error) {
+      showDialog({
+        title: t('common.info'),
+        message: t('games.checkVisibilityStillPrivate'),
+        tone: 'warning',
+        buttons: [{text: 'OK'}],
+      });
+    } finally {
+      setChecking(false);
+    }
+  }, [checking, loadData, steamId, t]);
 
   const renderEmptyList = () =>
     searchQuery && searchQuery.trim() !== '' ? (
@@ -39,6 +78,9 @@ const GamesList = React.memo(({listRef}) => {
         text={t('games.libraryEmptyText')}
         actionText={t('games.libraryEmptyPrivacyAction')}
         onAction={openSteamPrivacy}
+        secondaryActionText={t('games.checkVisibilityAction')}
+        onSecondaryAction={checkVisibility}
+        secondaryActionLoading={checking}
         align="top"
       />
     ) : (
@@ -49,6 +91,9 @@ const GamesList = React.memo(({listRef}) => {
         text={t('games.libraryEmptyText')}
         actionText={t('games.libraryEmptyPrivacyAction')}
         onAction={openSteamPrivacy}
+        secondaryActionText={t('games.checkVisibilityAction')}
+        onSecondaryAction={checkVisibility}
+        secondaryActionLoading={checking}
         align="top"
       />
     );

@@ -136,6 +136,8 @@ const steamService = {
     api.get('/steam/search', {params: {q: query, limit}}),
   fetchStatus: (steamId, config = {}) =>
     api.get(`/steam/status/${steamId}`, config),
+  checkVisibility: steamId =>
+    api.post(`/steam/check-visibility/${steamId}`),
 };
 
 const authApi = axios.create({

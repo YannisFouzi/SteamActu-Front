@@ -118,9 +118,10 @@ const resolveDialogButtonProps = (button, index, buttonsLength) => {
 
   if (button?.style === 'cancel') {
     return {
-      mode: 'text',
+      mode: 'contained-tonal',
+      buttonColor: COLORS.STEAM_BORDER,
       textColor: COLORS.STEAM_TEXT_GRAY,
-      compact: true,
+      compact: false,
     };
   }
 
@@ -366,9 +367,12 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.md,
     paddingTop: SPACING.sm,
     gap: SPACING.sm,
+    justifyContent: 'center',
+    flexDirection: 'row',
   },
   dialogButton: {
     borderRadius: RADIUS.md,
+    flex: 1,
   },
   dialogButtonLabel: {
     letterSpacing: 0.2,

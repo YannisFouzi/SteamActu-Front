@@ -78,6 +78,7 @@ const SettingsScreen = () => {
     showDialog({
       title: t('auth.logoutConfirmTitle'),
       message: t('auth.logoutConfirmMessage'),
+      icon: 'logout',
       options: {cancelable: true},
       buttons: [
         {text: t('common.cancel'), style: 'cancel'},
