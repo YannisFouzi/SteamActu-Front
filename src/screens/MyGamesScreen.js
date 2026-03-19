@@ -23,8 +23,8 @@ const MyGamesScreen = () => {
   const sortOptions = useMemo(
     () => [
       {value: 'default', label: t('games.sortAZ')},
-      {value: 'recent', label: t('games.recents')},
-      {value: 'recentsPlus', label: t('games.recentsPlus')},
+      // {value: 'recent', label: t('games.recents')},
+      // {value: 'recentsPlus', label: t('games.recentsPlus')},
       {value: 'lastTwoWeeks', label: t('games.recentTwoWeeks')},
       {value: 'mostPlayed', label: t('games.topPlayed')},
     ],

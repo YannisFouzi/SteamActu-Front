@@ -166,6 +166,7 @@ export const useGamesLibraryController = ({
         forceReload,
         isReconnection,
         games.length,
+        gamesHydratedFromCacheRef.current,
       );
       debugLog('[LOADDATA] shouldReload:', mustReload);
 

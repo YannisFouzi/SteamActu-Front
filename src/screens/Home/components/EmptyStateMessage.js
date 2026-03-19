@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../../constants';
 
@@ -15,6 +15,8 @@ const EmptyStateMessage = ({
   textStyle,
   subtext,
   subtextStyle,
+  actionText,
+  onAction,
   align = 'top',
   testID,
 }) => {
@@ -40,6 +42,23 @@ const EmptyStateMessage = ({
 
       {text ? (
         <Text style={textStyle || styles.placeholderText}>{text}</Text>
+      ) : null}
+
+      {actionText && onAction ? (
+        <TouchableOpacity
+          onPress={onAction}
+          style={{
+            backgroundColor: COLORS.STEAM_BLUE,
+            paddingHorizontal: 20,
+            paddingVertical: 12,
+            borderRadius: 8,
+            marginTop: 16,
+          }}
+          activeOpacity={0.7}>
+          <Text style={{color: COLORS.WHITE, fontSize: 15, fontWeight: '600', textAlign: 'center'}}>
+            {actionText}
+          </Text>
+        </TouchableOpacity>
       ) : null}
 
       {subtext ? (

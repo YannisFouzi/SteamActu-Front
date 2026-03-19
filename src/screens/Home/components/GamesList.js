@@ -1,5 +1,5 @@
-import React from 'react';
-import {FlatList, RefreshControl} from 'react-native';
+import React, {useCallback} from 'react';
+import {FlatList, Linking, RefreshControl} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import {COLORS} from '../../../constants';
 import {useAppContext} from '../../../context/AppContext';
@@ -9,10 +9,16 @@ import EmptyStateMessage from './EmptyStateMessage';
 import GameItemAlt from './GameItemAlt';
 import NoResultsPlaceholder from './NoResultsPlaceholder';
 
+const STEAM_PRIVACY_URL = 'https://steamcommunity.com/my/edit/settings';
+
 const GamesList = React.memo(({listRef}) => {
   const {t} = useTranslation();
   const {filteredGames, refreshing, handleRefresh, searchQuery, sortOption} =
     useAppContext();
+
+  const openSteamPrivacy = useCallback(() => {
+    Linking.openURL(STEAM_PRIVACY_URL);
+  }, []);
 
   const renderEmptyList = () =>
     searchQuery && searchQuery.trim() !== '' ? (
@@ -28,17 +34,21 @@ const GamesList = React.memo(({listRef}) => {
     ) : sortOption === 'lastTwoWeeks' ? (
       <EmptyStateMessage
         styles={styles}
-        iconName="calendar-outline"
-        title={t('games.lastTwoWeeksEmptyTitle')}
-        text={t('games.lastTwoWeeksEmptyText')}
+        iconName="lock-closed-outline"
+        title={t('games.libraryEmptyTitle')}
+        text={t('games.libraryEmptyText')}
+        actionText={t('games.libraryEmptyPrivacyAction')}
+        onAction={openSteamPrivacy}
         align="top"
       />
     ) : (
       <EmptyStateMessage
         styles={styles}
-        iconName="sad-outline"
+        iconName="lock-closed-outline"
         title={t('games.libraryEmptyTitle')}
         text={t('games.libraryEmptyText')}
+        actionText={t('games.libraryEmptyPrivacyAction')}
+        onAction={openSteamPrivacy}
         align="top"
       />
     );

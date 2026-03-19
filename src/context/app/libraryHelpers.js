@@ -81,8 +81,8 @@ export const loadGamesLibrary = async (steamId, requestConfig = {}) => {
   }
 };
 
-export const shouldReloadData = (forceReload, isReconnection, gamesLength) =>
-  forceReload || isReconnection || gamesLength === 0;
+export const shouldReloadData = (forceReload, isReconnection, gamesLength, hasLoadedOnce = false) =>
+  forceReload || isReconnection || (gamesLength === 0 && !hasLoadedOnce);
 
 export const handleDataLoadError = ({error, onRetry, onLogout}) => {
   debugError('[LOADDATA] Erreur', error);

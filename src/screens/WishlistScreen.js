@@ -1,6 +1,6 @@
 import {useFocusEffect} from '@react-navigation/native';
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {FlatList, RefreshControl, View} from 'react-native';
+import {FlatList, Linking, RefreshControl, View} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import GameCard from '../components/GameCard';
 import LoadingContainer from '../components/LoadingContainer';
@@ -11,6 +11,8 @@ import NoResultsPlaceholder from './Home/components/NoResultsPlaceholder';
 import SearchInput from './Home/components/SearchInput';
 import SortOptions from './Home/components/SortOptions';
 import styles from './Home/styles';
+
+const STEAM_PRIVACY_URL = 'https://steamcommunity.com/my/edit/settings';
 
 const WishlistScreen = ({
   wishlist,
@@ -74,9 +76,11 @@ const WishlistScreen = ({
     return (
       <EmptyStateMessage
         styles={styles}
-        iconName="sad-outline"
+        iconName="lock-closed-outline"
         title={t('games.wishlistEmptyTitle')}
         text={t('games.wishlistEmptyText')}
+        actionText={t('games.wishlistEmptyPrivacyAction')}
+        onAction={() => Linking.openURL(STEAM_PRIVACY_URL)}
         align="top"
       />
     );
