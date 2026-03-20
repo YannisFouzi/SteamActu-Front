@@ -115,8 +115,7 @@
     "followUnavailableTitle": "Suivi impossible",
     "unfollowUnavailableMessage": "Impossible de retirer ce jeu des suivis pour le moment. Réessayez plus tard.",
     "unfollowUnavailableTitle": "Désuivi impossible",
-    "unfollowAction": "Ne plus suivre ce jeu",
-    "followAction": "Suivre ce jeu"
+    "unfollowAction": "Ne plus suivre ce jeu"
   },
   "news": {
     "favoritesOnly": "Afficher uniquement les favoris",

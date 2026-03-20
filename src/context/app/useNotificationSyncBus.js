@@ -30,7 +30,6 @@ export const useNotificationSyncBus = () => {
     }
 
     const listeners = notificationSyncListenersRef.current[type];
-    console.log('[TRACE-SYNC]', {type, appId, listenersCount: listeners?.size || 0});
     if (!listeners || listeners.size === 0) {
       return;
     }

@@ -16,10 +16,6 @@ import {setPendingNotification} from './src/services/initialNotificationStore';
 // pour fonctionner en headless mode (app killed). Les imports dynamiques
 // (require) garantissent que le handler reste leger au boot.
 notifee.onBackgroundEvent(async event => {
-  const notifId = event.detail?.notification?.id || 'unknown';
-  const action = event.detail?.pressAction?.id || 'none';
-  console.log('[TRACE-NOTIF] 1/onBackgroundEvent', {notifId, action, eventType: event.type});
-
   if (
     event.type !== EventType.PRESS &&
     event.type !== EventType.ACTION_PRESS
@@ -63,9 +59,6 @@ notifee
   .getInitialNotification()
   .then(initialNotification => {
     if (initialNotification) {
-      const notifId = initialNotification.notification?.id || 'unknown';
-      const action = initialNotification.pressAction?.id || 'none';
-      console.log('[TRACE-NOTIF] 2/getInitialNotification', {notifId, action});
       setPendingNotification({source: 'notifee', data: initialNotification});
     }
   })

@@ -32,10 +32,6 @@ export async function handleNotificationInteraction({
   onFollowedGamesTabUnfollow,
   onFollowPromptConfirm,
 }) {
-  const notifId = detail?.notification?.id || 'unknown';
-  const action = detail?.pressAction?.id || 'none';
-  console.log('[TRACE-NOTIF] 5/handleNotificationInteraction', {notifId, action, eventType});
-
   if (eventType !== EventType.PRESS && eventType !== EventType.ACTION_PRESS) {
     return;
   }
@@ -116,8 +112,6 @@ export async function consumePendingInitialNotification({
   }
 
   const {source, data} = pendingNotification;
-  const notifId = data?.notification?.id || data?.messageId || 'unknown';
-  console.log('[TRACE-NOTIF] 4/consumePendingInitialNotification', {source, notifId});
 
   if (source === 'firebase' && data) {
     const payload = extractNotificationPayload(data);
@@ -169,10 +163,6 @@ export async function consumePendingInitialNotification({
 }
 
 export async function handleBackgroundNotifeeEvent(event) {
-  const notifId = event.detail?.notification?.id || 'unknown';
-  const action = event.detail?.pressAction?.id || 'none';
-  console.log('[TRACE-NOTIF] 3/handleBackgroundNotifeeEvent', {notifId, action});
-
   try {
     if (
       (event.type === EventType.PRESS ||

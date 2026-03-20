@@ -115,8 +115,7 @@
     "followUnavailableTitle": "Unable to follow",
     "unfollowUnavailableMessage": "Unable to remove this game from followed games right now. Try again later.",
     "unfollowUnavailableTitle": "Unable to unfollow",
-    "unfollowAction": "Unfollow this game",
-    "followAction": "Follow this game"
+    "unfollowAction": "Unfollow this game"
   },
   "news": {
     "favoritesOnly": "Show favorites only",
