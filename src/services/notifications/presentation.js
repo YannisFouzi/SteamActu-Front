@@ -180,8 +180,16 @@ async function validateNotificationImageUrl(imageUrl) {
 
 function buildBaseNotification(payload) {
   const canUnfollow = canDisplayUnfollowAction(payload);
-  const pressActionId =
-    payload.type === 'follow_prompt' ? ACTION_FOLLOW_GAME : ACTION_OPEN_NEWS;
+  const isFollowPrompt = payload.type === 'follow_prompt';
+
+  const androidActions = [];
+  if (Platform.OS === 'android' && canUnfollow) {
+    androidActions.push({
+      id: ACTION_UNFOLLOW_GAME,
+      title: translate('notifications.unfollowAction'),
+      pressAction: {id: ACTION_UNFOLLOW_GAME},
+    });
+  }
 
   return {
     id: payload.id,
@@ -190,17 +198,8 @@ function buildBaseNotification(payload) {
     data: payload.data,
     android: {
       channelId: NOTIFICATION_CHANNEL_ID,
-      pressAction: {id: pressActionId},
-      actions:
-        Platform.OS === 'android' && canUnfollow
-          ? [
-              {
-                id: ACTION_UNFOLLOW_GAME,
-                title: translate('notifications.unfollowAction'),
-                pressAction: {id: ACTION_UNFOLLOW_GAME},
-              },
-            ]
-          : [],
+      pressAction: {id: isFollowPrompt ? ACTION_FOLLOW_GAME : ACTION_OPEN_NEWS},
+      actions: androidActions,
       sound: 'default',
     },
     ios: {

@@ -206,6 +206,7 @@ export const AppProvider = ({children, navigation = null}) => {
     wishlistFollowMode,
     notifyNotificationSync,
     onNotificationUnfollowCommitted: applyNotificationUnfollowCommit,
+    setUser,
   });
 
   useAppLifecycleRefresh({

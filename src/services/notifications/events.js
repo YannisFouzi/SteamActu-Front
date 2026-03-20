@@ -122,11 +122,21 @@ export async function consumePendingInitialNotification({
   if (source === 'firebase' && data) {
     const payload = extractNotificationPayload(data);
 
-    if (
-      payload?.id &&
-      !processedNotificationIds.has(payload.id) &&
-      payload?.data?.url
-    ) {
+    if (!payload?.id || processedNotificationIds.has(payload.id)) {
+      return;
+    }
+
+    if (payload.type === 'follow_prompt') {
+      await executeFollowPromptAction({
+        steamId,
+        data: payload.data,
+        onFollowPromptConfirm,
+      });
+      processedNotificationIds.add(payload.id);
+      return;
+    }
+
+    if (payload?.data?.url) {
       await openUrlSafely(payload.data.url);
       processedNotificationIds.add(payload.id);
     }
@@ -193,6 +203,27 @@ export async function handleBackgroundNotifeeEvent(event) {
       );
 
       if (success && notification?.id) {
+        processedNotificationIds.add(notification.id);
+      }
+      return;
+    }
+
+    if (
+      (event.type === EventType.PRESS ||
+        event.type === EventType.ACTION_PRESS) &&
+      event.detail?.pressAction?.id === ACTION_FOLLOW_GAME
+    ) {
+      const notification = event.detail?.notification || null;
+      const data = notification?.data || {};
+      const steamId = data?.steamId;
+
+      await executeFollowPromptAction({
+        steamId,
+        notification,
+        data,
+      });
+
+      if (notification?.id) {
         processedNotificationIds.add(notification.id);
       }
     }

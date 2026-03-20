@@ -20,6 +20,7 @@ export const useAppNotificationsBridge = ({
   wishlistFollowMode,
   notifyNotificationSync,
   onNotificationUnfollowCommitted,
+  setUser,
 }) => {
   useEffect(() => {
     let cleanupNotifications;
@@ -111,8 +112,27 @@ export const useAppNotificationsBridge = ({
         onWishlistUnfollow: appId => notifyNotificationSync('wishlist', appId),
         onFollowedGamesTabUnfollow: appId =>
           notifyNotificationSync('followed', appId),
-        onFollowPromptConfirm: appId =>
-          notifyNotificationSync('followed', appId),
+        onFollowPromptConfirm: appId => {
+          if (appId) {
+            const appIdString = String(appId);
+            setUser(prevUser => {
+              if (!prevUser) {
+                return prevUser;
+              }
+              const current = Array.isArray(prevUser.followedGames)
+                ? prevUser.followedGames.slice()
+                : [];
+              if (current.includes(appIdString)) {
+                return prevUser;
+              }
+              return {
+                ...prevUser,
+                followedGames: [...current, appIdString],
+              };
+            });
+          }
+          notifyNotificationSync('followed', appId);
+        },
       });
 
       registrationTimeout = setTimeout(() => {
@@ -140,6 +160,7 @@ export const useAppNotificationsBridge = ({
     newsNotifications,
     notifyNotificationSync,
     onNotificationUnfollowCommitted,
+    setUser,
     settingsStatus,
     steamId,
     wishlistFollowMode,
