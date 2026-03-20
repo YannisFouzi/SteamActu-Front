@@ -3,7 +3,7 @@
  */
 
 import messaging from '@react-native-firebase/messaging';
-import notifee from '@notifee/react-native';
+import notifee, {EventType} from '@notifee/react-native';
 import {AppRegistry} from 'react-native';
 import 'react-native-gesture-handler';
 import './src/i18n';
@@ -11,6 +11,40 @@ import App from './App';
 import {name as appName} from './app.json';
 import {displayRemoteNotification} from './src/services/notificationService';
 import {setPendingNotification} from './src/services/initialNotificationStore';
+
+// Background Notifee Event Handler — DOIT etre enregistre au top-level (index.js)
+// pour fonctionner en headless mode (app killed). Les imports dynamiques
+// (require) garantissent que le handler reste leger au boot.
+notifee.onBackgroundEvent(async event => {
+  const notifId = event.detail?.notification?.id || 'unknown';
+  const action = event.detail?.pressAction?.id || 'none';
+  console.log('[TRACE-NOTIF] 1/onBackgroundEvent', {notifId, action, eventType: event.type});
+
+  if (
+    event.type !== EventType.PRESS &&
+    event.type !== EventType.ACTION_PRESS
+  ) {
+    return;
+  }
+
+  const {handleBackgroundNotifeeEvent, getBackgroundEventHandlers} =
+    require('./src/services/notifications/events');
+
+  const handlers = getBackgroundEventHandlers();
+
+  if (handlers.length === 0) {
+    await handleBackgroundNotifeeEvent(event);
+    return;
+  }
+
+  for (const handler of handlers) {
+    try {
+      await handler(event);
+    } catch (error) {
+      console.error('[FCM] Erreur handler background Notifee', error);
+    }
+  }
+});
 
 // Capturer l'intent initial le plus tot possible (avant le render React)
 // Si l'app a ete lancee par un tap sur une notification, on stocke l'info
@@ -29,7 +63,9 @@ notifee
   .getInitialNotification()
   .then(initialNotification => {
     if (initialNotification) {
-      console.log('[FCM] Notifee initial notification capturee au bootstrap');
+      const notifId = initialNotification.notification?.id || 'unknown';
+      const action = initialNotification.pressAction?.id || 'none';
+      console.log('[TRACE-NOTIF] 2/getInitialNotification', {notifId, action});
       setPendingNotification({source: 'notifee', data: initialNotification});
     }
   })

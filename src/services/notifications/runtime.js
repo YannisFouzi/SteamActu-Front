@@ -1,9 +1,17 @@
 import {getApp} from '@react-native-firebase/app';
 import {getMessaging} from '@react-native-firebase/messaging';
 
-const appInstance = getApp();
+let appInstance;
+let messagingInstanceValue;
 
-export const messagingInstance = getMessaging(appInstance);
+try {
+  appInstance = getApp();
+  messagingInstanceValue = getMessaging(appInstance);
+} catch (error) {
+  console.error('[FCM] Erreur initialisation Firebase:', error?.message || error);
+}
+
+export const messagingInstance = messagingInstanceValue;
 export const processedNotificationIds = new Set();
 export const backgroundEventHandlers = new Set();
 
