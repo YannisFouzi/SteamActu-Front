@@ -9,6 +9,7 @@ import {
   consumePendingInitialNotification,
   handleNotificationInteraction,
 } from './notifications/events';
+import {executeFollowPromptAction} from './notifications/actions';
 import {
   extractNotificationPayload,
   logCriticalNotificationError,
@@ -96,6 +97,16 @@ export function setupNotificationHandlers(steamId, options = {}) {
     messagingInstance,
     async remoteMessage => {
       const payload = extractNotificationPayload(remoteMessage);
+
+      if (payload?.type === 'follow_prompt') {
+        await executeFollowPromptAction({
+          steamId,
+          data: payload.data,
+          onFollowPromptConfirm,
+        });
+        return;
+      }
+
       if (payload?.data?.url) {
         await openUrlSafely(payload.data.url);
       }
