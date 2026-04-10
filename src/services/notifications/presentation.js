@@ -196,7 +196,9 @@ function buildBaseNotification(payload) {
     title: payload.title,
     body: payload.body,
     data: payload.data,
+    timestamp: Date.now(),
     android: {
+      showTimestamp: true,
       channelId: NOTIFICATION_CHANNEL_ID,
       pressAction: {
         id: isFollowPrompt ? ACTION_FOLLOW_GAME : ACTION_OPEN_NEWS,
