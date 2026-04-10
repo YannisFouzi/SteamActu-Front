@@ -118,7 +118,8 @@ const styles = StyleSheet.create({
   },
   followButton: {
     justifyContent: 'center',
-    padding: 12,
+    alignSelf: 'center',
+    marginRight: 12,
   },
 });
 

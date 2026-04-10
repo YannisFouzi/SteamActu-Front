@@ -202,16 +202,6 @@ export const useFollowedGamesActions = ({
         followRequestsInFlightRef.current.add(appIdString);
         setOptimisticFollowState(appIdString, !isFollowed);
 
-        debugLog('=== Debut handleFollowGame ===');
-        debugLog('AppID recu:', appIdString);
-        debugLog(
-          'Etat isFollowed (fourni):',
-          typeof gameMeta.isFollowed === 'boolean'
-            ? gameMeta.isFollowed
-            : 'non fourni',
-        );
-        debugLog('Nombre total de jeux:', games.length);
-
         const game = games.find(g => getGameAppId(g) === appIdString);
 
         const gameName =
@@ -223,8 +213,6 @@ export const useFollowedGamesActions = ({
           gameMeta.logoUrl ||
           (game ? getGameIconUrl(appIdString, game.img_icon_url) : '') ||
           '';
-
-        debugLog('Jeu cible:', gameName);
 
         const previousGames = games;
         let localToggleApplied = false;
@@ -259,7 +247,7 @@ export const useFollowedGamesActions = ({
                 reason: 'followGame',
               });
             }
-            debugLog('Jeu suivi avec succes:', gameName);
+            debugLog('[FOLLOW] Jeu suivi:', gameName);
 
             if (updatedUser) {
               setUser(updatedUser);
@@ -296,7 +284,7 @@ export const useFollowedGamesActions = ({
                 reason: 'unfollowGame',
               });
             }
-            debugLog('Jeu retire des suivis:', gameName);
+            debugLog('[FOLLOW] Jeu retire des suivis:', gameName);
 
             if (updatedUser) {
               setUser(updatedUser);
@@ -327,8 +315,6 @@ export const useFollowedGamesActions = ({
           if (localToggleApplied) {
             await persistGamesCache(optimisticGames, steamId);
           }
-
-          debugLog('=== Fin handleFollowGame (succes) ===');
           return true;
         } catch (apiError) {
           debugError('Erreur API lors de la modification du suivi:', apiError);
