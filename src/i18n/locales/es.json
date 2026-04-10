@@ -1,0 +1,357 @@
+{
+  "common": {
+    "about": "Acerca de",
+    "appName": "GameNotif",
+    "cancel": "Cancelar",
+    "contact": "Contacto",
+    "delete": "Eliminar",
+    "disabled": "Desactivado",
+    "english": "Inglés",
+    "error": "Error",
+    "french": "Francés",
+    "german": "Alemán",
+    "spanish": "Español",
+    "gameWithId": "Juego {{appId}}",
+    "language": "Idioma",
+    "autoFollow": "Seguimiento automático",
+    "information": "Información",
+    "legal": "Legal",
+    "loading": "Cargando...",
+    "notifications": "Notificaciones",
+    "ok": "OK",
+    "success": "Correcto",
+    "info": "Info",
+    "openSettings": "Abrir ajustes",
+    "retry": "Reintentar",
+    "searchPlaceholder": "Buscar...",
+    "settings": "Ajustes",
+    "unknownGame": "Juego desconocido",
+    "unavailableLink": "Enlace no disponible"
+  },
+  "nav": {
+    "account": "Cuenta",
+    "contact": "Contacto",
+    "feed": "Feed",
+    "followGame": "Seguir un juego",
+    "followedGames": "Juegos seguidos",
+    "myGames": "Mis juegos",
+    "news": "Noticias",
+    "privacyPolicy": "Privacidad",
+    "search": "Buscar",
+    "settings": "Ajustes",
+    "termsOfService": "Términos del servicio",
+    "wishlist": "Lista de deseos"
+  },
+  "auth": {
+    "connectivityErrorMessage": "No se puede iniciar sesión. Comprueba que el servidor sea accesible.",
+    "launchErrorMessage": "No se pudo iniciar el inicio de sesión de Steam. Inténtalo de nuevo.",
+    "loggingIn": "Iniciando sesión en Steam...",
+    "loginCancelledMessage": "La ventana de inicio de sesión de Steam se cerró antes de terminar.",
+    "loginCancelledTitle": "Inicio de sesión cancelado",
+    "loginButtonHint": "Abre la autenticación de Steam en un navegador seguro.",
+    "loginFeature1": "Solo noticias de los juegos que sigues",
+    "loginFeature2": "Notificaciones push personalizables",
+    "loginFeature3": "Biblioteca y lista de deseos sincronizadas",
+    "loginSecurityNote": "Inicio de sesión seguro con Steam OpenID",
+    "loginPendingMessage": "Completando el inicio de sesión, espera...",
+    "loginPendingTitle": "Iniciando sesión",
+    "loginExpiredMessage": "El intento de inicio de sesión ha caducado. Inténtalo de nuevo.",
+    "loginExpiredTitle": "Intento caducado",
+    "loginSubtitle": "Mantente al día con las noticias de tus juegos de Steam",
+    "loginTitle": "No te pierdas las noticias\nde tus juegos de Steam",
+    "loginWithSteam": "Iniciar sesión con Steam",
+    "logout": "Cerrar sesión",
+    "logoutConfirmTitle": "Cerrar sesión",
+    "logoutConfirmMessage": "¿Seguro que quieres cerrar sesión?",
+    "logoutErrorMessage": "Error al cerrar sesión. Inténtalo de nuevo.",
+    "logoutErrorTitle": "Error al cerrar sesión",
+    "logoutSuccessMessage": "Has cerrado sesión correctamente.",
+    "logoutSuccessTitle": "Sesión cerrada",
+    "steamIdMissingMessage": "No se pudo obtener tu Steam ID. Inténtalo de nuevo.",
+    "steamIdMissingTitle": "Error de autenticación"
+  },
+  "settings": {
+    "aboutBody": "Esta app te permite recibir notificaciones sobre los juegos de Steam que sigues.",
+    "aboutVersion": "GameNotif v1.0.0",
+    "contactShortcut": "Mi información de contacto",
+    "deleteAccount": "Eliminar mi cuenta",
+    "deleteAccountConfirmMessage": "¿Seguro que quieres eliminar tu cuenta? Esta acción es irreversible. Todos tus datos se borrarán de forma permanente.",
+    "deleteAccountConfirmTitle": "Eliminar mi cuenta",
+    "deleteAccountError": "Error al eliminar la cuenta. Inténtalo de nuevo.",
+    "deleting": "Eliminando...",
+    "deleteWarning": "Esta acción es irreversible",
+    "languageDescription": "Elige el idioma de la interfaz, las noticias de juegos solicitadas y las notificaciones.",
+    "languageLabel": "Idioma de la app",
+    "languageSaveError": "No se pudo actualizar el idioma ahora. Inténtalo de nuevo.",
+    "autoFollowDescription": "Elige cómo gestionar los juegos detectados en tu biblioteca y lista de deseos.",
+    "libraryDescription": "Elige cómo gestionar los juegos detectados en tu biblioteca.",
+    "libraryLabel": "Juegos comprados",
+    "newsNotificationsDescription": "Activa esta opción para recibir una notificación cuando haya noticias nuevas en los juegos que sigues.",
+    "newsNotificationsLabel": "Notificaciones de noticias",
+    "reviewTutorial": "Ver el tutorial otra vez",
+    "steamAccountLabel": "Cuenta Steam",
+    "tutorialSummary": "Cuando los ajustes estén bien, pulsa «Finalizar» para activar del todo las notificaciones y el seguimiento automático.",
+    "tutorialFinish": "Terminar tutorial",
+    "wishlistDescription": "Elige si los juegos añadidos a la lista de deseos deben seguirse automáticamente.",
+    "wishlistLabel": "Juegos en la lista de deseos"
+  },
+  "followModes": {
+    "autoSubtitleLibrary": "Cada juego comprado se añade directamente a tus juegos seguidos.",
+    "autoSubtitleWishlist": "Cada juego añadido a la lista de deseos se sigue automáticamente.",
+    "autoTitle": "Seguimiento automático",
+    "offSubtitleLibrary": "Los juegos comprados no se añadirán a los seguidos.",
+    "offSubtitleWishlist": "Los juegos de la lista de deseos no se añadirán a los seguidos.",
+    "offTitle": "Desactivado",
+    "promptSubtitleLibrary": "Recibe una notificación para confirmar el seguimiento de cada juego comprado.",
+    "promptSubtitleWishlist": "Una notificación te pide confirmar seguir cada juego de la lista de deseos.",
+    "promptTitle": "Alerta de confirmación"
+  },
+  "notifications": {
+    "blockedMessage": "Android está bloqueando las notificaciones de GameNotif. Actívalas en los ajustes.",
+    "blockedTitle": "Notificaciones bloqueadas",
+    "channelDescription": "Notificaciones push sobre noticias de juegos seguidos",
+    "channelName": "GameNotif",
+    "disabledMessage": "No se pueden activar las notificaciones ahora. Inténtalo más tarde.",
+    "disabledTitle": "Notificaciones desactivadas",
+    "followUnavailableMessage": "No se puede añadir este juego a los seguidos ahora. Inténtalo más tarde.",
+    "followUnavailableTitle": "No se puede seguir",
+    "unfollowUnavailableMessage": "No se puede quitar este juego de los seguidos ahora. Inténtalo más tarde.",
+    "unfollowUnavailableTitle": "No se puede dejar de seguir",
+    "unfollowAction": "Dejar de seguir este juego"
+  },
+  "news": {
+    "favoritesOnly": "Solo favoritos",
+    "loadGameNewsError": "No se pudieron cargar las noticias del juego. Inténtalo de nuevo.",
+    "loadingFeed": "Cargando feed de noticias...",
+    "loginForNewsSubtext": "Ve a ajustes para iniciar sesión en tu cuenta Steam.",
+    "loginForNewsText": "Inicia sesión para ver noticias de tus juegos seguidos.",
+    "loginForNewsTitle": "Inicia sesión para tus noticias",
+    "noLinkMessage": "No hay enlace disponible para esta noticia.",
+    "noLinkTitle": "Información",
+    "noRecentNewsText": "Tus juegos seguidos no han publicado noticias recientes. Vuelve más tarde o sigue más juegos.",
+    "noRecentNewsTitle": "Sin noticias recientes",
+    "openLinkError": "No se pudo abrir el enlace de Steam."
+  },
+  "games": {
+    "followedEmptySubtext": "Puedes seguir un juego desde su tarjeta o desde el feed de noticias.",
+    "followedEmptyText": "Activa la campana en tus juegos para recibir notificaciones aquí.",
+    "followedEmptyTitle": "Sin juegos seguidos",
+    "followUpdateError": "No se pudo actualizar el seguimiento del juego. Inténtalo de nuevo.",
+    "followUpdateUnexpectedError": "Error inesperado. Inténtalo de nuevo.",
+    "loadingGames": "Cargando juegos...",
+    "newGamesDetectedMessage_one": "Se ha añadido {{count}} juego nuevo a tu biblioteca.",
+    "newGamesDetectedMessage_other": "Se han añadido {{count}} juegos nuevos a tu biblioteca.",
+    "newGamesDetectedTitle": "Juegos nuevos detectados",
+    "recents": "Recientes",
+    "recentsPlus": "Recientes+",
+    "recentTwoWeeks": "Recientes",
+    "recentsPlusEmptyTitle": "Sin juego reciente",
+    "recentsPlusEmptyText": "Según los datos sincronizados, no se ha lanzado ningún juego recientemente.",
+    "lastTwoWeeksEmptyTitle": "Sin juego en las últimas 2 semanas",
+    "lastTwoWeeksEmptyText": "No se ha lanzado ningún juego en los últimos 14 días.",
+    "libraryEmptyTitle": "Ningún juego disponible",
+    "libraryEmptyText": "Tus juegos no son visibles. Comprueba que «Detalles del juego» esté en «Todos» en la privacidad de Steam.",
+    "libraryEmptyPrivacyAction": "Abrir ajustes de Steam",
+    "checkVisibilityAction": "Comprobar mi perfil",
+    "checkVisibilitySuccess": "¡Perfil público detectado! Sincronizando...",
+    "checkVisibilityStillPrivate": "Tu perfil sigue siendo privado. «Detalles del juego» debe estar en «Todos».",
+    "wishlistAccessDenied": "Acceso a la lista de deseos denegado (perfil privado).",
+    "searchMyGamesPlaceholder": "Buscar en mis juegos...",
+    "searchSteamPlaceholder": "Buscar un juego de Steam...",
+    "searchWishlistPlaceholder": "Buscar en mi lista de deseos...",
+    "sortAZ": "A-Z",
+    "topPlayed": "Más jugados",
+    "wishlistEmptyText": "Tu lista de deseos no es visible. Comprueba que «Detalles del juego» esté en «Todos».",
+    "wishlistEmptyPrivacyAction": "Abrir ajustes de Steam",
+    "checkVisibilityWishlistSuccess": "¡Perfil público detectado! Sincronizando lista de deseos...",
+    "wishlistEmptyTitle": "Ningún juego disponible",
+    "wishlistLoadError": "No se pudo cargar la lista de deseos.",
+    "wishlistLoading": "Cargando lista de deseos...",
+    "wishlistNotFoundOrPrivate": "Lista de deseos no encontrada o privada.",
+    "wishlistProfilePublicHint": "No se pudo cargar la lista de deseos. Asegúrate de que tu perfil de Steam sea público."
+  },
+  "search": {
+    "hint": "Escribe al menos 2 caracteres",
+    "loading": "Buscando...",
+    "placeholderFollowed": "Buscar en juegos seguidos...",
+    "title": "Buscar un juego"
+  },
+  "emptyStates": {
+    "noResultsText": "Prueba otras palabras clave",
+    "noResultsTitle": "Sin resultados"
+  },
+  "contact": {
+    "directTitle": "Contacto directo",
+    "email": "Correo",
+    "github": "GitHub",
+    "linkUnavailableMessage": "No se puede abrir este enlace ahora.",
+    "website": "Sitio web"
+  },
+  "legal": {
+    "frenchOnlyNotice": "Este aviso legal solo aplica si faltan textos en tu idioma.",
+    "lastUpdated": "Última actualización: {{date}}",
+    "privacyTitle": "Política de privacidad",
+    "termsTitle": "Términos del servicio",
+    "documents": {
+      "terms": {
+        "updatedAt": "2025-11-11T12:00:00.000Z",
+        "sections": [
+          {
+            "title": "1. Aceptación de los términos",
+            "content": "Al usar GameNotif aceptas íntegramente estos términos. Si no estás de acuerdo, deja de usar la aplicación y elimina tu cuenta desde Ajustes."
+          },
+          {
+            "title": "2. Descripción del servicio",
+            "content": "GameNotif agrega noticias del ecosistema Steam para los juegos que sigues. El servicio es informativo y puede cambiar o interrumpirse."
+          },
+          {
+            "title": "3. Uso de la aplicación",
+            "content": "Te comprometes a no hacer un uso indebido, no comprometer la seguridad ni recopilar datos de otros usuarios. El abuso puede suponer la suspensión del acceso."
+          },
+          {
+            "title": "4. Cuentas y autenticación Steam",
+            "content": "El acceso se basa en tu cuenta Steam. Eres responsable de la confidencialidad de tus credenciales y de las acciones realizadas con tu cuenta en la app."
+          },
+          {
+            "title": "5. Notificaciones y contenidos",
+            "content": "Las notificaciones provienen de fuentes públicas o oficiales relacionadas con Steam. No se garantiza su exactitud ni disponibilidad. GameNotif no se responsabiliza del contenido de terceros."
+          },
+          {
+            "title": "6. Disponibilidad",
+            "content": "Procuramos mantener la app disponible sin garantía. Pueden producirse interrupciones por mantenimiento, actualizaciones o fuerza mayor."
+          },
+          {
+            "title": "7. Propiedad intelectual",
+            "content": "Gráficos, textos, logos y funciones de GameNotif son propiedad de sus titulares. Steam y marcas relacionadas son propiedad de Valve Corporation."
+          },
+          {
+            "title": "8. Limitación de responsabilidad",
+            "content": "GameNotif se ofrece «tal cual». No nos hacemos responsables de daños directos o indirectos derivados del uso o la imposibilidad de uso."
+          },
+          {
+            "title": "9. Cambios en los términos",
+            "content": "Estos términos pueden modificarse en cualquier momento. La versión más reciente está en la app. El uso continuado implica aceptación."
+          },
+          {
+            "title": "10. Contacto",
+            "content": "Preguntas sobre estos términos: contact@fouzi-dev.fr."
+          }
+        ]
+      },
+      "privacy": {
+        "updatedAt": "2025-11-11T12:00:00.000Z",
+        "sections": [
+          {
+            "title": "1. Datos recopilados",
+            "content": "Solo guardamos lo necesario para GameNotif: tu Steam ID, biblioteca sincronizada (juegos con tiempo de juego), historial de juegos recientes, lista de deseos, ajustes de notificaciones en la app (activación, auto-seguimiento, token push) y registros técnicos para la estabilidad."
+          },
+          {
+            "title": "2. Uso de los datos",
+            "content": "Los datos sirven para sincronizar juegos, gestionar seguimientos, enviar notificaciones y mejorar el rendimiento. No se venden ni se usan con fines publicitarios."
+          },
+          {
+            "title": "3. Almacenamiento y conservación",
+            "content": "La información se guarda de forma segura en nuestros servidores mientras la cuenta esté activa. Puedes eliminar la cuenta desde la app para borrar tus datos."
+          },
+          {
+            "title": "4. Compartición con terceros",
+            "content": "No hay cesión comercial. Algunos datos pueden transitar por las APIs oficiales de Steam para prestar el servicio, conforme a las políticas de Valve."
+          },
+          {
+            "title": "5. Tus derechos",
+            "content": "Según la normativa aplicable, tienes derecho de acceso, rectificación, oposición y supresión. Contacto: contact@fouzi-dev.fr."
+          },
+          {
+            "title": "6. Seguridad",
+            "content": "Aplicamos medidas técnicas y organizativas para proteger tus datos. Ningún sistema es totalmente invulnerable."
+          },
+          {
+            "title": "7. Cookies y tecnologías similares",
+            "content": "GameNotif no usa cookies ni rastreadores publicitarios. Solo hay una caché técnica local para acelerar la visualización."
+          },
+          {
+            "title": "8. Cambios en esta política",
+            "content": "La política de privacidad puede evolucionar. Las actualizaciones se publicarán en esta sección. El uso continuado implica aceptación."
+          },
+          {
+            "title": "9. Contacto",
+            "content": "Preguntas sobre protección de datos: contact@fouzi-dev.fr."
+          }
+        ]
+      }
+    }
+  },
+  "dates": {
+    "fallbackNever": "Nunca",
+    "fallbackNow": "Ahora mismo"
+  },
+  "errors": {
+    "connectionDataMessage": "No se pudieron obtener tus datos. Comprueba la conexión e inténtalo de nuevo.",
+    "connectionGamesMessage": "No se pudieron obtener tus juegos. Comprueba la conexión e inténtalo de nuevo.",
+    "connectionTitle": "Error de conexión",
+    "genericTitle": "Error",
+    "genericRetryMessage": "Ha ocurrido un error. Inténtalo de nuevo.",
+    "loadSettingsMessage": "No se pudieron cargar los ajustes. Inténtalo de nuevo.",
+    "missingGameId": "ID de juego no encontrado.",
+    "missingSteamId": "Steam ID no encontrado.",
+    "networkFallbackMessage": "Error de red, comprueba tu conexión.",
+    "notConnectedMessage": "El usuario no ha iniciado sesión.",
+    "saveSettingsMessage": "No se pudieron guardar los ajustes. Inténtalo de nuevo.",
+    "sessionExpiredMessage": "Tu sesión ha caducado o tu cuenta fue eliminada. Inicia sesión de nuevo.",
+    "sessionExpiredTitle": "Sesión caducada",
+    "unexpectedRetryOrLogout": "Error inesperado. ¿Quieres cerrar sesión e intentarlo de nuevo?"
+  },
+  "tutorial": {
+    "resumeMessage": "Has parado la guía. ¿Continuar, empezar de nuevo u omitir por ahora?",
+    "resumeTitle": "¿Continuar el tutorial?",
+    "resumeButton": "Continuar",
+    "restartButton": "Reiniciar",
+    "skipButton": "Omitir",
+    "stepLabel": "Paso {{current}}/{{total}}",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "finish": "Finalizar",
+    "steps": {
+      "homeIntro": {
+        "title": "Primeros pasos",
+        "description": "Aquí verás noticias relacionadas con los juegos que vas a seguir."
+      },
+      "homeNewsFollowed": {
+        "title": "Juegos seguidos",
+        "description": "Aquí aparece la lista de juegos que sigues."
+      },
+      "homeMyGames": {
+        "title": "Mis juegos",
+        "description": "Encuentra los juegos de tu biblioteca y gestiona si los sigues."
+      },
+      "homeWishlist": {
+        "title": "Lista de deseos",
+        "description": "Ve los juegos de tu lista de deseos y activa el seguimiento."
+      },
+      "homeSearch": {
+        "title": "Buscar un juego",
+        "description": "Usa la búsqueda de Steam para añadir juegos a tus seguidos."
+      },
+      "homeSettings": {
+        "title": "Abrir ajustes",
+        "description": "Toca aquí para configurar notificaciones y preferencias de seguimiento."
+      },
+      "settingsNotifications": {
+        "title": "Notificaciones de noticias",
+        "description": "Activa este interruptor para recibir noticias de los juegos que sigues."
+      },
+      "settingsLibrary": {
+        "title": "Juegos comprados",
+        "description": "Elige si los juegos nuevos detectados en la biblioteca se añaden a seguidos automáticamente o tras confirmación."
+      },
+      "settingsWishlist": {
+        "title": "Lista de deseos de Steam",
+        "description": "Lo mismo para la lista de deseos: seguimiento automático o confirmación por notificación."
+      },
+      "settingsSummary": {
+        "title": "¡Listo!",
+        "description": "Puedes cambiar estas opciones en cualquier momento desde ajustes."
+      }
+    }
+  }
+}

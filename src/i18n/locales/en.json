@@ -9,6 +9,8 @@
     "english": "English",
     "error": "Error",
     "french": "French",
+    "german": "German",
+    "spanish": "Spanish",
     "gameWithId": "Game {{appId}}",
     "language": "Language",
     "autoFollow": "Auto-follow",

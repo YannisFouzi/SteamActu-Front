@@ -2,21 +2,28 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import i18n from 'i18next';
 import {initReactI18next} from 'react-i18next';
 import * as RNLocalize from 'react-native-localize';
+import de from './locales/de.json';
 import en from './locales/en.json';
+import es from './locales/es.json';
 import fr from './locales/fr.json';
 
 export const APP_LANGUAGE_STORAGE_KEY = 'appLanguage';
-export const SUPPORTED_LANGUAGES = ['fr', 'en'];
+export const SUPPORTED_LANGUAGES = ['fr', 'en', 'de', 'es'];
 
-const DEFAULT_LANGUAGE = 'fr';
+/** Langue si locale non reconnue (ex. italien → anglais). */
+const DEFAULT_LANGUAGE = 'en';
 const LANGUAGE_TO_LOCALE = {
   fr: 'fr-FR',
   en: 'en-US',
+  de: 'de-DE',
+  es: 'es-ES',
 };
 
 const resources = {
   en: {translation: en},
   fr: {translation: fr},
+  de: {translation: de},
+  es: {translation: es},
 };
 
 export const normalizeLanguage = language => {
@@ -39,14 +46,28 @@ export const normalizeLanguage = language => {
 
 export const detectDeviceLanguage = () => {
   const bestLanguage = RNLocalize.findBestLanguageTag(SUPPORTED_LANGUAGES);
-  return normalizeLanguage(bestLanguage?.languageTag || bestLanguage?.languageCode);
+  const raw = bestLanguage?.languageTag || bestLanguage?.languageCode || '';
+  const tag = raw.toLowerCase();
+  if (tag.startsWith('fr')) {
+    return 'fr';
+  }
+  if (tag.startsWith('en')) {
+    return 'en';
+  }
+  if (tag.startsWith('de')) {
+    return 'de';
+  }
+  if (tag.startsWith('es')) {
+    return 'es';
+  }
+  return DEFAULT_LANGUAGE;
 };
 
 export const getCurrentAppLanguage = () =>
   normalizeLanguage(i18n.resolvedLanguage || i18n.language);
 
 export const getLocaleForLanguage = language =>
-  LANGUAGE_TO_LOCALE[normalizeLanguage(language)] || LANGUAGE_TO_LOCALE.fr;
+  LANGUAGE_TO_LOCALE[normalizeLanguage(language)] || LANGUAGE_TO_LOCALE.en;
 
 export const getCurrentLocale = language =>
   getLocaleForLanguage(language || getCurrentAppLanguage());

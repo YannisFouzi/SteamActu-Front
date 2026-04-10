@@ -67,6 +67,8 @@ const SettingsScreen = () => {
     () => [
       {value: 'fr', title: t('common.french')},
       {value: 'en', title: t('common.english')},
+      {value: 'de', title: t('common.german')},
+      {value: 'es', title: t('common.spanish')},
     ],
     [t],
   );
