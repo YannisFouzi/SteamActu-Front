@@ -1,7 +1,7 @@
 {
   "common": {
     "about": "À propos",
-    "appName": "Steam Actu",
+    "appName": "GameNotif",
     "cancel": "Annuler",
     "contact": "Contact",
     "delete": "Supprimer",
@@ -70,7 +70,7 @@
   },
   "settings": {
     "aboutBody": "Cette application vous permet de recevoir des notifications pour les actualités des jeux Steam que vous suivez.",
-    "aboutVersion": "Steam Notifications v1.0.0",
+    "aboutVersion": "GameNotif v1.0.0",
     "contactShortcut": "Mes infos de contact",
     "deleteAccount": "Supprimer mon compte",
     "deleteAccountConfirmMessage": "Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible. Toutes vos données seront définitivement supprimées.",
@@ -78,7 +78,7 @@
     "deleteAccountError": "Une erreur est survenue lors de la suppression de votre compte. Veuillez réessayer.",
     "deleting": "Suppression...",
     "deleteWarning": "Cette action est irréversible",
-    "languageDescription": "Choisissez la langue de l'interface, des actualités Steam demandées et des notifications.",
+    "languageDescription": "Choisissez la langue de l'interface, des actualités jeu demandées et des notifications.",
     "languageLabel": "Langue de l'application",
     "languageSaveError": "Impossible de mettre à jour la langue pour le moment. Veuillez réessayer.",
     "autoFollowDescription": "Choisissez comment gérer le suivi des jeux détectés dans votre bibliothèque et votre wishlist.",
@@ -105,10 +105,10 @@
     "promptTitle": "Notif. de confirmation"
   },
   "notifications": {
-    "blockedMessage": "Android bloque les notifications pour Steam Actu. Activez-les dans les paramètres.",
+    "blockedMessage": "Android bloque les notifications pour GameNotif. Activez-les dans les paramètres.",
     "blockedTitle": "Notifications bloquées",
     "channelDescription": "Notifications push pour les actualités des jeux suivis",
-    "channelName": "Actualités Steam",
+    "channelName": "GameNotif",
     "disabledMessage": "Impossible d'activer les notifications pour le moment. Veuillez réessayer plus tard.",
     "disabledTitle": "Notifications désactivées",
     "followUnavailableMessage": "Impossible d'ajouter ce jeu aux suivis pour le moment. Réessayez plus tard.",
@@ -196,11 +196,11 @@
         "sections": [
           {
             "title": "1. Acceptation des conditions",
-            "content": "En accédant à l'application Steam Notifications, vous acceptez l'intégralité des présentes Conditions d'utilisation. Si vous refusez une quelconque disposition, veuillez cesser d'utiliser l'application et supprimer votre compte depuis l'écran Paramètres."
+            "content": "En accédant à l'application GameNotif, vous acceptez l'intégralité des présentes Conditions d'utilisation. Si vous refusez une quelconque disposition, veuillez cesser d'utiliser l'application et supprimer votre compte depuis l'écran Paramètres."
           },
           {
             "title": "2. Description du service",
-            "content": "Steam Notifications agrège et vous diffuse des actualités provenant de l'écosystème Steam pour les jeux que vous suivez. Le service est proposé à titre informatif et peut évoluer ou être interrompu à tout moment."
+            "content": "GameNotif agrège et vous diffuse des actualités provenant de l'écosystème Steam pour les jeux que vous suivez. Le service est proposé à titre informatif et peut évoluer ou être interrompu à tout moment."
           },
           {
             "title": "3. Utilisation de l'application",
@@ -212,7 +212,7 @@
           },
           {
             "title": "5. Notifications et contenu",
-            "content": "Les notifications sont générées à partir de sources publiques ou de flux officiels liés à Steam. Leur exactitude ou disponibilité n'est pas garantie. Steam Notifications ne saurait être tenue responsable des contenus publiés par des tiers."
+            "content": "Les notifications sont générées à partir de sources publiques ou de flux officiels liés à Steam. Leur exactitude ou disponibilité n'est pas garantie. GameNotif ne saurait être tenue responsable des contenus publiés par des tiers."
           },
           {
             "title": "6. Disponibilité du service",
@@ -220,11 +220,11 @@
           },
           {
             "title": "7. Propriété intellectuelle",
-            "content": "L'ensemble des éléments graphiques, textes, logos et fonctionnalités propres à Steam Notifications demeurent la propriété de leur auteur. Steam et les éléments associés sont la propriété de Valve Corporation."
+            "content": "L'ensemble des éléments graphiques, textes, logos et fonctionnalités propres à GameNotif demeurent la propriété de leur auteur. Steam et les éléments associés sont la propriété de Valve Corporation."
           },
           {
             "title": "8. Limitation de responsabilité",
-            "content": "Steam Notifications est fournie \"telle quelle\". Nous ne saurions être tenus responsables des dommages directs ou indirects résultant de l'utilisation ou de l'impossibilité d'utiliser l'application."
+            "content": "GameNotif est fournie \"telle quelle\". Nous ne saurions être tenus responsables des dommages directs ou indirects résultant de l'utilisation ou de l'impossibilité d'utiliser l'application."
           },
           {
             "title": "9. Modifications des conditions",
@@ -241,7 +241,7 @@
         "sections": [
           {
             "title": "1. Données collectées",
-            "content": "Nous stockons uniquement les informations nécessaires au fonctionnement de Steam Notifications : votre identifiant Steam, votre bibliothèque synchronisée (liste des jeux avec leurs temps de jeu), l'historique des jeux récemment actifs, votre wishlist, les paramètres de notification que vous définissez dans l'application (activation, auto-follow, token de notification pour l'envoi push) ainsi que des journaux techniques indispensables à la stabilité du service."
+            "content": "Nous stockons uniquement les informations nécessaires au fonctionnement de GameNotif : votre identifiant Steam, votre bibliothèque synchronisée (liste des jeux avec leurs temps de jeu), l'historique des jeux récemment actifs, votre wishlist, les paramètres de notification que vous définissez dans l'application (activation, auto-follow, token de notification pour l'envoi push) ainsi que des journaux techniques indispensables à la stabilité du service."
           },
           {
             "title": "2. Utilisation des données",
@@ -265,7 +265,7 @@
           },
           {
             "title": "7. Cookies et technologies similaires",
-            "content": "Steam Notifications n'utilise ni cookies, ni outils de suivi publicitaires. L'application conserve uniquement un cache technique local (sur votre appareil) pour accélérer l'affichage de vos données."
+            "content": "GameNotif n'utilise ni cookies, ni outils de suivi publicitaires. L'application conserve uniquement un cache technique local (sur votre appareil) pour accélérer l'affichage de vos données."
           },
           {
             "title": "8. Modifications de la politique",

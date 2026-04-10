@@ -2,7 +2,7 @@ import {DarkTheme as NavigationDarkTheme} from '@react-navigation/native';
 import {MD3DarkTheme, adaptNavigationTheme} from 'react-native-paper';
 
 /**
- * Theme global de l'application Steam Notifications.
+ * Theme global de l'application GameNotif.
  * Centralise les couleurs, les espacements et les styles visuels partages.
  */
 export const COLORS = {

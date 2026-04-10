@@ -10,7 +10,7 @@
 		<string>en</string>
 	</array>
 	<key>CFBundleDisplayName</key>
-	<string>SteamNews</string>
+	<string>GameNotif</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

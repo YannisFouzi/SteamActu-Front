@@ -1,7 +1,7 @@
 {
-  "name": "SteamNews",
-  "displayName": "Steam Notifications",
-  "slug": "steam-notifications",
+  "name": "GameNotif",
+  "displayName": "GameNotif",
+  "slug": "game-notif",
   "version": "1.0.0",
   "orientation": "portrait",
   "scheme": "steamnotif",

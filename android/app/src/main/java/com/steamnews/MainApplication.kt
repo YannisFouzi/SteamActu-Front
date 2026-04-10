@@ -45,21 +45,21 @@ class MainApplication : Application(), ReactApplication {
       load()
     }
 
-    // Créer le canal de notification pour Steam News (Android 8.0+)
+    // Canal Android 8+ (id technique inchangé pour compatibilité FCM / backend)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val channel = NotificationChannel(
         "steam_news",
-        "Steam News",
+        "GameNotif",
         NotificationManager.IMPORTANCE_HIGH
       ).apply {
-        description = "Notifications des actualités Steam"
+        description = "Notifications d'actualités sur vos jeux suivis"
         enableLights(true)
         enableVibration(true)
       }
 
       val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
       notificationManager.createNotificationChannel(channel)
-      android.util.Log.d("SteamNews", "Canal de notification 'steam_news' créé")
+      android.util.Log.d("GameNotif", "Canal de notification 'steam_news' créé")
     }
   }
 }

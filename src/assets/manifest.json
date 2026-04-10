@@ -1,7 +1,7 @@
 {
   "images": {
     "steamLogo": {
-      "description": "Logo Steam Notifications optimisé pour les écrans mobiles.",
+      "description": "Logo GameNotif optimisé pour les écrans mobiles.",
       "variants": {
         "1x": {
           "file": "steam-logo.webp",
@@ -24,7 +24,7 @@
       }
     },
     "steamLogov2": {
-      "description": "Logo Steam Notifications v2 (avec cloche) - utilisé dans l'app.",
+      "description": "Logo GameNotif v2 (avec cloche) - utilisé dans l'app.",
       "variants": {
         "1x": {
           "file": "steam-logov2.png",

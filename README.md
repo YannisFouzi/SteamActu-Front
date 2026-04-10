@@ -1,10 +1,10 @@
-# Steam Actu - Application Mobile
+# GameNotif - Application mobile
 
 Une application React Native moderne pour suivre les actualités de vos jeux Steam favoris avec notifications et gestion avancée de votre bibliothèque.
 
 ## 📱 Aperçu de l'Application
 
-**Steam Actu** est une application mobile qui vous permet de :
+**GameNotif** est une application mobile qui vous permet de :
 
 - 🎮 Visualiser votre bibliothèque Steam complète
 - 📰 Suivre les actualités de vos jeux préférés

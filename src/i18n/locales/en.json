@@ -1,7 +1,7 @@
 {
   "common": {
     "about": "About",
-    "appName": "Steam Actu",
+    "appName": "GameNotif",
     "cancel": "Cancel",
     "contact": "Contact",
     "delete": "Delete",
@@ -70,7 +70,7 @@
   },
   "settings": {
     "aboutBody": "This app lets you receive notifications about the Steam games you follow.",
-    "aboutVersion": "Steam Notifications v1.0.0",
+    "aboutVersion": "GameNotif v1.0.0",
     "contactShortcut": "My contact info",
     "deleteAccount": "Delete my account",
     "deleteAccountConfirmMessage": "Are you sure you want to delete your account? This action is irreversible. All your data will be permanently deleted.",
@@ -78,7 +78,7 @@
     "deleteAccountError": "An error occurred while deleting your account. Please try again.",
     "deleting": "Deleting...",
     "deleteWarning": "This action is irreversible",
-    "languageDescription": "Choose the language for the interface, requested Steam news, and notifications.",
+    "languageDescription": "Choose the language for the interface, requested game news, and notifications.",
     "languageLabel": "App language",
     "languageSaveError": "Unable to update the language right now. Please try again.",
     "autoFollowDescription": "Choose how to manage games detected in your library and wishlist.",
@@ -105,10 +105,10 @@
     "promptTitle": "Confirmation alert"
   },
   "notifications": {
-    "blockedMessage": "Android is blocking notifications for Steam Actu. Enable them in settings.",
+    "blockedMessage": "Android is blocking notifications for GameNotif. Enable them in settings.",
     "blockedTitle": "Notifications blocked",
     "channelDescription": "Push notifications for news about followed games",
-    "channelName": "Steam news",
+    "channelName": "GameNotif",
     "disabledMessage": "Unable to enable notifications right now. Please try again later.",
     "disabledTitle": "Notifications disabled",
     "followUnavailableMessage": "Unable to add this game to followed games right now. Try again later.",
@@ -196,11 +196,11 @@
         "sections": [
           {
             "title": "1. Acceptance of terms",
-            "content": "By accessing the Steam Notifications application, you accept these Terms of Service in full. If you do not agree with any provision, please stop using the application and delete your account from the Settings screen."
+            "content": "By accessing the GameNotif application, you accept these Terms of Service in full. If you do not agree with any provision, please stop using the application and delete your account from the Settings screen."
           },
           {
             "title": "2. Service description",
-            "content": "Steam Notifications aggregates and delivers news from the Steam ecosystem for the games you follow. The service is provided for informational purposes and may change or be discontinued at any time."
+            "content": "GameNotif aggregates and delivers news from the Steam ecosystem for the games you follow. The service is provided for informational purposes and may change or be discontinued at any time."
           },
           {
             "title": "3. Use of the application",
@@ -212,7 +212,7 @@
           },
           {
             "title": "5. Notifications and content",
-            "content": "Notifications are generated from public sources or official Steam-related feeds. Their accuracy and availability are not guaranteed. Steam Notifications cannot be held responsible for content published by third parties."
+            "content": "Notifications are generated from public sources or official Steam-related feeds. Their accuracy and availability are not guaranteed. GameNotif cannot be held responsible for content published by third parties."
           },
           {
             "title": "6. Service availability",
@@ -220,11 +220,11 @@
           },
           {
             "title": "7. Intellectual property",
-            "content": "All graphics, text, logos, and features specific to Steam Notifications remain the property of their respective author. Steam and related assets are the property of Valve Corporation."
+            "content": "All graphics, text, logos, and features specific to GameNotif remain the property of their respective author. Steam and related assets are the property of Valve Corporation."
           },
           {
             "title": "8. Limitation of liability",
-            "content": "Steam Notifications is provided \"as is\". We cannot be held liable for any direct or indirect damages resulting from the use of, or inability to use, the application."
+            "content": "GameNotif is provided \"as is\". We cannot be held liable for any direct or indirect damages resulting from the use of, or inability to use, the application."
           },
           {
             "title": "9. Changes to the terms",
@@ -241,7 +241,7 @@
         "sections": [
           {
             "title": "1. Data collected",
-            "content": "We store only the information necessary to operate Steam Notifications: your Steam ID, your synced library (list of games with playtime), your recently active games history, your wishlist, the notification settings you configure in the application (enabled state, auto-follow, push notification token), as well as technical logs required to keep the service stable."
+            "content": "We store only the information necessary to operate GameNotif: your Steam ID, your synced library (list of games with playtime), your recently active games history, your wishlist, the notification settings you configure in the application (enabled state, auto-follow, push notification token), as well as technical logs required to keep the service stable."
           },
           {
             "title": "2. Use of data",
@@ -265,7 +265,7 @@
           },
           {
             "title": "7. Cookies and similar technologies",
-            "content": "Steam Notifications does not use cookies or advertising trackers. The application keeps only a local technical cache on your device in order to speed up data display."
+            "content": "GameNotif does not use cookies or advertising trackers. The application keeps only a local technical cache on your device in order to speed up data display."
           },
           {
             "title": "8. Changes to this policy",
