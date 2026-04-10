@@ -198,7 +198,10 @@ function buildBaseNotification(payload) {
     data: payload.data,
     android: {
       channelId: NOTIFICATION_CHANNEL_ID,
-      pressAction: {id: isFollowPrompt ? ACTION_FOLLOW_GAME : ACTION_OPEN_NEWS},
+      pressAction: {
+        id: isFollowPrompt ? ACTION_FOLLOW_GAME : ACTION_OPEN_NEWS,
+        launchActivity: 'default',
+      },
       actions: androidActions,
       sound: 'default',
     },

@@ -21,6 +21,7 @@ export const useGamesLibraryController = ({
   updateVerificationDate,
   syncRecentActiveGames,
   onLogoutRef,
+  pendingFollowsRef,
 }) => {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -194,10 +195,28 @@ export const useGamesLibraryController = ({
       };
 
       try {
-        const userData = await loadUserProfile(savedSteamId);
+        let userData = await loadUserProfile(savedSteamId);
         if (gamesLastRequestIdRef.current !== requestId) {
           debugLog('[LOADDATA] Resultat userData ignore (requete obsolete)');
           return;
+        }
+        const pending = pendingFollowsRef?.current;
+        if (pending && pending.size > 0) {
+          const serverFollowed = new Set(
+            (userData.followedGames || []).map(String),
+          );
+          const extras = [...pending].filter(id => !serverFollowed.has(id));
+          if (extras.length > 0) {
+            userData = {
+              ...userData,
+              followedGames: [...(userData.followedGames || []), ...extras],
+            };
+          }
+          for (const id of pending) {
+            if (serverFollowed.has(id)) {
+              pending.delete(id);
+            }
+          }
         }
         setUser(userData);
         debugLog('[LOADDATA] Utilisateur recupere');

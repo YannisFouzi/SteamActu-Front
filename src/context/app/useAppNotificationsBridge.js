@@ -21,6 +21,7 @@ export const useAppNotificationsBridge = ({
   notifyNotificationSync,
   onNotificationUnfollowCommitted,
   setUser,
+  pendingFollowsRef,
 }) => {
   useEffect(() => {
     let cleanupNotifications;
@@ -115,6 +116,9 @@ export const useAppNotificationsBridge = ({
         onFollowPromptConfirm: appId => {
           if (appId) {
             const appIdString = String(appId);
+            if (pendingFollowsRef?.current) {
+              pendingFollowsRef.current.add(appIdString);
+            }
             setUser(prevUser => {
               if (!prevUser) {
                 return prevUser;

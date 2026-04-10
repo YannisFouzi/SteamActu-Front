@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import notifee from '@notifee/react-native';
 import {Platform} from 'react-native';
 import {debugError, showAlert} from '../../hooks/hooksLogger';
@@ -177,27 +178,42 @@ export async function executeFollowPromptAction({
   onFollowPromptConfirm,
 }) {
   const appId = data?.appId;
+  let resolvedSteamId = steamId;
+
+  if (!resolvedSteamId) {
+    try {
+      resolvedSteamId = await AsyncStorage.getItem('steamId');
+      console.log('[FCM] steamId recupere depuis AsyncStorage:', resolvedSteamId ? 'OK' : 'null');
+    } catch (_) {}
+  }
+
+  console.log('[FCM] executeFollowPromptAction CALLED', JSON.stringify({ steamId: resolvedSteamId, appId, gameName: data?.gameName, type: data?.type }));
 
   if (!isValidAppId(appId)) {
     debugError('[FCM] Aucun appId trouve pour follow_prompt, action ignoree');
     return;
   }
 
-  if (!steamId) {
-    debugError('[FCM] steamId manquant, impossible de suivre le jeu');
+  if (!resolvedSteamId) {
+    debugError('[FCM] steamId manquant (ni parametre ni AsyncStorage)');
     return;
   }
 
   try {
+    console.log(`[FCM] Appel POST /follow steamId=${resolvedSteamId} appId=${appId}`);
     await userService.followGame(
-      steamId,
+      resolvedSteamId,
       appId,
       data.gameName || '',
       data.imageUrl || '',
     );
+    console.log(`[FCM] POST /follow SUCCESS pour appId=${appId}`);
 
     if (typeof onFollowPromptConfirm === 'function') {
       onFollowPromptConfirm(appId);
+      console.log(`[FCM] onFollowPromptConfirm appelé pour appId=${appId}`);
+    } else {
+      console.log('[FCM] onFollowPromptConfirm NON DISPONIBLE (background?)');
     }
   } catch (error) {
     debugError('[FCM] Erreur follow_prompt:', error);

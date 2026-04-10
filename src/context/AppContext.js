@@ -44,6 +44,7 @@ export const AppProvider = ({children, navigation = null}) => {
   const [wishlistVersion, setWishlistVersion] = useState(null);
 
   const onLogoutRef = useRef(null);
+  const pendingFollowsRef = useRef(new Set());
 
   const {
     authStatus,
@@ -81,6 +82,7 @@ export const AppProvider = ({children, navigation = null}) => {
     updateVerificationDate,
     syncRecentActiveGames,
     onLogoutRef,
+    pendingFollowsRef,
   });
 
   const {
@@ -207,6 +209,7 @@ export const AppProvider = ({children, navigation = null}) => {
     notifyNotificationSync,
     onNotificationUnfollowCommitted: applyNotificationUnfollowCommit,
     setUser,
+    pendingFollowsRef,
   });
 
   useAppLifecycleRefresh({

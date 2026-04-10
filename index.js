@@ -16,6 +16,8 @@ import {setPendingNotification} from './src/services/initialNotificationStore';
 // pour fonctionner en headless mode (app killed). Les imports dynamiques
 // (require) garantissent que le handler reste leger au boot.
 notifee.onBackgroundEvent(async event => {
+  console.log('[FCM] [BOOT] onBackgroundEvent type=' + event.type + ' pressAction=' + event.detail?.pressAction?.id + ' dataType=' + event.detail?.notification?.data?.type);
+
   if (
     event.type !== EventType.PRESS &&
     event.type !== EventType.ACTION_PRESS
@@ -27,6 +29,7 @@ notifee.onBackgroundEvent(async event => {
     require('./src/services/notifications/events');
 
   const handlers = getBackgroundEventHandlers();
+  console.log('[FCM] [BOOT] handlers.length=' + handlers.length);
 
   if (handlers.length === 0) {
     await handleBackgroundNotifeeEvent(event);
@@ -49,8 +52,10 @@ messaging()
   .getInitialNotification()
   .then(remoteMessage => {
     if (remoteMessage) {
-      console.log('[FCM] Initial notification capturee au bootstrap:', remoteMessage.messageId);
+      console.log('[FCM] [BOOT] Firebase getInitialNotification → OUI', remoteMessage.messageId, JSON.stringify(remoteMessage.data));
       setPendingNotification({source: 'firebase', data: remoteMessage});
+    } else {
+      console.log('[FCM] [BOOT] Firebase getInitialNotification → null');
     }
   })
   .catch(err => console.error('[FCM] Erreur getInitialNotification bootstrap:', err));
@@ -59,7 +64,10 @@ notifee
   .getInitialNotification()
   .then(initialNotification => {
     if (initialNotification) {
+      console.log('[FCM] [BOOT] Notifee getInitialNotification → OUI', JSON.stringify(initialNotification?.notification?.data));
       setPendingNotification({source: 'notifee', data: initialNotification});
+    } else {
+      console.log('[FCM] [BOOT] Notifee getInitialNotification → null');
     }
   })
   .catch(err => console.error('[FCM] Erreur notifee.getInitialNotification bootstrap:', err));

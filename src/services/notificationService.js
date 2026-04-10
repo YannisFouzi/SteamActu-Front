@@ -99,6 +99,7 @@ export function setupNotificationHandlers(steamId, options = {}) {
       const payload = extractNotificationPayload(remoteMessage);
 
       if (payload?.type === 'follow_prompt') {
+        console.log('[FCM] onNotificationOpenedApp → follow_prompt détecté', JSON.stringify({ appId: payload.data?.appId }));
         await executeFollowPromptAction({
           steamId,
           data: payload.data,

@@ -83,6 +83,7 @@ export async function handleNotificationInteraction({
       !pressActionId &&
       data.type === 'follow_prompt')
   ) {
+    console.log('[FCM] handleNotificationInteraction → follow_prompt détecté', JSON.stringify({ pressActionId, eventType, type: data.type }));
     await executeFollowPromptAction({
       steamId,
       notification,
@@ -106,6 +107,7 @@ export async function consumePendingInitialNotification({
   onFollowPromptConfirm,
 }) {
   const pendingNotification = consumePendingNotification();
+  console.log('[FCM] consumePendingInitialNotification:', pendingNotification ? 'source=' + pendingNotification.source + ' type=' + (pendingNotification.data?.data?.type || pendingNotification.data?.notification?.data?.type || '?') : 'null');
 
   if (!pendingNotification) {
     return;
