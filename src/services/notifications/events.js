@@ -1,5 +1,11 @@
-import {EventType} from '@notifee/react-native';
-import {consumePendingNotification} from '../initialNotificationStore';
+import { EventType } from '@notifee/react-native';
+import { consumePendingNotification } from '../initialNotificationStore';
+import {
+  executeFollowPromptAction,
+  executeNotificationUnfollow,
+  notifyUnfollowSyncCallbacks,
+  performHeadlessNotificationUnfollow,
+} from './actions';
 import {
   ACTION_FOLLOW_GAME,
   ACTION_OPEN_NEWS,
@@ -15,12 +21,6 @@ import {
   backgroundEventHandlers,
   processedNotificationIds,
 } from './runtime';
-import {
-  executeFollowPromptAction,
-  executeNotificationUnfollow,
-  notifyUnfollowSyncCallbacks,
-  performHeadlessNotificationUnfollow,
-} from './actions';
 
 export async function handleNotificationInteraction({
   eventType,

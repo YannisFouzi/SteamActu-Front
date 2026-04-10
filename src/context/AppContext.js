@@ -1,32 +1,32 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useRef,
-  useState,
+    createContext,
+    useCallback,
+    useContext,
+    useMemo,
+    useRef,
+    useState,
 } from 'react';
-import {useLastVerificationDate} from '../hooks/useAsyncStorage';
-import {useGameSync} from '../hooks/useGameSync';
 import {
-  debugError,
-  debugLog,
-  showAlert,
-  showSuccessMessage,
+    debugError,
+    debugLog,
+    showAlert,
+    showSuccessMessage,
 } from '../hooks/hooksLogger';
-import {translate} from '../i18n';
-import {unregisterFCMToken} from '../services/notificationService';
-import {isRecentlyUpdated} from '../utils';
-import {getUserScopedStorageKeys} from './app/libraryHelpers';
-import {useAppBootstrap} from './app/useAppBootstrap';
-import {useAppLifecycleRefresh} from './app/useAppLifecycleRefresh';
-import {useAppNotificationsBridge} from './app/useAppNotificationsBridge';
-import {useFollowedGamesActions} from './app/useFollowedGamesActions';
-import {useGamesFiltering} from './app/useGamesFiltering';
-import {useGamesLibraryController} from './app/useGamesLibraryController';
-import {useNotificationSyncBus} from './app/useNotificationSyncBus';
-import {useUserSettingsController} from './app/useUserSettingsController';
+import { useLastVerificationDate } from '../hooks/useAsyncStorage';
+import { useGameSync } from '../hooks/useGameSync';
+import { translate } from '../i18n';
+import { unregisterFCMToken } from '../services/notificationService';
+import { isRecentlyUpdated } from '../utils';
+import { getUserScopedStorageKeys } from './app/libraryHelpers';
+import { useAppBootstrap } from './app/useAppBootstrap';
+import { useAppLifecycleRefresh } from './app/useAppLifecycleRefresh';
+import { useAppNotificationsBridge } from './app/useAppNotificationsBridge';
+import { useFollowedGamesActions } from './app/useFollowedGamesActions';
+import { useGamesFiltering } from './app/useGamesFiltering';
+import { useGamesLibraryController } from './app/useGamesLibraryController';
+import { useNotificationSyncBus } from './app/useNotificationSyncBus';
+import { useUserSettingsController } from './app/useUserSettingsController';
 
 const AppContext = createContext();
 
