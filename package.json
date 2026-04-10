@@ -6,10 +6,12 @@
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "dev": "react-native start",
     "start": "react-native start",
     "test": "jest",
     "bundle:android": "react-native bundle --platform android --dev false --entry-file index.js --bundle-output ./android/app/src/main/assets/index.android.bundle --assets-dest ./android/app/src/main/res/",
     "bundle:ios": "react-native bundle --platform ios --dev false --entry-file index.js --bundle-output ./ios/main.jsbundle --assets-dest ./ios",
+    "build": "npm run bundle:android && npm run bundle:ios",
     "prebuild": "npm run lint:ci",
     "lint:ci": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0"
   },

@@ -164,6 +164,7 @@ export const useAppNotificationsBridge = ({
     newsNotifications,
     notifyNotificationSync,
     onNotificationUnfollowCommitted,
+    pendingFollowsRef,
     setUser,
     settingsStatus,
     steamId,

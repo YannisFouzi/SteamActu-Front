@@ -1,5 +1,11 @@
 import React from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS } from '../../../constants';
 
@@ -50,17 +56,9 @@ const EmptyStateMessage = ({
       {actionText && onAction ? (
         <TouchableOpacity
           onPress={onAction}
-          style={{
-            backgroundColor: COLORS.STEAM_BLUE,
-            paddingHorizontal: 20,
-            paddingVertical: 12,
-            borderRadius: 8,
-            marginTop: 16,
-          }}
+          style={localStyles.primaryTouchable}
           activeOpacity={0.7}>
-          <Text style={{color: COLORS.WHITE, fontSize: 15, fontWeight: '600', textAlign: 'center'}}>
-            {actionText}
-          </Text>
+          <Text style={localStyles.primaryTouchableText}>{actionText}</Text>
         </TouchableOpacity>
       ) : null}
 
@@ -68,20 +66,15 @@ const EmptyStateMessage = ({
         <TouchableOpacity
           onPress={onSecondaryAction}
           disabled={secondaryActionLoading}
-          style={{
-            borderWidth: 1,
-            borderColor: COLORS.STEAM_BLUE,
-            paddingHorizontal: 20,
-            paddingVertical: 12,
-            borderRadius: 8,
-            marginTop: 12,
-            opacity: secondaryActionLoading ? 0.6 : 1,
-          }}
+          style={[
+            localStyles.secondaryTouchable,
+            secondaryActionLoading && localStyles.secondaryTouchableDisabled,
+          ]}
           activeOpacity={0.7}>
           {secondaryActionLoading ? (
             <ActivityIndicator size="small" color={COLORS.STEAM_BLUE} />
           ) : (
-            <Text style={{color: COLORS.STEAM_BLUE, fontSize: 15, fontWeight: '600', textAlign: 'center'}}>
+            <Text style={localStyles.secondaryTouchableText}>
               {secondaryActionText}
             </Text>
           )}
@@ -94,6 +87,39 @@ const EmptyStateMessage = ({
     </View>
   );
 };
+
+const localStyles = StyleSheet.create({
+  primaryTouchable: {
+    backgroundColor: COLORS.STEAM_BLUE,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  primaryTouchableText: {
+    color: COLORS.WHITE,
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  secondaryTouchable: {
+    borderWidth: 1,
+    borderColor: COLORS.STEAM_BLUE,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  secondaryTouchableDisabled: {
+    opacity: 0.6,
+  },
+  secondaryTouchableText: {
+    color: COLORS.STEAM_BLUE,
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});
 
 export default EmptyStateMessage;
 

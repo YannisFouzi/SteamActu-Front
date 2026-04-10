@@ -306,6 +306,7 @@ export const useGamesLibraryController = ({
       finalizeLoadingState,
       games.length,
       onLogoutRef,
+      pendingFollowsRef,
       persistGamesCache,
       persistGamesVersion,
       setSteamId,
