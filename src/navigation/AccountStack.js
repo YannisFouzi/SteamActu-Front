@@ -17,7 +17,7 @@ const AccountStack = () => {
       <Stack.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{title: t('nav.settings')}}
+        options={{title: t('nav.account')}}
       />
       <Stack.Screen
         name="Contact"
