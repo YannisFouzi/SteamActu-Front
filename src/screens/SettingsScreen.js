@@ -38,9 +38,11 @@ const SettingsScreen = () => {
     newsNotifications,
     libraryFollowMode,
     wishlistFollowMode,
+    confirmUnfollowGames,
     handleToggleNews,
     handleLibraryModeChange,
     handleWishlistModeChange,
+    handleConfirmUnfollowGamesChange,
   } = useUserSettings();
 
   const {
@@ -158,6 +160,12 @@ const SettingsScreen = () => {
           onValueChange={handleToggleNews}
           disabled={saving || loggingOut}
           tutorialTargetId="settings-notifications"
+        />
+        <SettingSection
+          label={t('settings.confirmUnfollowLabel')}
+          value={confirmUnfollowGames}
+          onValueChange={handleConfirmUnfollowGamesChange}
+          disabled={saving || loggingOut}
         />
       </SettingsGroup>
 

@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {Pressable, StyleSheet} from 'react-native';
+import {useTranslation} from 'react-i18next';
 import Animated, {
   Easing,
   cancelAnimation,
@@ -12,7 +13,7 @@ import Animated, {
 import Icon from 'react-native-vector-icons/Ionicons';
 import {COLORS} from '../constants';
 import {useAppContext} from '../context/AppContext';
-import {debugLog} from '../hooks/hooksLogger';
+import {debugLog, showDialog} from '../hooks/hooksLogger';
 
 /**
  * Bouton generique de suivi/desuivi d'un jeu.
@@ -31,11 +32,14 @@ const FollowToggle = ({
   onToggle,
   testID,
 }) => {
+  const {t} = useTranslation();
   const {
     handleFollowGame,
     getResolvedFollowState,
     isGameFollowed,
     isFollowPending,
+    confirmUnfollowGames,
+    handleConfirmUnfollowGamesChange,
   } = useAppContext();
 
   const pressScale = useSharedValue(1);
@@ -163,6 +167,45 @@ const FollowToggle = ({
     );
   }, [iconRotate, iconScale]);
 
+  const commitFollowChange = useCallback(
+    async nextIsFollowed => {
+      setVisualIsFollowed(nextIsFollowed);
+      animatePressFeedback();
+
+      if (nextIsFollowed) {
+        animateActivationFeedback();
+      } else {
+        resetIconAnimation();
+      }
+
+      const success = await handleFollowGame({
+        appId: appIdString,
+        name: safeName,
+        imageUrl: safeImageUrl,
+        isFollowed: derivedIsFollowed,
+      });
+
+      if (success && typeof onToggle === 'function') {
+        onToggle({
+          appId: appIdString,
+          previousIsFollowed: derivedIsFollowed,
+          nextIsFollowed,
+        });
+      }
+    },
+    [
+      animateActivationFeedback,
+      animatePressFeedback,
+      appIdString,
+      derivedIsFollowed,
+      handleFollowGame,
+      onToggle,
+      resetIconAnimation,
+      safeImageUrl,
+      safeName,
+    ],
+  );
+
   const handlePress = useCallback(async () => {
     if (!appIdString) {
       debugLog('FollowToggle: appId manquant, action ignoree');
@@ -174,40 +217,46 @@ const FollowToggle = ({
     }
 
     const nextIsFollowed = !visualIsFollowed;
-    setVisualIsFollowed(nextIsFollowed);
-    animatePressFeedback();
 
-    if (nextIsFollowed) {
-      animateActivationFeedback();
-    } else {
-      resetIconAnimation();
-    }
-
-    const success = await handleFollowGame({
-      appId: appIdString,
-      name: safeName,
-      imageUrl: safeImageUrl,
-      isFollowed: derivedIsFollowed,
-    });
-
-    if (success && typeof onToggle === 'function') {
-      onToggle({
-        appId: appIdString,
-        previousIsFollowed: derivedIsFollowed,
-        nextIsFollowed,
+    if (
+      derivedIsFollowed &&
+      confirmUnfollowGames &&
+      nextIsFollowed === false
+    ) {
+      showDialog({
+        title: t('settings.confirmUnfollowTitle'),
+        message: t('settings.confirmUnfollowMessage', {game: safeName}),
+        tone: 'warning',
+        icon: 'bell-off-outline',
+        confirmCheckboxLabel: t('settings.confirmUnfollowCheckbox'),
+        options: {cancelable: true},
+        buttons: [
+          {text: t('common.cancel'), style: 'cancel'},
+          {
+            text: t('settings.confirmUnfollowConfirm'),
+            style: 'destructive',
+            onPress: async ({dontShowAgain}) => {
+              if (dontShowAgain) {
+                await handleConfirmUnfollowGamesChange(false);
+              }
+              await commitFollowChange(false);
+            },
+          },
+        ],
       });
+      return;
     }
+
+    await commitFollowChange(nextIsFollowed);
   }, [
     appIdString,
-    animateActivationFeedback,
-    animatePressFeedback,
+    commitFollowChange,
+    confirmUnfollowGames,
     derivedIsFollowed,
     followPending,
-    handleFollowGame,
-    onToggle,
-    resetIconAnimation,
-    safeImageUrl,
+    handleConfirmUnfollowGamesChange,
     safeName,
+    t,
     visualIsFollowed,
   ]);
 

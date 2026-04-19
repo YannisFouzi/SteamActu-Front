@@ -1,6 +1,13 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {StyleSheet} from 'react-native';
-import {Button, Dialog, Portal, Snackbar, Text} from 'react-native-paper';
+import {Pressable, StyleSheet} from 'react-native';
+import {
+  Button,
+  Checkbox,
+  Dialog,
+  Portal,
+  Snackbar,
+  Text,
+} from 'react-native-paper';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {COLORS, PAPER_THEME, RADIUS, SPACING} from '../constants';
 import {translate} from '../i18n';
@@ -64,6 +71,7 @@ const normalizeDialogEntry = config => {
       config?.icon === false
         ? null
         : config?.icon || DIALOG_ICON_BY_TONE[tone] || null,
+    confirmCheckboxLabel: config?.confirmCheckboxLabel || null,
   };
 };
 
@@ -147,6 +155,7 @@ const FeedbackProvider = ({children}) => {
   const snackbarQueueRef = useRef([]);
   const [activeDialog, setActiveDialog] = useState(null);
   const [activeSnackbar, setActiveSnackbar] = useState(null);
+  const [dialogCheckboxChecked, setDialogCheckboxChecked] = useState(false);
 
   const showDialog = useCallback(config => {
     const entry = normalizeDialogEntry(config);
@@ -217,6 +226,10 @@ const FeedbackProvider = ({children}) => {
     }
   }, [activeSnackbar]);
 
+  useEffect(() => {
+    setDialogCheckboxChecked(false);
+  }, [activeDialog?.id]);
+
   const handleDialogDismiss = useCallback(() => {
     setActiveDialog(current => {
       if (!current?.dismissible) {
@@ -227,15 +240,24 @@ const FeedbackProvider = ({children}) => {
     });
   }, []);
 
-  const handleDialogActionPress = useCallback(button => {
-    setActiveDialog(null);
+  const handleDialogActionPress = useCallback(
+    button => {
+      const dialogSnapshot = activeDialog;
+      const checkboxPayload =
+        dialogSnapshot?.confirmCheckboxLabel && dialogCheckboxChecked
+          ? {dontShowAgain: true}
+          : {dontShowAgain: false};
 
-    if (typeof button?.onPress === 'function') {
-      requestAnimationFrame(() => {
-        button.onPress();
-      });
-    }
-  }, []);
+      setActiveDialog(null);
+
+      if (typeof button?.onPress === 'function') {
+        requestAnimationFrame(() => {
+          button.onPress(checkboxPayload);
+        });
+      }
+    },
+    [activeDialog, dialogCheckboxChecked],
+  );
 
   const handleSnackbarActionPress = useCallback(() => {
     const callback = activeSnackbar?.onActionPress;
@@ -278,9 +300,31 @@ const FeedbackProvider = ({children}) => {
             </Dialog.Title>
           ) : null}
 
-          {activeDialog?.message ? (
+          {activeDialog?.message || activeDialog?.confirmCheckboxLabel ? (
             <Dialog.Content>
-              <Text style={styles.dialogMessage}>{activeDialog.message}</Text>
+              {activeDialog?.message ? (
+                <Text style={styles.dialogMessage}>{activeDialog.message}</Text>
+              ) : null}
+              {activeDialog?.confirmCheckboxLabel ? (
+                <Pressable
+                  accessibilityRole="checkbox"
+                  accessibilityState={{checked: dialogCheckboxChecked}}
+                  onPress={() =>
+                    setDialogCheckboxChecked(current => !current)
+                  }
+                  style={styles.dialogCheckboxRow}>
+                  <Checkbox.Android
+                    status={
+                      dialogCheckboxChecked ? 'checked' : 'unchecked'
+                    }
+                    pointerEvents="none"
+                    color={getDialogAccentColor(activeDialog.tone)}
+                  />
+                  <Text style={styles.dialogCheckboxLabel}>
+                    {activeDialog.confirmCheckboxLabel}
+                  </Text>
+                </Pressable>
+              ) : null}
             </Dialog.Content>
           ) : null}
 
@@ -361,6 +405,19 @@ const styles = StyleSheet.create({
   dialogMessage: {
     color: COLORS.STEAM_TEXT_GRAY,
     lineHeight: 22,
+  },
+  dialogCheckboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.md,
+    paddingVertical: SPACING.xs,
+  },
+  dialogCheckboxLabel: {
+    flex: 1,
+    color: COLORS.STEAM_TEXT_GRAY,
+    fontSize: 15,
+    lineHeight: 22,
+    marginLeft: SPACING.sm,
   },
   dialogActions: {
     paddingHorizontal: SPACING.md,

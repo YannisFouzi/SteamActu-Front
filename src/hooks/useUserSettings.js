@@ -8,9 +8,11 @@ export const useUserSettings = () => {
     newsNotifications,
     libraryFollowMode,
     wishlistFollowMode,
+    confirmUnfollowGames,
     handleToggleNews,
     handleLibraryModeChange,
     handleWishlistModeChange,
+    handleConfirmUnfollowGamesChange,
   } = useAppContext();
 
   return useMemo(
@@ -20,11 +22,15 @@ export const useUserSettings = () => {
       newsNotifications,
       libraryFollowMode,
       wishlistFollowMode,
+      confirmUnfollowGames,
       handleToggleNews,
       handleLibraryModeChange,
       handleWishlistModeChange,
+      handleConfirmUnfollowGamesChange,
     }),
     [
+      confirmUnfollowGames,
+      handleConfirmUnfollowGamesChange,
       handleLibraryModeChange,
       handleToggleNews,
       handleWishlistModeChange,

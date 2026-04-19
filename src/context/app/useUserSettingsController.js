@@ -14,6 +14,7 @@ import {
   persistUserSettingsToStorage,
   readStoredUserSettings,
   requiresNotifications,
+  resolveConfirmUnfollowGames,
   resolveUserSettingsSnapshot,
   USER_SETTINGS_STATUS,
 } from './userSettingsHelpers';
@@ -31,6 +32,9 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
   );
   const [wishlistFollowMode, setWishlistFollowMode] = useState(
     DEFAULT_USER_SETTINGS.wishlistFollowMode,
+  );
+  const [confirmUnfollowGames, setConfirmUnfollowGames] = useState(
+    DEFAULT_USER_SETTINGS.confirmUnfollowGames,
   );
 
   const isMountedRef = useRef(true);
@@ -52,6 +56,10 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
       );
       safeSetState(setLibraryFollowMode, snapshot.libraryFollowMode);
       safeSetState(setWishlistFollowMode, snapshot.wishlistFollowMode);
+      safeSetState(
+        setConfirmUnfollowGames,
+        resolveConfirmUnfollowGames(snapshot.confirmUnfollowGames),
+      );
     },
     [safeSetState],
   );
@@ -84,7 +92,9 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
           resolvedServerSnapshot.libraryFollowMode !==
             localSnapshot.libraryFollowMode ||
           resolvedServerSnapshot.wishlistFollowMode !==
-            localSnapshot.wishlistFollowMode;
+            localSnapshot.wishlistFollowMode ||
+          resolvedServerSnapshot.confirmUnfollowGames !==
+            localSnapshot.confirmUnfollowGames;
 
         const timeSinceLastLocalMod =
           Date.now() - lastLocalModificationRef.current;
@@ -126,7 +136,9 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
         localSnapshot.libraryFollowMode ===
           DEFAULT_USER_SETTINGS.libraryFollowMode &&
         localSnapshot.wishlistFollowMode ===
-          DEFAULT_USER_SETTINGS.wishlistFollowMode
+          DEFAULT_USER_SETTINGS.wishlistFollowMode &&
+        localSnapshot.confirmUnfollowGames ===
+          DEFAULT_USER_SETTINGS.confirmUnfollowGames
       ) {
         localSnapshot = resolveUserSettingsSnapshot(user.notificationSettings);
       }
@@ -241,6 +253,7 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
             nextSnapshot.wishlistFollowMode === 'prompt',
           libraryFollowMode: nextSnapshot.libraryFollowMode,
           wishlistFollowMode: nextSnapshot.wishlistFollowMode,
+          confirmUnfollowGames: nextSnapshot.confirmUnfollowGames,
         });
 
         return true;
@@ -308,9 +321,15 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
         newsNotifications: value,
         libraryFollowMode,
         wishlistFollowMode,
+        confirmUnfollowGames,
       });
     },
-    [applySettingsChange, libraryFollowMode, wishlistFollowMode],
+    [
+      applySettingsChange,
+      confirmUnfollowGames,
+      libraryFollowMode,
+      wishlistFollowMode,
+    ],
   );
 
   const handleLibraryModeChange = useCallback(
@@ -323,10 +342,12 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
         newsNotifications,
         libraryFollowMode: safeMode,
         wishlistFollowMode,
+        confirmUnfollowGames,
       });
     },
     [
       applySettingsChange,
+      confirmUnfollowGames,
       libraryFollowMode,
       newsNotifications,
       wishlistFollowMode,
@@ -343,6 +364,25 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
         newsNotifications,
         libraryFollowMode,
         wishlistFollowMode: safeMode,
+        confirmUnfollowGames,
+      });
+    },
+    [
+      applySettingsChange,
+      confirmUnfollowGames,
+      libraryFollowMode,
+      newsNotifications,
+      wishlistFollowMode,
+    ],
+  );
+
+  const handleConfirmUnfollowGamesChange = useCallback(
+    async value => {
+      await applySettingsChange({
+        newsNotifications,
+        libraryFollowMode,
+        wishlistFollowMode,
+        confirmUnfollowGames: value,
       });
     },
     [
@@ -374,10 +414,12 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
     newsNotifications,
     libraryFollowMode,
     wishlistFollowMode,
+    confirmUnfollowGames,
     hydrateUserSettings,
     resetUserSettingsState: resetSettingsState,
     handleToggleNews,
     handleLibraryModeChange,
     handleWishlistModeChange,
+    handleConfirmUnfollowGamesChange,
   };
 };

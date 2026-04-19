@@ -12,6 +12,7 @@ export const DEFAULT_USER_SETTINGS = {
   newsNotifications: false,
   libraryFollowMode: 'off',
   wishlistFollowMode: 'off',
+  confirmUnfollowGames: true,
 };
 
 const LEGACY_STORAGE_KEYS = [
@@ -53,6 +54,11 @@ export const resolveNewsNotifications = (newsNotifications, legacyEnabled) =>
     ? legacyEnabled
     : DEFAULT_USER_SETTINGS.newsNotifications;
 
+export const resolveConfirmUnfollowGames = value =>
+  typeof value === 'boolean'
+    ? value
+    : DEFAULT_USER_SETTINGS.confirmUnfollowGames;
+
 export const resolveUserSettingsSnapshot = notificationSettings => {
   if (!notificationSettings || typeof notificationSettings !== 'object') {
     return {...DEFAULT_USER_SETTINGS};
@@ -61,6 +67,7 @@ export const resolveUserSettingsSnapshot = notificationSettings => {
   const {
     newsNotifications,
     enabled,
+    confirmUnfollowGames,
     libraryFollowMode,
     wishlistFollowMode,
     autoFollowNewGames,
@@ -77,6 +84,7 @@ export const resolveUserSettingsSnapshot = notificationSettings => {
       wishlistFollowMode,
       autoFollowWishlistGames,
     ),
+    confirmUnfollowGames: resolveConfirmUnfollowGames(confirmUnfollowGames),
   };
 };
 
@@ -95,11 +103,20 @@ export const persistUserSettingsToStorage = async ({
   newsNotifications,
   libraryFollowMode,
   wishlistFollowMode,
+  confirmUnfollowGames,
 }) => {
   await AsyncStorage.multiSet([
     ['newsNotifications', JSON.stringify(Boolean(newsNotifications))],
     ['libraryFollowMode', normalizeFollowMode(libraryFollowMode)],
     ['wishlistFollowMode', normalizeFollowMode(wishlistFollowMode)],
+    [
+      'confirmUnfollowGames',
+      JSON.stringify(
+        typeof confirmUnfollowGames === 'boolean'
+          ? confirmUnfollowGames
+          : DEFAULT_USER_SETTINGS.confirmUnfollowGames,
+      ),
+    ],
   ]);
 
   await AsyncStorage.multiRemove(LEGACY_STORAGE_KEYS);
@@ -110,18 +127,29 @@ export const readStoredUserSettings = async () => {
     storedNews,
     storedLibraryMode,
     storedWishlistMode,
+    storedConfirmUnfollow,
     legacyLibraryMode,
     legacyWishlistMode,
   ] = await AsyncStorage.multiGet([
     'newsNotifications',
     'libraryFollowMode',
     'wishlistFollowMode',
+    'confirmUnfollowGames',
     'autoFollowEnabled',
     'autoFollowWishlistEnabled',
   ]);
 
   const localNews =
     storedNews[1] !== null ? JSON.parse(storedNews[1]) : false;
+
+  let localConfirmUnfollow = DEFAULT_USER_SETTINGS.confirmUnfollowGames;
+  if (storedConfirmUnfollow[1] !== null) {
+    try {
+      localConfirmUnfollow = JSON.parse(storedConfirmUnfollow[1]);
+    } catch {
+      localConfirmUnfollow = DEFAULT_USER_SETTINGS.confirmUnfollowGames;
+    }
+  }
 
   return {
     newsNotifications: Boolean(localNews),
@@ -133,5 +161,6 @@ export const readStoredUserSettings = async () => {
       storedWishlistMode[1],
       legacyWishlistMode[1],
     ),
+    confirmUnfollowGames: resolveConfirmUnfollowGames(localConfirmUnfollow),
   };
 };
