@@ -6,11 +6,7 @@
     "contact": "Contact",
     "delete": "Supprimer",
     "disabled": "Désactivé",
-    "english": "Anglais",
     "error": "Erreur",
-    "french": "Français",
-    "german": "Allemand",
-    "spanish": "Espagnol",
     "gameWithId": "Jeu {{appId}}",
     "language": "Langue",
     "autoFollow": "Suivi automatique",
@@ -193,6 +189,7 @@
     "website": "Site web"
   },
   "legal": {
+    "documentFallbackNotice": "Le texte juridique ci-dessous est affiché en anglais.",
     "frenchOnlyNotice": "Ce contenu légal est actuellement disponible en français uniquement.",
     "lastUpdated": "Dernière mise à jour : {{date}}",
     "privacyTitle": "Politique de confidentialité",

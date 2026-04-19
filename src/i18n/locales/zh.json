@@ -1,0 +1,271 @@
+{
+  "common": {
+    "about": "关于",
+    "appName": "GameNotif",
+    "cancel": "取消",
+    "contact": "联系",
+    "delete": "删除",
+    "disabled": "已关闭",
+    "error": "错误",
+    "gameWithId": "游戏 {{appId}}",
+    "language": "语言",
+    "autoFollow": "自动关注",
+    "information": "信息",
+    "legal": "法律信息",
+    "loading": "加载中...",
+    "notifications": "通知",
+    "ok": "确定",
+    "success": "成功",
+    "info": "提示",
+    "openSettings": "打开系统设置",
+    "retry": "重试",
+    "searchPlaceholder": "搜索...",
+    "settings": "设置",
+    "unknownGame": "未知游戏",
+    "unavailableLink": "链接不可用"
+  },
+  "nav": {
+    "account": "我的账户",
+    "contact": "联系",
+    "feed": "动态",
+    "followGame": "关注游戏",
+    "followedGames": "已关注",
+    "myGames": "我的游戏",
+    "news": "资讯",
+    "privacyPolicy": "隐私政策",
+    "search": "搜索",
+    "settings": "设置",
+    "termsOfService": "服务条款",
+    "wishlist": "愿望单"
+  },
+  "auth": {
+    "connectivityErrorMessage": "无法登录，请检查服务器是否可达。",
+    "launchErrorMessage": "无法启动 Steam 登录，请重试。",
+    "loggingIn": "正在登录 Steam...",
+    "loginCancelledMessage": "登录窗口在流程完成前被关闭。",
+    "loginCancelledTitle": "已取消登录",
+    "loginButtonHint": "在受保护的浏览器中打开 Steam 验证。",
+    "loginFeature1": "只看你关注游戏的资讯",
+    "loginFeature2": "可自定义推送通知",
+    "loginFeature3": "同步游戏库与愿望单",
+    "loginSecurityNote": "通过 Steam OpenID 安全登录",
+    "loginPendingMessage": "正在完成登录，请稍候...",
+    "loginPendingTitle": "登录中",
+    "loginExpiredMessage": "登录尝试已过期，请重试。",
+    "loginExpiredTitle": "尝试已过期",
+    "loginSubtitle": "随时掌握 Steam 游戏的最新资讯",
+    "loginTitle": "不再错过\nSteam 游戏资讯",
+    "loginWithSteam": "使用 Steam 登录",
+    "logout": "退出登录",
+    "logoutConfirmTitle": "退出登录",
+    "logoutConfirmMessage": "确定要退出登录吗？",
+    "logoutErrorMessage": "退出时出错，请重试。",
+    "logoutErrorTitle": "退出失败",
+    "logoutSuccessMessage": "您已成功退出。",
+    "logoutSuccessTitle": "已退出",
+    "steamIdMissingMessage": "无法获取 Steam ID，请重试。",
+    "steamIdMissingTitle": "认证错误"
+  },
+  "settings": {
+    "aboutBody": "本应用可为你关注的 Steam 游戏推送资讯通知。",
+    "aboutVersion": "GameNotif v1.0.0",
+    "sectionSupportTitle": "联系与法律信息",
+    "deleteAccount": "删除我的账户",
+    "deleteAccountConfirmMessage": "确定删除账户吗？此操作不可恢复，所有数据将被永久删除。",
+    "deleteAccountConfirmTitle": "删除我的账户",
+    "deleteAccountError": "删除账户时出错，请重试。",
+    "deleting": "正在删除...",
+    "deleteWarning": "此操作不可恢复",
+    "languageDescription": "选择界面语言、请求的游戏资讯语言以及通知语言。",
+    "languageLabel": "应用语言",
+    "languageSaveError": "暂时无法更新语言，请稍后重试。",
+    "autoFollowDescription": "如何处理在游戏库和愿望单中检测到的游戏。",
+    "libraryDescription": "如何处理游戏库中检测到的游戏。",
+    "libraryLabel": "已购游戏",
+    "newsNotificationsDescription": "开启后，关注的游戏发布新资讯时会收到通知。",
+    "newsNotificationsLabel": "资讯通知",
+    "confirmUnfollowTitle": "取消关注此游戏？",
+    "confirmUnfollowMessage": "你将不再收到关于「{{game}}」的资讯更新。",
+    "confirmUnfollowCheckbox": "取消关注时不再询问",
+    "confirmUnfollowConfirm": "取消关注",
+    "confirmUnfollowLabel": "取消关注前确认",
+    "reviewTutorial": "重新查看教程",
+    "steamAccountLabel": "Steam 账户",
+    "tutorialSummary": "设置满意后，点击「完成」以启用通知与自动关注。",
+    "tutorialFinish": "完成教程",
+    "wishlistDescription": "愿望单中的游戏是否自动关注。",
+    "wishlistLabel": "愿望单游戏"
+  },
+  "followModes": {
+    "autoSubtitleLibrary": "每个已购游戏会自动加入关注列表。",
+    "autoSubtitleWishlist": "愿望单中的每个游戏会自动关注。",
+    "autoTitle": "自动关注",
+    "offSubtitleLibrary": "已购游戏不会加入关注列表。",
+    "offSubtitleWishlist": "愿望单游戏不会加入关注列表。",
+    "offTitle": "关闭",
+    "promptSubtitleLibrary": "通过通知确认是否关注库中每个新游戏。",
+    "promptSubtitleWishlist": "通过通知确认是否关注愿望单中的游戏。",
+    "promptTitle": "通知确认"
+  },
+  "notifications": {
+    "blockedMessage": "Android 正在拦截 GameNotif 的通知，请在系统设置中开启。",
+    "blockedTitle": "通知被拦截",
+    "channelDescription": "已关注游戏的资讯推送",
+    "channelName": "GameNotif",
+    "disabledMessage": "暂时无法启用通知，请稍后重试。",
+    "disabledTitle": "通知已关闭",
+    "followUnavailableMessage": "暂时无法关注该游戏，请稍后重试。",
+    "followUnavailableTitle": "无法关注",
+    "unfollowUnavailableMessage": "暂时无法取消关注，请稍后重试。",
+    "unfollowUnavailableTitle": "无法取消关注",
+    "unfollowAction": "取消关注此游戏"
+  },
+  "news": {
+    "favoritesOnly": "仅显示收藏",
+    "loadGameNewsError": "无法加载游戏资讯，请重试。",
+    "loadingFeed": "正在加载资讯...",
+    "loginForNewsSubtext": "请在设置中登录 Steam 账户。",
+    "loginForNewsText": "登录后可查看已关注游戏的资讯。",
+    "loginForNewsTitle": "登录以查看资讯",
+    "noLinkMessage": "此资讯没有可用链接。",
+    "noLinkTitle": "提示",
+    "noRecentNewsText": "关注的游戏暂无新资讯，请稍后再来或关注更多游戏。",
+    "noRecentNewsTitle": "暂无新资讯",
+    "openLinkError": "无法打开 Steam 链接。"
+  },
+  "games": {
+    "followedEmptySubtext": "可在游戏卡片或资讯流中添加关注。",
+    "followedEmptyText": "在游戏上开启小铃铛即可在此接收通知。",
+    "followedEmptyTitle": "暂无关注游戏",
+    "followUpdateError": "无法更新关注状态，请重试。",
+    "followUpdateUnexpectedError": "发生意外错误，请重试。",
+    "loadingGames": "正在加载游戏...",
+    "newGamesDetectedMessage_one": "游戏库中新增了 {{count}} 款游戏。",
+    "newGamesDetectedMessage_other": "游戏库中新增了 {{count}} 款游戏。",
+    "newGamesDetectedTitle": "检测到新游戏",
+    "recents": "最近",
+    "recentsPlus": "最近+",
+    "recentTwoWeeks": "最近",
+    "recentsPlusEmptyTitle": "暂无最近游戏",
+    "recentsPlusEmptyText": "根据同步数据，最近没有启动记录。",
+    "lastTwoWeeksEmptyTitle": "近两周无游戏",
+    "lastTwoWeeksEmptyText": "过去 14 天内没有启动记录。",
+    "libraryEmptyTitle": "暂无可用游戏",
+    "libraryEmptyText": "看不到游戏。请在 Steam 隐私设置中将「游戏详情」设为「公开」。",
+    "libraryEmptyPrivacyAction": "打开 Steam 设置",
+    "checkVisibilityAction": "检查我的资料",
+    "checkVisibilitySuccess": "检测到公开资料！正在同步...",
+    "checkVisibilityStillPrivate": "资料仍为私密，请确认「游戏详情」为「公开」。",
+    "wishlistAccessDenied": "无法访问愿望单（资料为私密）。",
+    "searchMyGamesPlaceholder": "在我的游戏中搜索...",
+    "searchSteamPlaceholder": "搜索 Steam 游戏...",
+    "searchWishlistPlaceholder": "在愿望单中搜索...",
+    "sortAZ": "A-Z",
+    "topPlayed": "游戏时间最长",
+    "wishlistEmptyText": "看不到愿望单。请在 Steam 隐私设置中将「游戏详情」设为「公开」。",
+    "wishlistEmptyPrivacyAction": "打开 Steam 设置",
+    "checkVisibilityWishlistSuccess": "检测到公开资料！正在同步愿望单...",
+    "wishlistEmptyTitle": "暂无可用游戏",
+    "wishlistLoadError": "无法加载愿望单。",
+    "wishlistLoading": "正在加载愿望单...",
+    "wishlistNotFoundOrPrivate": "未找到愿望单或为私密。",
+    "wishlistProfilePublicHint": "无法加载愿望单，请确认 Steam 资料为公开。"
+  },
+  "search": {
+    "hint": "至少输入 2 个字符",
+    "loading": "搜索中...",
+    "placeholderFollowed": "在已关注游戏中搜索...",
+    "title": "搜索游戏"
+  },
+  "emptyStates": {
+    "noResultsText": "试试其他关键词",
+    "noResultsTitle": "无结果"
+  },
+  "contact": {
+    "directTitle": "直接联系",
+    "email": "电子邮件",
+    "github": "GitHub",
+    "linkUnavailableMessage": "暂时无法打开此链接。",
+    "website": "网站"
+  },
+  "legal": {
+    "frenchOnlyNotice": "法律文本以其他语言提供。",
+    "lastUpdated": "更新日期：{{date}}",
+    "privacyTitle": "隐私政策",
+    "termsTitle": "服务条款",
+    "documentFallbackNotice": "以下法律条文以英文显示。"
+  },
+  "dates": {
+    "fallbackNever": "从未",
+    "fallbackNow": "刚刚"
+  },
+  "errors": {
+    "connectionDataMessage": "无法获取数据，请检查网络连接。",
+    "connectionGamesMessage": "无法获取游戏列表，请检查网络连接。",
+    "connectionTitle": "连接错误",
+    "genericTitle": "错误",
+    "genericRetryMessage": "发生错误，请重试。",
+    "loadSettingsMessage": "无法加载设置，请重试。",
+    "missingGameId": "未找到游戏 ID。",
+    "missingSteamId": "未找到 Steam ID。",
+    "networkFallbackMessage": "网络错误，请检查连接。",
+    "notConnectedMessage": "用户未登录。",
+    "saveSettingsMessage": "无法保存设置，请重试。",
+    "sessionExpiredMessage": "会话已过期或账户已删除，请重新登录。",
+    "sessionExpiredTitle": "会话已过期",
+    "unexpectedRetryOrLogout": "发生意外错误，是否退出并重试？"
+  },
+  "tutorial": {
+    "resumeMessage": "你已暂停教程。要继续、从头开始，还是暂时跳过？",
+    "resumeTitle": "继续教程？",
+    "resumeButton": "继续",
+    "restartButton": "重新开始",
+    "skipButton": "跳过",
+    "stepLabel": "第 {{current}} / {{total}} 步",
+    "previous": "上一步",
+    "next": "下一步",
+    "finish": "完成",
+    "steps": {
+      "homeIntro": {
+        "title": "入门",
+        "description": "这里会显示你关注游戏的资讯。"
+      },
+      "homeNewsFollowed": {
+        "title": "已关注游戏",
+        "description": "这里列出你关注的游戏。"
+      },
+      "homeMyGames": {
+        "title": "我的游戏",
+        "description": "查看库中游戏并管理是否关注资讯。"
+      },
+      "homeWishlist": {
+        "title": "愿望单",
+        "description": "查看愿望单游戏并开启关注。"
+      },
+      "homeSearch": {
+        "title": "搜索游戏",
+        "description": "使用 Steam 搜索把游戏加入关注。"
+      },
+      "homeSettings": {
+        "title": "打开设置",
+        "description": "点这里配置通知与自动关注。"
+      },
+      "settingsNotifications": {
+        "title": "资讯通知",
+        "description": "打开开关以接收关注游戏的资讯。"
+      },
+      "settingsLibrary": {
+        "title": "已购游戏",
+        "description": "库中新检测到的游戏：自动关注或需确认。"
+      },
+      "settingsWishlist": {
+        "title": "Steam 愿望单",
+        "description": "愿望单同样可选自动关注或通过通知确认。"
+      },
+      "settingsSummary": {
+        "title": "完成！",
+        "description": "这些选项可随时在设置中更改。"
+      }
+    }
+  }
+}

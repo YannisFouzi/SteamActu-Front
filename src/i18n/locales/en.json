@@ -6,11 +6,7 @@
     "contact": "Contact",
     "delete": "Delete",
     "disabled": "Disabled",
-    "english": "English",
     "error": "Error",
-    "french": "French",
-    "german": "German",
-    "spanish": "Spanish",
     "gameWithId": "Game {{appId}}",
     "language": "Language",
     "autoFollow": "Auto-follow",
@@ -193,6 +189,7 @@
     "website": "Website"
   },
   "legal": {
+    "documentFallbackNotice": "The legal text below is shown in English.",
     "frenchOnlyNotice": "This legal content is currently available in French only.",
     "lastUpdated": "Last updated: {{date}}",
     "privacyTitle": "Privacy policy",

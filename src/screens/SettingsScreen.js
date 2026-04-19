@@ -9,6 +9,7 @@ import OptionSetting from '../components/OptionSetting';
 import SettingSection from '../components/SettingSection';
 import {COLORS} from '../constants';
 import {useAppContext} from '../context/AppContext';
+import {LANGUAGE_NATIVE_LABELS, SUPPORTED_LANGUAGES} from '../i18n';
 import {useAppLanguage} from '../hooks/useAppLanguage';
 import {debugError, showAlert, showDialog} from '../hooks/hooksLogger';
 import {useUserSettings} from '../hooks/useUserSettings';
@@ -66,13 +67,12 @@ const SettingsScreen = () => {
   );
 
   const languageOptions = useMemo(
-    () => [
-      {value: 'fr', title: t('common.french')},
-      {value: 'en', title: t('common.english')},
-      {value: 'de', title: t('common.german')},
-      {value: 'es', title: t('common.spanish')},
-    ],
-    [t],
+    () =>
+      SUPPORTED_LANGUAGES.map(code => ({
+        value: code,
+        title: LANGUAGE_NATIVE_LABELS[code],
+      })),
+    [],
   );
 
   const handlePressLogout = useCallback(() => {

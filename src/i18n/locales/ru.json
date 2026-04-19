@@ -1,0 +1,273 @@
+{
+  "common": {
+    "about": "О приложении",
+    "appName": "GameNotif",
+    "cancel": "Отмена",
+    "contact": "Контакты",
+    "delete": "Удалить",
+    "disabled": "Отключено",
+    "error": "Ошибка",
+    "gameWithId": "Игра {{appId}}",
+    "language": "Язык",
+    "autoFollow": "Авто-подписка",
+    "information": "Информация",
+    "legal": "Правовая информация",
+    "loading": "Загрузка...",
+    "notifications": "Уведомления",
+    "ok": "OK",
+    "success": "Готово",
+    "info": "Сведения",
+    "openSettings": "Открыть настройки",
+    "retry": "Повторить",
+    "searchPlaceholder": "Поиск...",
+    "settings": "Настройки",
+    "unknownGame": "Неизвестная игра",
+    "unavailableLink": "Ссылка недоступна"
+  },
+  "nav": {
+    "account": "Мой аккаунт",
+    "contact": "Контакты",
+    "feed": "Лента",
+    "followGame": "Следить за игрой",
+    "followedGames": "Отслеживаемые",
+    "myGames": "Мои игры",
+    "news": "Новости",
+    "privacyPolicy": "Политика конфиденциальности",
+    "search": "Поиск",
+    "settings": "Настройки",
+    "termsOfService": "Условия использования",
+    "wishlist": "Список желаемого"
+  },
+  "auth": {
+    "connectivityErrorMessage": "Не удалось войти. Проверьте доступность сервера.",
+    "launchErrorMessage": "Не удалось начать вход через Steam. Попробуйте снова.",
+    "loggingIn": "Вход в Steam...",
+    "loginCancelledMessage": "Окно входа Steam было закрыто до завершения.",
+    "loginCancelledTitle": "Вход отменён",
+    "loginButtonHint": "Открывает безопасную авторизацию Steam в браузере.",
+    "loginFeature1": "Только новости по играм, за которыми вы следите",
+    "loginFeature2": "Настраиваемые push-уведомления",
+    "loginFeature3": "Синхронизация библиотеки и списка желаемого",
+    "loginSecurityNote": "Безопасный вход через Steam OpenID",
+    "loginPendingMessage": "Завершаем вход, подождите...",
+    "loginPendingTitle": "Вход",
+    "loginExpiredMessage": "Срок попытки входа истёк. Попробуйте снова.",
+    "loginExpiredTitle": "Попытка устарела",
+    "loginSubtitle": "Будьте в курсе новостей ваших игр в Steam",
+    "loginTitle": "Не пропускайте новости\nваших игр в Steam",
+    "loginWithSteam": "Войти через Steam",
+    "logout": "Выйти",
+    "logoutConfirmTitle": "Выход",
+    "logoutConfirmMessage": "Выйти из аккаунта?",
+    "logoutErrorMessage": "Ошибка при выходе. Попробуйте снова.",
+    "logoutErrorTitle": "Ошибка выхода",
+    "logoutSuccessMessage": "Вы вышли из аккаунта.",
+    "logoutSuccessTitle": "Выход выполнен",
+    "steamIdMissingMessage": "Не удалось получить Steam ID. Попробуйте снова.",
+    "steamIdMissingTitle": "Ошибка авторизации"
+  },
+  "settings": {
+    "aboutBody": "Приложение присылает уведомления о новостях игр Steam, за которыми вы следите.",
+    "aboutVersion": "GameNotif v1.0.0",
+    "sectionSupportTitle": "Контакты и правовая информация",
+    "deleteAccount": "Удалить аккаунт",
+    "deleteAccountConfirmMessage": "Удалить аккаунт без возможности восстановления? Все данные будут безвозвратно удалены.",
+    "deleteAccountConfirmTitle": "Удалить аккаунт",
+    "deleteAccountError": "Не удалось удалить аккаунт. Попробуйте снова.",
+    "deleting": "Удаление...",
+    "deleteWarning": "Это действие необратимо",
+    "languageDescription": "Язык интерфейса, запрашиваемых новостей об играх и уведомлений.",
+    "languageLabel": "Язык приложения",
+    "languageSaveError": "Не удалось сохранить язык. Попробуйте позже.",
+    "autoFollowDescription": "Как обрабатывать игры из библиотеки и списка желаемого.",
+    "libraryDescription": "Как обрабатывать игры из вашей библиотеки.",
+    "libraryLabel": "Купленные игры",
+    "newsNotificationsDescription": "Включите, чтобы получать уведомления о новых новостях по отслеживаемым играм.",
+    "newsNotificationsLabel": "Уведомления о новостях",
+    "confirmUnfollowTitle": "Отписаться от этой игры?",
+    "confirmUnfollowMessage": "Вы больше не будете получать новости об игре «{{game}}».",
+    "confirmUnfollowCheckbox": "Больше не спрашивать при отписке",
+    "confirmUnfollowConfirm": "Отписаться",
+    "confirmUnfollowLabel": "Подтверждать перед отпиской",
+    "reviewTutorial": "Пройти обучение снова",
+    "steamAccountLabel": "Аккаунт Steam",
+    "tutorialSummary": "Когда настройки вас устраивают, нажмите «Готово», чтобы включить уведомления и авто-подписку.",
+    "tutorialFinish": "Завершить обучение",
+    "wishlistDescription": "Следить ли автоматически за играми, добавленными в список желаемого.",
+    "wishlistLabel": "Список желаемого"
+  },
+  "followModes": {
+    "autoSubtitleLibrary": "Каждая купленная игра сразу попадает в отслеживаемые.",
+    "autoSubtitleWishlist": "Каждая игра из списка желаемого отслеживается автоматически.",
+    "autoTitle": "Автоматически",
+    "offSubtitleLibrary": "Купленные игры не добавляются в отслеживаемые.",
+    "offSubtitleWishlist": "Игры из списка желаемого не добавляются в отслеживаемые.",
+    "offTitle": "Выключено",
+    "promptSubtitleLibrary": "Уведомление с подтверждением для каждой новой игры из библиотеки.",
+    "promptSubtitleWishlist": "Уведомление с подтверждением для каждой игры из списка желаемого.",
+    "promptTitle": "Запрос в уведомлении"
+  },
+  "notifications": {
+    "blockedMessage": "Android блокирует уведомления GameNotif. Включите их в настройках системы.",
+    "blockedTitle": "Уведомления заблокированы",
+    "channelDescription": "Push о новостях отслеживаемых игр",
+    "channelName": "GameNotif",
+    "disabledMessage": "Сейчас нельзя включить уведомления. Попробуйте позже.",
+    "disabledTitle": "Уведомления отключены",
+    "followUnavailableMessage": "Не удалось подписаться на игру. Попробуйте позже.",
+    "followUnavailableTitle": "Не удалось подписаться",
+    "unfollowUnavailableMessage": "Не удалось отписаться от игры. Попробуйте позже.",
+    "unfollowUnavailableTitle": "Не удалось отписаться",
+    "unfollowAction": "Отписаться от игры"
+  },
+  "news": {
+    "favoritesOnly": "Только избранное",
+    "loadGameNewsError": "Не удалось загрузить новости игры. Попробуйте снова.",
+    "loadingFeed": "Загрузка ленты...",
+    "loginForNewsSubtext": "Войдите в аккаунт Steam в настройках.",
+    "loginForNewsText": "Войдите, чтобы видеть новости отслеживаемых игр.",
+    "loginForNewsTitle": "Войдите для новостей",
+    "noLinkMessage": "Для этой новости нет ссылки.",
+    "noLinkTitle": "Информация",
+    "noRecentNewsText": "У отслеживаемых игр пока нет свежих новостей. Загляните позже или добавьте игры.",
+    "noRecentNewsTitle": "Нет свежих новостей",
+    "openLinkError": "Не удалось открыть ссылку Steam."
+  },
+  "games": {
+    "followedEmptySubtext": "Подписку можно включить с карточки игры или из ленты новостей.",
+    "followedEmptyText": "Включите колокольчик у игр, чтобы видеть уведомления здесь.",
+    "followedEmptyTitle": "Нет отслеживаемых игр",
+    "followUpdateError": "Не удалось обновить подписку. Попробуйте снова.",
+    "followUpdateUnexpectedError": "Произошла ошибка. Попробуйте снова.",
+    "loadingGames": "Загрузка игр...",
+    "newGamesDetectedMessage_one": "В библиотеку добавлена {{count}} новая игра.",
+    "newGamesDetectedMessage_few": "В библиотеку добавлено {{count}} новые игры.",
+    "newGamesDetectedMessage_many": "В библиотеку добавлено {{count}} новых игр.",
+    "newGamesDetectedMessage_other": "В библиотеку добавлено {{count}} новых игр.",
+    "newGamesDetectedTitle": "Новые игры",
+    "recents": "Недавние",
+    "recentsPlus": "Недавние+",
+    "recentTwoWeeks": "Недавние",
+    "recentsPlusEmptyTitle": "Нет недавних игр",
+    "recentsPlusEmptyText": "По синхронизированным данным недавних запусков нет.",
+    "lastTwoWeeksEmptyTitle": "Нет игр за 2 недели",
+    "lastTwoWeeksEmptyText": "За последние 14 дней запусков не было.",
+    "libraryEmptyTitle": "Нет доступных игр",
+    "libraryEmptyText": "Игры не видны. В настройках приватности Steam для «Сведений об играх» выберите «Все».",
+    "libraryEmptyPrivacyAction": "Настройки Steam",
+    "checkVisibilityAction": "Проверить профиль",
+    "checkVisibilitySuccess": "Профиль открыт! Синхронизация...",
+    "checkVisibilityStillPrivate": "Профиль всё ещё закрыт. Проверьте «Сведения об играх» → «Все».",
+    "wishlistAccessDenied": "Доступ к списку желаемого запрещён (закрытый профиль).",
+    "searchMyGamesPlaceholder": "Поиск в моих играх...",
+    "searchSteamPlaceholder": "Поиск игры Steam...",
+    "searchWishlistPlaceholder": "Поиск в списке желаемого...",
+    "sortAZ": "А–Я",
+    "topPlayed": "Больше всего часов",
+    "wishlistEmptyText": "Список желаемого не виден. В настройках приватности Steam для «Сведений об играх» выберите «Все».",
+    "wishlistEmptyPrivacyAction": "Настройки Steam",
+    "checkVisibilityWishlistSuccess": "Профиль открыт! Синхронизация списка желаемого...",
+    "wishlistEmptyTitle": "Нет доступных игр",
+    "wishlistLoadError": "Не удалось загрузить список желаемого.",
+    "wishlistLoading": "Загрузка списка желаемого...",
+    "wishlistNotFoundOrPrivate": "Список желаемого не найден или скрыт.",
+    "wishlistProfilePublicHint": "Не удалось загрузить список желаемого. Убедитесь, что профиль Steam открыт."
+  },
+  "search": {
+    "hint": "Введите не менее 2 символов",
+    "loading": "Поиск...",
+    "placeholderFollowed": "Поиск среди отслеживаемых...",
+    "title": "Найти игру"
+  },
+  "emptyStates": {
+    "noResultsText": "Попробуйте другие слова",
+    "noResultsTitle": "Ничего не найдено"
+  },
+  "contact": {
+    "directTitle": "Прямой контакт",
+    "email": "Эл. почта",
+    "github": "GitHub",
+    "linkUnavailableMessage": "Не удалось открыть ссылку.",
+    "website": "Сайт"
+  },
+  "legal": {
+    "frenchOnlyNotice": "Юридический текст доступен на другом языке.",
+    "lastUpdated": "Обновлено: {{date}}",
+    "privacyTitle": "Политика конфиденциальности",
+    "termsTitle": "Условия использования",
+    "documentFallbackNotice": "Юридический текст ниже отображён на английском языке."
+  },
+  "dates": {
+    "fallbackNever": "Никогда",
+    "fallbackNow": "Только что"
+  },
+  "errors": {
+    "connectionDataMessage": "Не удалось загрузить данные. Проверьте соединение.",
+    "connectionGamesMessage": "Не удалось загрузить игры. Проверьте соединение.",
+    "connectionTitle": "Ошибка соединения",
+    "genericTitle": "Ошибка",
+    "genericRetryMessage": "Произошла ошибка. Попробуйте снова.",
+    "loadSettingsMessage": "Не удалось загрузить настройки. Попробуйте снова.",
+    "missingGameId": "Идентификатор игры не найден.",
+    "missingSteamId": "Steam ID не найден.",
+    "networkFallbackMessage": "Ошибка сети. Проверьте подключение.",
+    "notConnectedMessage": "Пользователь не вошёл в аккаунт.",
+    "saveSettingsMessage": "Не удалось сохранить настройки. Попробуйте снова.",
+    "sessionExpiredMessage": "Сессия истекла или аккаунт удалён. Войдите снова.",
+    "sessionExpiredTitle": "Сессия истекла",
+    "unexpectedRetryOrLogout": "Произошла ошибка. Выйти и попробовать снова?"
+  },
+  "tutorial": {
+    "resumeMessage": "Вы прервали обучение. Продолжить с места остановки, начать заново или пропустить?",
+    "resumeTitle": "Продолжить обучение?",
+    "resumeButton": "Продолжить",
+    "restartButton": "С начала",
+    "skipButton": "Пропустить",
+    "stepLabel": "Шаг {{current}} из {{total}}",
+    "previous": "Назад",
+    "next": "Далее",
+    "finish": "Готово",
+    "steps": {
+      "homeIntro": {
+        "title": "Первые шаги",
+        "description": "Здесь будут новости по играм, за которыми вы следите."
+      },
+      "homeNewsFollowed": {
+        "title": "Отслеживаемые игры",
+        "description": "Здесь список игр, на которые вы подписаны."
+      },
+      "homeMyGames": {
+        "title": "Мои игры",
+        "description": "Игры из библиотеки и управление подпиской на новости."
+      },
+      "homeWishlist": {
+        "title": "Список желаемого",
+        "description": "Игры из списка желаемого и подписка на новости."
+      },
+      "homeSearch": {
+        "title": "Поиск игры",
+        "description": "Поиск Steam, чтобы добавить игры в отслеживаемые."
+      },
+      "homeSettings": {
+        "title": "Настройки",
+        "description": "Нажмите здесь, чтобы настроить уведомления и авто-подписку."
+      },
+      "settingsNotifications": {
+        "title": "Новости",
+        "description": "Включите переключатель, чтобы получать новости по отслеживаемым играм."
+      },
+      "settingsLibrary": {
+        "title": "Купленные игры",
+        "description": "Новые игры из библиотеки: добавлять в отслеживаемые автоматически или после подтверждения."
+      },
+      "settingsWishlist": {
+        "title": "Список желаемого Steam",
+        "description": "То же для списка желаемого: автоматически или подтверждение в уведомлении."
+      },
+      "settingsSummary": {
+        "title": "Готово!",
+        "description": "Эти параметры можно изменить в настройках в любой момент."
+      }
+    }
+  }
+}

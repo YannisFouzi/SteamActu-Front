@@ -6,9 +6,21 @@ import de from './locales/de.json';
 import en from './locales/en.json';
 import es from './locales/es.json';
 import fr from './locales/fr.json';
+import ru from './locales/ru.json';
+import zh from './locales/zh.json';
 
 const APP_LANGUAGE_STORAGE_KEY = 'appLanguage';
-export const SUPPORTED_LANGUAGES = ['fr', 'en', 'de', 'es'];
+export const SUPPORTED_LANGUAGES = ['fr', 'en', 'de', 'es', 'ru', 'zh'];
+
+/** Endonymes pour le sélecteur de langue (identiques quelle que soit la locale i18n). */
+export const LANGUAGE_NATIVE_LABELS = {
+  fr: 'Français',
+  en: 'English',
+  de: 'Deutsch',
+  es: 'Español',
+  ru: 'Русский',
+  zh: '简体中文',
+};
 
 /** Langue si locale non reconnue (ex. italien → anglais). */
 const DEFAULT_LANGUAGE = 'en';
@@ -17,6 +29,8 @@ const LANGUAGE_TO_LOCALE = {
   en: 'en-US',
   de: 'de-DE',
   es: 'es-ES',
+  ru: 'ru-RU',
+  zh: 'zh-CN',
 };
 
 const resources = {
@@ -24,6 +38,8 @@ const resources = {
   fr: {translation: fr},
   de: {translation: de},
   es: {translation: es},
+  ru: {translation: ru},
+  zh: {translation: zh},
 };
 
 export const normalizeLanguage = language => {
@@ -32,6 +48,14 @@ export const normalizeLanguage = language => {
   }
 
   const normalized = language.toLowerCase().trim();
+
+  if (normalized.startsWith('zh')) {
+    return 'zh';
+  }
+
+  if (normalized.startsWith('ru')) {
+    return 'ru';
+  }
 
   if (SUPPORTED_LANGUAGES.includes(normalized)) {
     return normalized;
@@ -45,9 +69,24 @@ export const normalizeLanguage = language => {
 };
 
 const detectDeviceLanguage = () => {
-  const bestLanguage = RNLocalize.findBestLanguageTag(SUPPORTED_LANGUAGES);
+  const bestLanguage = RNLocalize.findBestLanguageTag([
+    'en',
+    'fr',
+    'de',
+    'es',
+    'ru',
+    'zh',
+    'zh-CN',
+    'zh-Hans',
+  ]);
   const raw = bestLanguage?.languageTag || bestLanguage?.languageCode || '';
   const tag = raw.toLowerCase();
+  if (tag.startsWith('zh')) {
+    return 'zh';
+  }
+  if (tag.startsWith('ru')) {
+    return 'ru';
+  }
   if (tag.startsWith('fr')) {
     return 'fr';
   }

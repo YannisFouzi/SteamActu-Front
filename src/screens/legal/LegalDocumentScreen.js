@@ -5,46 +5,53 @@ import {COLORS, CONTAINER_STYLES, TEXT_STYLES} from '../../constants';
 import {normalizeLanguage} from '../../i18n';
 import {formatAbsoluteDate} from '../../utils';
 
-const FALLBACK_LANGUAGE = 'fr';
+const FALLBACK_LANGUAGES = ['en', 'fr'];
 
 const resolveLegalDocument = (i18n, documentKey) => {
   const activeLanguage = normalizeLanguage(
-    i18n.resolvedLanguage || i18n.language || FALLBACK_LANGUAGE,
+    i18n.resolvedLanguage || i18n.language || 'en',
   );
+  const resourcePath = `legal.documents.${documentKey}`;
   const activeDocument = i18n.getResource(
     activeLanguage,
     'translation',
-    `legal.documents.${documentKey}`,
+    resourcePath,
   );
 
   if (activeDocument && Array.isArray(activeDocument.sections)) {
     return {
       document: activeDocument,
-      usesFrenchFallback: false,
-      language: activeLanguage,
+      usesDocumentFallback: false,
+      documentLocale: activeLanguage,
     };
   }
 
-  const fallbackDocument = i18n.getResource(
-    FALLBACK_LANGUAGE,
-    'translation',
-    `legal.documents.${documentKey}`,
-  );
+  for (const fallbackLng of FALLBACK_LANGUAGES) {
+    const fallbackDocument = i18n.getResource(
+      fallbackLng,
+      'translation',
+      resourcePath,
+    );
+    if (fallbackDocument && Array.isArray(fallbackDocument.sections)) {
+      return {
+        document: fallbackDocument,
+        usesDocumentFallback: activeLanguage !== fallbackLng,
+        documentLocale: fallbackLng,
+      };
+    }
+  }
 
   return {
-    document:
-      fallbackDocument && Array.isArray(fallbackDocument.sections)
-        ? fallbackDocument
-        : {updatedAt: null, sections: []},
-    usesFrenchFallback: activeLanguage !== FALLBACK_LANGUAGE,
-    language: activeLanguage,
+    document: {updatedAt: null, sections: []},
+    usesDocumentFallback: false,
+    documentLocale: activeLanguage,
   };
 };
 
 const LegalDocumentScreen = ({documentKey, titleKey}) => {
   const {t, i18n} = useTranslation();
 
-  const {document, usesFrenchFallback, language} = useMemo(
+  const {document, usesDocumentFallback, documentLocale} = useMemo(
     () => resolveLegalDocument(i18n, documentKey),
     [documentKey, i18n],
   );
@@ -59,7 +66,7 @@ const LegalDocumentScreen = ({documentKey, titleKey}) => {
           year: 'numeric',
           month: 'long',
           day: 'numeric',
-          language,
+          language: documentLocale,
         })
       : null;
 
@@ -76,9 +83,9 @@ const LegalDocumentScreen = ({documentKey, titleKey}) => {
         </Text>
       ) : null}
 
-      {usesFrenchFallback ? (
+      {usesDocumentFallback ? (
         <View style={styles.notice}>
-          <Text style={styles.noticeText}>{t('legal.frenchOnlyNotice')}</Text>
+          <Text style={styles.noticeText}>{t('legal.documentFallbackNotice')}</Text>
         </View>
       ) : null}
 
