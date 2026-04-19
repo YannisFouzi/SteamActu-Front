@@ -196,88 +196,104 @@
     "termsTitle": "Terms of service",
     "documents": {
       "terms": {
-        "updatedAt": "2025-11-11T12:00:00.000Z",
+        "updatedAt": "2026-04-18T12:00:00.000Z",
         "sections": [
           {
             "title": "1. Acceptance of terms",
-            "content": "By accessing the GameNotif application, you accept these Terms of Service in full. If you do not agree with any provision, please stop using the application and delete your account from the Settings screen."
+            "content": "By using the GameNotif application, you accept these Terms of Service in full. If you do not agree, stop using the application and delete your account from the Settings screen."
           },
           {
-            "title": "2. Service description",
-            "content": "GameNotif aggregates and delivers news from the Steam ecosystem for the games you follow. The service is provided for informational purposes and may change or be discontinued at any time."
+            "title": "2. Service provider",
+            "content": "GameNotif is operated by an independent developer. For any questions about the service or these terms: contact@fouzi-dev.fr."
           },
           {
-            "title": "3. Use of the application",
-            "content": "You agree not to misuse the application, not to attempt to compromise its security, and not to collect or exploit data belonging to other users. Any abusive use may lead to suspension or removal of access."
+            "title": "3. Service description",
+            "content": "GameNotif aggregates and presents news from the Steam ecosystem for games you follow. The service is provided for information only; it may change or be discontinued at any time."
           },
           {
-            "title": "4. Accounts and Steam authentication",
-            "content": "Sign-in relies on your Steam account. You are responsible for keeping your Steam credentials confidential and for any actions performed through your account within the application."
+            "title": "4. Use of the application",
+            "content": "You agree to use the application only for its intended purpose, not to harm its security or stability, and not to collect or exploit data about other users. Misuse may result in suspension or removal of access."
           },
           {
-            "title": "5. Notifications and content",
-            "content": "Notifications are generated from public sources or official Steam-related feeds. Their accuracy and availability are not guaranteed. GameNotif cannot be held responsible for content published by third parties."
+            "title": "5. Accounts and Steam authentication",
+            "content": "Sign-in uses your Steam account. You remain responsible for the confidentiality of your Steam credentials and for actions taken through your account in the application. Valve Corporation is not a party to these terms."
           },
           {
-            "title": "6. Service availability",
-            "content": "We strive to keep the application available at all times, without guarantee. Temporary interruptions may occur for maintenance, updates, or force majeure."
+            "title": "6. Notifications and content",
+            "content": "Notifications and content come from public sources or Steam-related information. Accuracy, completeness, and availability are not guaranteed. GameNotif is not liable for third-party content (including Valve or game publishers)."
           },
           {
-            "title": "7. Intellectual property",
-            "content": "All graphics, text, logos, and features specific to GameNotif remain the property of their respective author. Steam and related assets are the property of Valve Corporation."
+            "title": "7. Service availability",
+            "content": "We aim for continuous availability but make no warranty of uninterrupted service. Outages may occur (maintenance, updates, incidents, force majeure)."
           },
           {
-            "title": "8. Limitation of liability",
-            "content": "GameNotif is provided \"as is\". We cannot be held liable for any direct or indirect damages resulting from the use of, or inability to use, the application."
+            "title": "8. Intellectual property",
+            "content": "Elements specific to GameNotif (interface, in-app text excluding third-party content, the GameNotif name where applicable) remain the property of the publisher. Steam, Valve, and related assets are the property of Valve Corporation."
           },
           {
-            "title": "9. Changes to the terms",
-            "content": "These Terms of Service may be changed at any time. The most recent version is always available in the application. Continued use of the application constitutes acceptance of the updated terms."
+            "title": "9. Limitation of liability",
+            "content": "To the fullest extent permitted by law, GameNotif is provided \"as is\". Where liability is established, it shall not exceed what is typically foreseeable for a free or low-cost app; indirect damages or data loss attributable to third parties or your equipment are excluded except where mandatory law provides otherwise."
           },
           {
-            "title": "10. Contact",
-            "content": "If you have any questions about these Terms of Service, you can write to: contact@fouzi-dev.fr."
+            "title": "10. Governing law and disputes",
+            "content": "These terms are governed by French law. Failing an amicable settlement, French courts shall have jurisdiction, without prejudice to mandatory consumer rules of the European Union (including, where the law so requires, the courts of your habitual residence)."
+          },
+          {
+            "title": "11. Changes to the terms",
+            "content": "These terms may be updated. The binding version is the one displayed in the application with its update date. If you continue to use GameNotif after a new version is published, you are deemed to accept the changes unless the law requires separate consent."
+          },
+          {
+            "title": "12. Contact",
+            "content": "Questions about these Terms of Service: contact@fouzi-dev.fr."
           }
         ]
       },
       "privacy": {
-        "updatedAt": "2025-11-11T12:00:00.000Z",
+        "updatedAt": "2026-04-18T12:00:00.000Z",
         "sections": [
           {
-            "title": "1. Data collected",
-            "content": "We store only the information necessary to operate GameNotif: your Steam ID, your synced library (list of games with playtime), your recently active games history, your wishlist, the notification settings you configure in the application (enabled state, auto-follow, push notification token), as well as technical logs required to keep the service stable."
+            "title": "1. Data controller",
+            "content": "The controller of personal data processed through GameNotif is the publisher of the application, reachable at: contact@fouzi-dev.fr."
           },
           {
-            "title": "2. Use of data",
-            "content": "This data is used to sync your games, manage your follows, send relevant notifications, and improve the application's performance. It is never sold or used for advertising purposes."
+            "title": "2. Data we process",
+            "content": "We process, where necessary for the service: your Steam ID; library and playtime data synced from Steam; recently active games; your wishlist; games you follow; news items you may bookmark as favorites; the display language you choose in the app; notification and follow settings (news alerts, library/wishlist follow modes, confirmation preferences); push notification tokens and related technical identifiers (FCM), with your device platform; limited technical logs (security, diagnostics, service availability)."
           },
           {
-            "title": "3. Storage and retention",
-            "content": "Information is stored securely on our servers. It is kept for as long as your account remains active. You can delete your account directly from the application to erase your data."
+            "title": "3. Purposes and legal bases",
+            "content": "Providing the account and service (performance of these terms / pre-contractual measures): Steam sync, news display, managing followed games. Push notifications: where required by law, your consent or explicit activation in system and app settings; otherwise, limited legitimate interest strictly for messages related to the service you requested. Security, abuse prevention, and reliability: legitimate interest. Legal obligations where applicable: legal obligation. We do not sell data or carry out advertising profiling."
           },
           {
-            "title": "4. Sharing with third parties",
-            "content": "No commercial sharing is carried out. Some data may transit through official Steam APIs in order to provide the service. These exchanges comply with Valve Corporation's policies."
+            "title": "4. Recipients, processors, and transfers",
+            "content": "Data is hosted and processed on the publisher's infrastructure and that of technical providers. Push delivery uses Google Firebase Cloud Messaging (Google LLC / Google group companies), which may process technical data in the United States or other countries; where applicable, transfers rely on GDPR safeguards (including the European Commission's Standard Contractual Clauses) and Google's privacy policy. The service also relies on official Steam / Valve APIs under their applicable policies. Other processors (hosting, email) may act on the controller's instructions."
           },
           {
-            "title": "5. Your rights",
-            "content": "In accordance with applicable regulations, you have the right to access, correct, object to, and delete your personal data. Contact contact@fouzi-dev.fr to exercise these rights."
+            "title": "5. Retention",
+            "content": "Account and preference data are kept while your account is active; they are deleted or anonymised within a reasonable period after you delete your account in the app, unless a legal retention obligation applies. Technical logs are kept for a limited period strictly necessary for security and diagnostics (typically a few months, unless a prolonged incident requires longer retention). Invalid notification tokens are removed or replaced on subsequent connections."
           },
           {
-            "title": "6. Security",
-            "content": "Technical and organizational measures are implemented to protect your data against unauthorized access, loss, or disclosure. Despite our efforts, no system is completely invulnerable."
+            "title": "6. Your rights",
+            "content": "Under Regulation (EU) 2016/679 (GDPR) and French law, you have, subject to conditions and legal exceptions, the rights of access, rectification, erasure, restriction, objection, and data portability (where applicable). You may lodge a complaint with a supervisory authority; in France, the CNIL (www.cnil.fr). To exercise your rights: contact@fouzi-dev.fr; proof of identity may be requested if there is reasonable doubt."
           },
           {
-            "title": "7. Cookies and similar technologies",
-            "content": "GameNotif does not use cookies or advertising trackers. The application keeps only a local technical cache on your device in order to speed up data display."
+            "title": "7. Security",
+            "content": "Appropriate technical and organisational measures protect your data. No processing is entirely risk-free; if an incident materially affects your data, notification may be given as required by law."
           },
           {
-            "title": "8. Changes to this policy",
-            "content": "This Privacy Policy may evolve. Any update will be published in this section of the application. By continuing to use the service, you accept these changes."
+            "title": "8. Cookies, tracking, and ads",
+            "content": "The mobile app does not use web cookies. No third-party advertising trackers are integrated for targeting. A local cache may be used solely to improve display performance on your device."
           },
           {
-            "title": "9. Contact",
-            "content": "If you have any questions about the protection of your data, write to contact@fouzi-dev.fr. We will do our best to respond quickly."
+            "title": "9. Minors",
+            "content": "The service is intended for users able to contract with Steam and use the application. If you believe a minor has provided data without authority, contact us so we can take appropriate steps."
+          },
+          {
+            "title": "10. Changes to this policy",
+            "content": "This policy may be updated; the last revision date appears at the top of this document in the application. Please review it periodically."
+          },
+          {
+            "title": "11. Contact",
+            "content": "Questions about this policy or your personal data: contact@fouzi-dev.fr."
           }
         ]
       }
