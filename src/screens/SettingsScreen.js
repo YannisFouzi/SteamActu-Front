@@ -19,10 +19,10 @@ import SettingsGroup from './settings/components/SettingsGroup';
 import SettingsRow from './settings/components/SettingsRow';
 import styles from './settings/SettingsScreen.styles';
 
-const NAV_LINKS = [
-  {label: 'settings.contactShortcut', icon: 'person-circle-outline', route: 'Contact'},
-  {label: 'nav.termsOfService', icon: 'document-text-outline', route: 'TermsOfService'},
-  {label: 'nav.privacyPolicy', icon: 'shield-checkmark-outline', route: 'PrivacyPolicy'},
+const SUPPORT_LINKS = [
+  {labelKey: 'common.contact', icon: 'mail-outline', route: 'Contact'},
+  {labelKey: 'nav.termsOfService', icon: 'document-text-outline', route: 'TermsOfService'},
+  {labelKey: 'nav.privacyPolicy', icon: 'shield-checkmark-outline', route: 'PrivacyPolicy'},
 ];
 
 const SettingsScreen = () => {
@@ -191,14 +191,17 @@ const SettingsScreen = () => {
       </SettingsGroup>
 
       <SettingsGroup>
-        {NAV_LINKS.map(link => (
-          <SettingsRow
-            key={link.route}
-            icon={link.icon}
-            label={t(link.label)}
-            onPress={() => navigation.navigate(link.route)}
-          />
-        ))}
+        <OptionSetting
+          label={t('settings.languageLabel')}
+          description={t('settings.languageDescription')}
+          value={appLanguage}
+          options={languageOptions}
+          onChange={handleLanguageChange}
+          disabled={languageDisabled}
+        />
+      </SettingsGroup>
+
+      <SettingsGroup>
         <SettingsRow
           icon="school-outline"
           label={
@@ -210,15 +213,15 @@ const SettingsScreen = () => {
         />
       </SettingsGroup>
 
-      <SettingsGroup>
-        <OptionSetting
-          label={t('settings.languageLabel')}
-          description={t('settings.languageDescription')}
-          value={appLanguage}
-          options={languageOptions}
-          onChange={handleLanguageChange}
-          disabled={languageDisabled}
-        />
+      <SettingsGroup title={t('settings.sectionSupportTitle')}>
+        {SUPPORT_LINKS.map(link => (
+          <SettingsRow
+            key={link.route}
+            icon={link.icon}
+            label={t(link.labelKey)}
+            onPress={() => navigation.navigate(link.route)}
+          />
+        ))}
       </SettingsGroup>
 
       <SettingsGroup>

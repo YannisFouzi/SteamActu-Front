@@ -73,7 +73,7 @@
   "settings": {
     "aboutBody": "Mit dieser App erhalten Sie Benachrichtigungen zu den Steam-Spielen, denen Sie folgen.",
     "aboutVersion": "GameNotif v1.0.0",
-    "contactShortcut": "Meine Kontaktdaten",
+    "sectionSupportTitle": "Kontakt & rechtliche Hinweise",
     "deleteAccount": "Konto löschen",
     "deleteAccountConfirmMessage": "Möchten Sie Ihr Konto wirklich löschen? Dieser Vorgang kann nicht rückgängig gemacht werden. Alle Daten werden dauerhaft gelöscht.",
     "deleteAccountConfirmTitle": "Konto löschen",

@@ -73,7 +73,7 @@
   "settings": {
     "aboutBody": "Cette application vous permet de recevoir des notifications pour les actualités des jeux Steam que vous suivez.",
     "aboutVersion": "GameNotif v1.0.0",
-    "contactShortcut": "Mes infos de contact",
+    "sectionSupportTitle": "Contact et informations légales",
     "deleteAccount": "Supprimer mon compte",
     "deleteAccountConfirmMessage": "Êtes-vous sûr de vouloir supprimer votre compte ? Cette action est irréversible. Toutes vos données seront définitivement supprimées.",
     "deleteAccountConfirmTitle": "Supprimer mon compte",
