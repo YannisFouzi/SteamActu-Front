@@ -19,12 +19,7 @@ export default StyleSheet.create({
   actionIcon: {
     marginRight: SPACING.md,
   },
-  logoutText: {
-    color: COLORS.ERROR,
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  deleteText: {
+  destructiveText: {
     color: COLORS.ERROR,
     fontSize: 15,
     fontWeight: '600',

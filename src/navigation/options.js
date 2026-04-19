@@ -18,7 +18,6 @@ export const ROOT_STACK_SCREEN_OPTIONS = {
     headerShown: false,
   },
   home: {
-    headerBackVisible: false,
     headerShown: false,
   },
 };

@@ -11,36 +11,25 @@ import { COLORS } from '../../../constants';
 
 const EmptyStateMessage = ({
   styles,
-  emoji,
   iconName,
-  iconSize = 64,
-  iconColor = COLORS.STEAM_TEXT_GRAY,
   title,
   titleStyle,
   text,
   textStyle,
   subtext,
-  subtextStyle,
   actionText,
   onAction,
   secondaryActionText,
   onSecondaryAction,
   secondaryActionLoading,
-  align = 'top',
-  testID,
 }) => {
-  const containerStyle =
-    align === 'center' ? styles.centerContainer : styles.emptyContainer;
-
   return (
-    <View style={containerStyle} testID={testID}>
-      {emoji ? (
-        <Text style={styles.placeholderEmoji}>{emoji}</Text>
-      ) : iconName ? (
+    <View style={styles.emptyContainer}>
+      {iconName ? (
         <Icon
           name={iconName}
-          size={iconSize}
-          color={iconColor}
+          size={64}
+          color={COLORS.STEAM_TEXT_GRAY}
           style={styles.emptyIcon}
         />
       ) : null}
@@ -82,7 +71,7 @@ const EmptyStateMessage = ({
       ) : null}
 
       {subtext ? (
-        <Text style={subtextStyle || styles.placeholderSubtext}>{subtext}</Text>
+        <Text style={styles.placeholderSubtext}>{subtext}</Text>
       ) : null}
     </View>
   );

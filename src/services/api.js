@@ -3,21 +3,11 @@ import {APP_CONFIG} from '../config/env';
 import {debugError} from '../hooks/hooksLogger';
 import {getCurrentAppLanguage, translate} from '../i18n';
 
-const DEFAULT_CONFIG = {
+const API_CONFIG = {
   API_URL: APP_CONFIG.API_BASE_URL,
-  DEFAULT_NEWS_PARAMS: {
-    steamOnly: 'true',
-  },
   DEFAULT_LIMITS: {
-    newsCount: 5,
-    newsMaxLength: 300,
     perGameLimit: 20,
   },
-};
-
-const API_CONFIG = {
-  ...DEFAULT_CONFIG,
-  API_URL: APP_CONFIG.API_BASE_URL,
 };
 
 const api = axios.create({
@@ -88,20 +78,6 @@ const userService = {
 };
 
 const newsService = {
-  getGameNews: (
-    appId,
-    count = API_CONFIG.DEFAULT_LIMITS.newsCount,
-    maxLength = API_CONFIG.DEFAULT_LIMITS.newsMaxLength,
-    language = getCurrentAppLanguage(),
-  ) =>
-    api.get(`/news/game/${appId}`, {
-      params: {
-        count,
-        maxLength,
-        language,
-        steamOnly: API_CONFIG.DEFAULT_NEWS_PARAMS.steamOnly,
-      },
-    }),
   getNewsFeed: (
     steamId,
     {
@@ -174,11 +150,6 @@ const steamAuthService = {
     const response = await authApi.get(`/auth/steam/status/${authToken}`);
     return response.data;
   },
-};
-
-export const apiConfig = {
-  ...API_CONFIG,
-  ENVIRONMENT: APP_CONFIG.ENVIRONMENT,
 };
 
 export {newsService, steamAuthService, steamService, userService};

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * Hook personnalisé pour le debouncing
@@ -24,45 +24,4 @@ export const useDebounce = (value, delay = 300) => {
   }, [value, delay]);
 
   return debouncedValue;
-};
-
-/**
- * Hook personnalisé pour debouncer un callback
- * Utile quand on veut debouncer une fonction plutôt qu'une valeur
- *
- * @param {function} callback - Fonction à debouncer
- * @param {number} delay - Délai en millisecondes (défaut: 300ms)
- * @returns {function} Fonction debouncée
- */
-export const useDebouncedCallback = (callback, delay = 300) => {
-  const timerRef = useRef(null);
-  const latestCallbackRef = useRef(callback);
-
-  useEffect(() => {
-    latestCallbackRef.current = callback;
-  }, [callback]);
-
-  const debouncedCallback = useCallback(
-    (...args) => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
-
-      timerRef.current = setTimeout(() => {
-        latestCallbackRef.current(...args);
-      }, delay);
-    },
-    [delay],
-  );
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
-      }
-    };
-  }, []);
-
-  return debouncedCallback;
 };

@@ -80,7 +80,7 @@ export const resolveUserSettingsSnapshot = notificationSettings => {
   };
 };
 
-export const shouldEnablePrompts = (libraryFollowMode, wishlistFollowMode) =>
+const shouldEnablePrompts = (libraryFollowMode, wishlistFollowMode) =>
   libraryFollowMode === 'prompt' || wishlistFollowMode === 'prompt';
 
 export const requiresNotifications = (

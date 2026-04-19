@@ -2,7 +2,7 @@ import React from 'react';
 import {useTranslation} from 'react-i18next';
 import EmptyStateMessage from './EmptyStateMessage';
 
-const NoResultsPlaceholder = ({styles, align = 'top'}) => {
+const NoResultsPlaceholder = ({styles}) => {
   const {t} = useTranslation();
 
   return (
@@ -13,7 +13,6 @@ const NoResultsPlaceholder = ({styles, align = 'top'}) => {
       text={t('emptyStates.noResultsText')}
       titleStyle={styles.emptyTitle}
       textStyle={styles.emptyText}
-      align={align}
     />
   );
 };

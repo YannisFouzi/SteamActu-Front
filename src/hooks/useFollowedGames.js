@@ -32,7 +32,6 @@ export const useFollowedGames = ({
   const [followedGames, setFollowedGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
 
   const isMountedRef = useRef(true);
   const followedGamesHydratedFromCacheRef = useRef(false);
@@ -105,7 +104,6 @@ export const useFollowedGames = ({
           : [];
 
         safeSetValue(setFollowedGames, remoteGames);
-        safeSetValue(setError, null);
         followedGamesHydratedFromCacheRef.current = true;
         await persistFollowedGamesCache(remoteGames, steamId);
 
@@ -116,7 +114,6 @@ export const useFollowedGames = ({
         return remoteGames;
       } catch (err) {
         debugError('[FOLLOWED_GAMES] Erreur recuperation:', err);
-        safeSetValue(setError, err);
         return [];
       } finally {
         fetchInFlightRef.current = false;
@@ -164,7 +161,6 @@ export const useFollowedGames = ({
       followedGamesHydratedFromCacheRef.current = false;
       fetchInFlightRef.current = false;
       safeSetValue(setFollowedGames, []);
-      safeSetValue(setError, null);
       safeSetValue(setLoading, false);
       safeSetValue(setRefreshing, false);
       return;
@@ -263,8 +259,6 @@ export const useFollowedGames = ({
     followedGames,
     loading,
     refreshing,
-    error,
-    fetchFollowedGames,
     handleRefresh,
     removeFollowedGame,
   };

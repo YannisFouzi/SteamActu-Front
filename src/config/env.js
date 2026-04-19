@@ -61,5 +61,3 @@ export const APP_CONFIG = {
   APP_SCHEME,
   STEAM_MEDIA_CDN,
 };
-
-export const getEnvValue = (key, fallback) => getEnvVar(key, fallback);

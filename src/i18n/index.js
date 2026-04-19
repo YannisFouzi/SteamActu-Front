@@ -7,7 +7,7 @@ import en from './locales/en.json';
 import es from './locales/es.json';
 import fr from './locales/fr.json';
 
-export const APP_LANGUAGE_STORAGE_KEY = 'appLanguage';
+const APP_LANGUAGE_STORAGE_KEY = 'appLanguage';
 export const SUPPORTED_LANGUAGES = ['fr', 'en', 'de', 'es'];
 
 /** Langue si locale non reconnue (ex. italien → anglais). */
@@ -44,7 +44,7 @@ export const normalizeLanguage = language => {
   return matched || DEFAULT_LANGUAGE;
 };
 
-export const detectDeviceLanguage = () => {
+const detectDeviceLanguage = () => {
   const bestLanguage = RNLocalize.findBestLanguageTag(SUPPORTED_LANGUAGES);
   const raw = bestLanguage?.languageTag || bestLanguage?.languageCode || '';
   const tag = raw.toLowerCase();
@@ -66,23 +66,18 @@ export const detectDeviceLanguage = () => {
 export const getCurrentAppLanguage = () =>
   normalizeLanguage(i18n.resolvedLanguage || i18n.language);
 
-export const getLocaleForLanguage = language =>
+const getLocaleForLanguage = language =>
   LANGUAGE_TO_LOCALE[normalizeLanguage(language)] || LANGUAGE_TO_LOCALE.en;
 
 export const getCurrentLocale = language =>
   getLocaleForLanguage(language || getCurrentAppLanguage());
 
-export const hasStoredLanguagePreference = async () => {
-  const stored = await AsyncStorage.getItem(APP_LANGUAGE_STORAGE_KEY);
-  return typeof stored === 'string' && stored.trim().length > 0;
-};
-
-export const loadStoredLanguagePreference = async () => {
+const loadStoredLanguagePreference = async () => {
   const stored = await AsyncStorage.getItem(APP_LANGUAGE_STORAGE_KEY);
   return stored ? normalizeLanguage(stored) : null;
 };
 
-export const persistAppLanguage = async language => {
+const persistAppLanguage = async language => {
   await AsyncStorage.setItem(
     APP_LANGUAGE_STORAGE_KEY,
     normalizeLanguage(language),

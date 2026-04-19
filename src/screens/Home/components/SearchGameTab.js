@@ -91,13 +91,12 @@ const SearchGameTab = ({styles}) => {
           text={t('search.hint')}
           titleStyle={styles.emptyTitle}
           textStyle={styles.emptyText}
-          align="top"
         />
       );
     }
 
     if (searchResults.length === 0) {
-      return <NoResultsPlaceholder styles={styles} align="top" />;
+      return <NoResultsPlaceholder styles={styles} />;
     }
 
     return (

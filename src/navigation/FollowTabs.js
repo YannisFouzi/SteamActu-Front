@@ -20,7 +20,6 @@ const FollowTabs = () => {
     wishlist,
     loading,
     refreshing,
-    fetchWishlist,
     handleRefresh,
     filterWishlist,
     updateWishlistFollowState,
@@ -51,11 +50,9 @@ const FollowTabs = () => {
     wishlist,
     loading,
     refreshing,
-    fetchWishlist,
     handleRefresh,
     filterWishlist,
     updateWishlistFollowState,
-    removeWishlistEntry,
     maybeRefreshWishlist,
   };
 

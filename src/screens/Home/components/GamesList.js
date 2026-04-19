@@ -61,27 +61,13 @@ const GamesList = React.memo(({listRef}) => {
 
   const renderEmptyList = () =>
     searchQuery && searchQuery.trim() !== '' ? (
-      <NoResultsPlaceholder styles={styles} align="top" />
+      <NoResultsPlaceholder styles={styles} />
     ) : sortOption === 'recentsPlus' ? (
       <EmptyStateMessage
         styles={styles}
         iconName="time-outline"
         title={t('games.recentsPlusEmptyTitle')}
         text={t('games.recentsPlusEmptyText')}
-        align="top"
-      />
-    ) : sortOption === 'lastTwoWeeks' ? (
-      <EmptyStateMessage
-        styles={styles}
-        iconName="lock-closed-outline"
-        title={t('games.libraryEmptyTitle')}
-        text={t('games.libraryEmptyText')}
-        actionText={t('games.libraryEmptyPrivacyAction')}
-        onAction={openSteamPrivacy}
-        secondaryActionText={t('games.checkVisibilityAction')}
-        onSecondaryAction={checkVisibility}
-        secondaryActionLoading={checking}
-        align="top"
       />
     ) : (
       <EmptyStateMessage
@@ -94,7 +80,6 @@ const GamesList = React.memo(({listRef}) => {
         secondaryActionText={t('games.checkVisibilityAction')}
         onSecondaryAction={checkVisibility}
         secondaryActionLoading={checking}
-        align="top"
       />
     );
 

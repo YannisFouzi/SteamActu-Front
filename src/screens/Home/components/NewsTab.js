@@ -120,15 +120,10 @@ const NewsTab = ({
   );
 
   const renderEmptyNewsList = useMemo(() => {
-    const commonProps = {
-      styles,
-      align: 'top',
-    };
-
     if (!steamId) {
       return () => (
         <EmptyStateMessage
-          {...commonProps}
+          styles={styles}
           iconName="log-in-outline"
           title={t('news.loginForNewsTitle')}
           text={t('news.loginForNewsText')}
@@ -139,7 +134,7 @@ const NewsTab = ({
 
     return () => (
       <EmptyStateMessage
-        {...commonProps}
+        styles={styles}
         iconName="newspaper-outline"
         title={t('news.noRecentNewsTitle')}
         text={t('news.noRecentNewsText')}

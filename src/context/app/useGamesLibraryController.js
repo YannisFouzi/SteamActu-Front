@@ -37,23 +37,27 @@ export const useGamesLibraryController = ({
   const gamesFetchedOnceRef = useRef(false);
   const skipNextGamesRefreshRef = useRef(false);
 
+  const cancelInFlightOperations = useCallback(reason => {
+    if (statusDebounceTimeoutRef.current) {
+      clearTimeout(statusDebounceTimeoutRef.current);
+      statusDebounceTimeoutRef.current = null;
+    }
+
+    if (gamesFetchAbortControllerRef.current) {
+      try {
+        gamesFetchAbortControllerRef.current.abort();
+      } catch (abortError) {
+        debugError(`[LOADDATA] Erreur lors de l’abort au ${reason}:`, abortError);
+      }
+      gamesFetchAbortControllerRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     return () => {
-      if (statusDebounceTimeoutRef.current) {
-        clearTimeout(statusDebounceTimeoutRef.current);
-        statusDebounceTimeoutRef.current = null;
-      }
-
-      if (gamesFetchAbortControllerRef.current) {
-        try {
-          gamesFetchAbortControllerRef.current.abort();
-        } catch (abortError) {
-          debugError('[LOADDATA] Erreur lors de l’abort au nettoyage:', abortError);
-        }
-        gamesFetchAbortControllerRef.current = null;
-      }
+      cancelInFlightOperations('nettoyage');
     };
-  }, []);
+  }, [cancelInFlightOperations]);
 
   const beginLoadingState = useCallback(forceReload => {
     if (forceReload) {
@@ -432,35 +436,12 @@ export const useGamesLibraryController = ({
     [gamesVersion, loadData, loading, refreshing, steamId],
   );
 
-  const refreshRecentsPlus = useCallback(
-    async (origin = 'refreshRecentsPlus') => {
-      if (!steamId) {
-        return;
-      }
-
-      await maybeRefreshGames(origin);
-    },
-    [maybeRefreshGames, steamId],
-  );
-
   const markSkipNextGamesRefresh = useCallback(() => {
     skipNextGamesRefreshRef.current = true;
   }, []);
 
   const resetGamesLibraryState = useCallback(() => {
-    if (statusDebounceTimeoutRef.current) {
-      clearTimeout(statusDebounceTimeoutRef.current);
-      statusDebounceTimeoutRef.current = null;
-    }
-
-    if (gamesFetchAbortControllerRef.current) {
-      try {
-        gamesFetchAbortControllerRef.current.abort();
-      } catch (abortError) {
-        debugError('[LOADDATA] Erreur lors de l’abort au logout:', abortError);
-      }
-      gamesFetchAbortControllerRef.current = null;
-    }
+    cancelInFlightOperations('logout');
 
     gamesFetchInFlightRef.current = false;
     gamesLastRequestIdRef.current = null;
@@ -473,22 +454,18 @@ export const useGamesLibraryController = ({
     setLastRefreshTime(0);
     setLoading(false);
     setRefreshing(false);
-  }, []);
+  }, [cancelInFlightOperations]);
 
   return {
     games,
     setGames,
     loading,
     refreshing,
-    gamesVersion,
-    setGamesVersion,
     lastRefreshTime,
-    setLastRefreshTime,
     loadData,
     handleRefresh,
     checkForNewGames,
     maybeRefreshGames,
-    refreshRecentsPlus,
     persistGamesCache,
     persistGamesVersion,
     markSkipNextGamesRefresh,

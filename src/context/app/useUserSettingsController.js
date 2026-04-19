@@ -258,14 +258,14 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
     [applySettingsSnapshot, safeSetState, steamId],
   );
 
-  const handleToggleNews = useCallback(
-    async value => {
+  const applySettingsChange = useCallback(
+    async nextSnapshot => {
       if (!steamId) {
         showAlert(
           translate('common.error'),
           translate('errors.notConnectedMessage'),
         );
-        return;
+        return false;
       }
 
       const previousRequires = requiresNotifications(
@@ -274,27 +274,23 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
         wishlistFollowMode,
       );
       const nextRequires = requiresNotifications(
-        value,
-        libraryFollowMode,
-        wishlistFollowMode,
+        nextSnapshot.newsNotifications,
+        nextSnapshot.libraryFollowMode,
+        nextSnapshot.wishlistFollowMode,
       );
 
-      if (value && !previousRequires) {
+      if (!previousRequires && nextRequires) {
         const granted = await ensureNotificationsPermission();
         if (!granted) {
-          return;
+          return false;
         }
       }
 
-      if (!value && previousRequires && !nextRequires) {
+      if (previousRequires && !nextRequires) {
         await unregisterFCMToken(steamId);
       }
 
-      await persistSettings({
-        newsNotifications: value,
-        libraryFollowMode,
-        wishlistFollowMode,
-      });
+      return persistSettings(nextSnapshot);
     },
     [
       ensureNotificationsPermission,
@@ -306,108 +302,53 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
     ],
   );
 
+  const handleToggleNews = useCallback(
+    async value => {
+      await applySettingsChange({
+        newsNotifications: value,
+        libraryFollowMode,
+        wishlistFollowMode,
+      });
+    },
+    [applySettingsChange, libraryFollowMode, wishlistFollowMode],
+  );
+
   const handleLibraryModeChange = useCallback(
     async mode => {
-      if (!steamId) {
-        showAlert(
-          translate('common.error'),
-          translate('errors.notConnectedMessage'),
-        );
-        return;
-      }
-
       const safeMode = FOLLOW_MODES.includes(mode) ? mode : 'off';
       if (safeMode === libraryFollowMode) {
         return;
       }
-
-      const previousRequires = requiresNotifications(
-        newsNotifications,
-        libraryFollowMode,
-        wishlistFollowMode,
-      );
-      const nextRequires = requiresNotifications(
-        newsNotifications,
-        safeMode,
-        wishlistFollowMode,
-      );
-
-      if (!previousRequires && nextRequires) {
-        const granted = await ensureNotificationsPermission();
-        if (!granted) {
-          return;
-        }
-      }
-
-      if (previousRequires && !nextRequires) {
-        await unregisterFCMToken(steamId);
-      }
-
-      await persistSettings({
+      await applySettingsChange({
         newsNotifications,
         libraryFollowMode: safeMode,
         wishlistFollowMode,
       });
     },
     [
-      ensureNotificationsPermission,
+      applySettingsChange,
       libraryFollowMode,
       newsNotifications,
-      persistSettings,
-      steamId,
       wishlistFollowMode,
     ],
   );
 
   const handleWishlistModeChange = useCallback(
     async mode => {
-      if (!steamId) {
-        showAlert(
-          translate('common.error'),
-          translate('errors.notConnectedMessage'),
-        );
-        return;
-      }
-
       const safeMode = FOLLOW_MODES.includes(mode) ? mode : 'off';
       if (safeMode === wishlistFollowMode) {
         return;
       }
-
-      const previousRequires = requiresNotifications(
-        newsNotifications,
-        libraryFollowMode,
-        wishlistFollowMode,
-      );
-      const nextRequires = requiresNotifications(
-        newsNotifications,
-        libraryFollowMode,
-        safeMode,
-      );
-
-      if (!previousRequires && nextRequires) {
-        const granted = await ensureNotificationsPermission();
-        if (!granted) {
-          return;
-        }
-      }
-
-      if (previousRequires && !nextRequires) {
-        await unregisterFCMToken(steamId);
-      }
-
-      await persistSettings({
+      await applySettingsChange({
         newsNotifications,
         libraryFollowMode,
         wishlistFollowMode: safeMode,
       });
     },
     [
-      ensureNotificationsPermission,
+      applySettingsChange,
       libraryFollowMode,
       newsNotifications,
-      persistSettings,
-      steamId,
       wishlistFollowMode,
     ],
   );

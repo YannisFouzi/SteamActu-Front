@@ -173,6 +173,48 @@ export const useFollowedGamesActions = ({
     ],
   );
 
+  const commitFollowApiResponse = useCallback(
+    async (updatedUser, appIdString, isUnfollow) => {
+      if (updatedUser?.gamesVersion) {
+        await persistGamesVersion(updatedUser.gamesVersion, steamId, {
+          reason: isUnfollow ? 'unfollowGame' : 'followGame',
+        });
+      }
+
+      if (updatedUser) {
+        setUser(updatedUser);
+        return;
+      }
+
+      setUser(prevUser => {
+        if (!prevUser) {
+          return prevUser;
+        }
+
+        const current = Array.isArray(prevUser.followedGames)
+          ? prevUser.followedGames.slice()
+          : [];
+
+        if (isUnfollow) {
+          return {
+            ...prevUser,
+            followedGames: current.filter(id => id !== appIdString),
+          };
+        }
+
+        if (current.includes(appIdString)) {
+          return {...prevUser, followedGames: current};
+        }
+
+        return {
+          ...prevUser,
+          followedGames: [...current, appIdString],
+        };
+      });
+    },
+    [persistGamesVersion, setUser, steamId],
+  );
+
   const handleFollowGame = useCallback(
     async (gameMeta = {}) => {
       try {
@@ -234,79 +276,29 @@ export const useFollowedGamesActions = ({
         }
 
         try {
-          if (!isFollowed) {
-            const followResponse = await userService.followGame(
-              steamId,
-              appIdString,
-              gameName,
-              gameIcon,
-            );
-            const updatedUser = followResponse?.data;
-            if (updatedUser?.gamesVersion) {
-              await persistGamesVersion(updatedUser.gamesVersion, steamId, {
-                reason: 'followGame',
-              });
-            }
-            debugLog('[FOLLOW] Jeu suivi:', gameName);
+          const apiResponse = isFollowed
+            ? await userService.unfollowGame(steamId, appIdString)
+            : await userService.followGame(
+                steamId,
+                appIdString,
+                gameName,
+                gameIcon,
+              );
 
-            if (updatedUser) {
-              setUser(updatedUser);
-            } else {
-              setUser(prevUser => {
-                if (!prevUser) {
-                  return prevUser;
-                }
+          await commitFollowApiResponse(
+            apiResponse?.data,
+            appIdString,
+            isFollowed,
+          );
 
-                const current = Array.isArray(prevUser.followedGames)
-                  ? prevUser.followedGames.slice()
-                  : [];
+          debugLog(
+            isFollowed
+              ? '[FOLLOW] Jeu retire des suivis:'
+              : '[FOLLOW] Jeu suivi:',
+            gameName,
+          );
 
-                if (current.includes(appIdString)) {
-                  return {...prevUser, followedGames: current};
-                }
-
-                return {
-                  ...prevUser,
-                  followedGames: [...current, appIdString],
-                };
-              });
-            }
-
-            clearOptimisticFollowState(appIdString);
-          } else {
-            const unfollowResponse = await userService.unfollowGame(
-              steamId,
-              appIdString,
-            );
-            const updatedUser = unfollowResponse?.data;
-            if (updatedUser?.gamesVersion) {
-              await persistGamesVersion(updatedUser.gamesVersion, steamId, {
-                reason: 'unfollowGame',
-              });
-            }
-            debugLog('[FOLLOW] Jeu retire des suivis:', gameName);
-
-            if (updatedUser) {
-              setUser(updatedUser);
-            } else {
-              setUser(prevUser => {
-                if (!prevUser) {
-                  return prevUser;
-                }
-
-                const current = Array.isArray(prevUser.followedGames)
-                  ? prevUser.followedGames.slice()
-                  : [];
-
-                return {
-                  ...prevUser,
-                  followedGames: current.filter(id => id !== appIdString),
-                };
-              });
-            }
-
-            clearOptimisticFollowState(appIdString);
-          }
+          clearOptimisticFollowState(appIdString);
 
           if (typeof markSkipNextGamesRefresh === 'function') {
             markSkipNextGamesRefresh();
@@ -353,13 +345,12 @@ export const useFollowedGamesActions = ({
     [
       games,
       clearOptimisticFollowState,
+      commitFollowApiResponse,
       isGameFollowed,
       markSkipNextGamesRefresh,
       persistGamesCache,
-      persistGamesVersion,
       setOptimisticFollowState,
       setGames,
-      setUser,
       steamId,
     ],
   );

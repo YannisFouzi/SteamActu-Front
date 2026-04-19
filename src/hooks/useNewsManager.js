@@ -262,26 +262,6 @@ export const useNewsManager = steamId => {
     };
   }, [fetchNews, getCacheKey, language, safeSetNewsState, steamId]);
 
-  const updateNewsFollowStatus = useCallback(
-    (appId, isFollowed) => {
-      safeSetNewsState(prev => {
-        const previous = prev.news || createInitialNewsState();
-        return {
-          ...prev,
-          news: {
-            ...previous,
-            items: previous.items.map(item =>
-              item.appId?.toString() === appId
-                ? {...item, isFollowed: !isFollowed}
-                : item,
-            ),
-          },
-        };
-      });
-    },
-    [createInitialNewsState, safeSetNewsState],
-  );
-
   const removeNewsByAppId = useCallback(
     appId => {
       if (!appId) {
@@ -369,12 +349,8 @@ export const useNewsManager = steamId => {
   return {
     newsState,
     fetchNews,
-    updateNewsFollowStatus,
     removeNewsByAppId,
     setFavoritesOnlyFilter,
     toggleNewsFavorite,
-    activeNewsState: newsState.news,
-    isNewsInitialized: newsState.news?.initialized,
-    isNewsLoading: newsState.news?.loading,
   };
 };

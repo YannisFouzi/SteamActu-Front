@@ -66,13 +66,6 @@ export const useAsyncStorage = (key, defaultValue) => {
 };
 
 /**
- * Hook spécialisé pour les options de tri
- */
-export const useSortOption = () => {
-  return useAsyncStorage('sortOption', 'default');
-};
-
-/**
  * Hook spécialisé pour la date de dernière vérification
  */
 export const useLastVerificationDate = () => {
@@ -99,24 +92,6 @@ export const useLastVerificationDate = () => {
     date,
     updateVerificationDate,
     isOlderThanOneDay,
-    isLoaded,
-  };
-};
-
-/**
- * Hook spécialisé pour la gestion du SteamID
- */
-export const useSteamId = () => {
-  const [steamId, setSteamId, isLoaded] = useAsyncStorage('steamId', '');
-
-  const clearSteamId = () => {
-    setSteamId(null);
-  };
-
-  return {
-    steamId,
-    setSteamId,
-    clearSteamId,
     isLoaded,
   };
 };

@@ -3,7 +3,6 @@ import {
   showDialog as showFeedbackDialog,
   showErrorMessage as showFeedbackErrorMessage,
   showInfoMessage as showFeedbackInfoMessage,
-  showSnackbar as showFeedbackSnackbar,
   showSuccessMessage as showFeedbackSuccessMessage,
 } from '../feedback/feedbackService';
 
@@ -29,8 +28,6 @@ export const showAlert = (title, message, buttons, options) =>
   showFeedbackAlert(title, message, buttons, options);
 
 export const showDialog = config => showFeedbackDialog(config);
-
-export const showSnackbar = config => showFeedbackSnackbar(config);
 
 export const showInfoMessage = (title, message, config) =>
   showFeedbackInfoMessage(title, message, config);

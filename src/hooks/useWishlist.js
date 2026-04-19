@@ -21,7 +21,6 @@ export const useWishlist = steamId => {
   const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
   const [wishlistVersion, setWishlistVersion] = useState(null);
 
   const { setWishlistVersion: setContextWishlistVersion } = useAppContext();
@@ -205,7 +204,6 @@ export const useWishlist = steamId => {
         if (!silent) {
           safeSetState(setLoading, true);
         }
-        safeSetState(setError, null);
 
         debugLog('[WISHLIST] Chargement...', {
           steamId: maskSteamId(steamId),
@@ -289,14 +287,6 @@ export const useWishlist = steamId => {
           return [];
         }
 
-        if (err.response?.status === 404) {
-          safeSetState(setError, t('games.wishlistNotFoundOrPrivate'));
-        } else if (err.response?.status === 403) {
-          safeSetState(setError, t('games.wishlistAccessDenied'));
-        } else {
-          safeSetState(setError, t('games.wishlistLoadError'));
-        }
-
         showAlert(
           t('common.error'),
           t('games.wishlistProfilePublicHint'),
@@ -357,25 +347,6 @@ export const useWishlist = steamId => {
     },
     [sortedWishlist],
   );
-
-  const wishlistStats = useCallback(() => {
-    if (!Array.isArray(wishlist)) {
-      return {
-        total: 0,
-        recentlyAdded: 0,
-      };
-    }
-
-    const thirtyDaysAgo = Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60;
-    const recentlyAdded = wishlist.filter(
-      item => (item.date_added || 0) > thirtyDaysAgo,
-    ).length;
-
-    return {
-      total: wishlist.length,
-      recentlyAdded,
-    };
-  }, [wishlist]);
 
   const updateWishlistFollowState = useCallback(
     (appId, nextIsFollowed) => {
@@ -499,12 +470,8 @@ export const useWishlist = steamId => {
     wishlist,
     loading,
     refreshing,
-    error,
-    fetchWishlist,
     handleRefresh,
-    sortedWishlist,
     filterWishlist,
-    wishlistStats,
     updateWishlistFollowState,
     removeWishlistEntry,
     maybeRefreshWishlist,

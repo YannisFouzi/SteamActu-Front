@@ -220,7 +220,7 @@ const SettingsScreen = () => {
           disabled={loggingOut}
           android_ripple={{color: 'rgba(192, 57, 43, 0.08)'}}>
           <Ionicons name="log-out-outline" size={20} color={COLORS.ERROR} style={styles.actionIcon} />
-          <Text style={styles.logoutText}>
+          <Text style={styles.destructiveText}>
             {loggingOut ? t('auth.loggingIn') : t('auth.logout')}
           </Text>
         </Pressable>
@@ -230,7 +230,7 @@ const SettingsScreen = () => {
           disabled={deleting || loggingOut || saving}
           android_ripple={{color: 'rgba(192, 57, 43, 0.06)'}}>
           <Ionicons name="trash-outline" size={20} color={COLORS.ERROR} style={styles.actionIcon} />
-          <Text style={styles.deleteText}>
+          <Text style={styles.destructiveText}>
             {deleting ? t('settings.deleting') : t('settings.deleteAccount')}
           </Text>
         </Pressable>

@@ -125,7 +125,6 @@ const WishlistScreen = ({
         secondaryActionText={t('games.checkVisibilityAction')}
         onSecondaryAction={checkVisibility}
         secondaryActionLoading={checking}
-        align="top"
       />
     );
   }, [checkVisibility, checking, t, wishlistSearchQuery]);

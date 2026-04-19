@@ -100,13 +100,12 @@ const FollowedGamesTab = React.memo(({styles}) => {
           title={t('games.followedEmptyTitle')}
           text={t('games.followedEmptyText')}
           subtext={t('games.followedEmptySubtext')}
-          align="top"
         />
       );
     }
 
     if (searchQuery.trim() !== '' && filteredFollowedGames.length === 0) {
-      return <NoResultsPlaceholder styles={styles} align="top" />;
+      return <NoResultsPlaceholder styles={styles} />;
     }
 
     return (

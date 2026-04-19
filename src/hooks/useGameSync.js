@@ -90,23 +90,7 @@ export const useGameSync = () => {
     }
   };
 
-  /**
-   * Vérifie si un jeu est dans la fenêtre "récent"
-   * @param {number} timestamp - Timestamp à vérifier
-   * @returns {boolean} True si le jeu est récent
-   */
-  const isInRecentWindow = timestamp => {
-    if (!timestamp) {
-      return false;
-    }
-    const now = Date.now();
-    const normalizedTimestamp = timestamp > 1e12 ? timestamp : timestamp * 1000;
-    return now - normalizedTimestamp <= RECENT_WINDOW_MS;
-  };
-
   return {
     syncRecentActiveGames,
-    isInRecentWindow,
-    RECENT_WINDOW_MS,
   };
 };

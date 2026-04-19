@@ -15,14 +15,6 @@ export const unregisterFeedbackController = controller => {
   }
 };
 
-export const dismissDialog = () => {
-  feedbackController?.dismissDialog?.();
-};
-
-export const dismissSnackbar = () => {
-  feedbackController?.dismissSnackbar?.();
-};
-
 export const showDialog = config => {
   if (feedbackController?.showDialog) {
     feedbackController.showDialog(config);
@@ -33,7 +25,7 @@ export const showDialog = config => {
   return false;
 };
 
-export const showSnackbar = config => {
+const showSnackbar = config => {
   if (feedbackController?.showSnackbar) {
     feedbackController.showSnackbar(config);
     return true;
