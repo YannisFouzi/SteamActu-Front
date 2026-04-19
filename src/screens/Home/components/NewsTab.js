@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
+import FollowToggle from '../../../components/FollowToggle';
 import LoadingContainer from '../../../components/LoadingContainer';
 import {COLORS} from '../../../constants';
 import {
@@ -72,6 +73,7 @@ const NewsTab = ({
   hasFavorites = false,
   onToggleFavoritesFilter,
   onToggleFavorite,
+  syncNewsFeedAfterFollowToggle,
 }) => {
   const {t, i18n} = useTranslation();
   const activeNewsState = newsState?.news || null;
@@ -163,22 +165,38 @@ const NewsTab = ({
                 </Text>
               </View>
             </View>
-            {steamId && typeof onToggleFavorite === 'function' ? (
-              <TouchableOpacity
-                style={styles.newsFavoriteButton}
-                accessibilityRole="button"
-                hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-                onPress={() => onToggleFavorite(item)}>
-                <Icon
-                  name={item.isFavorite ? 'star' : 'star-outline'}
-                  size={20}
-                  color={
-                    item.isFavorite
-                      ? COLORS.FAVORITE_GOLD
-                      : COLORS.STEAM_TEXT_GRAY
+            {steamId ? (
+              <View style={styles.newsCardActions}>
+                <FollowToggle
+                  appId={item.appId}
+                  name={item.gameName}
+                  imageUrl={item.gameLogoUrl}
+                  size={22}
+                  style={styles.newsFollowToggle}
+                  onToggle={
+                    typeof syncNewsFeedAfterFollowToggle === 'function'
+                      ? syncNewsFeedAfterFollowToggle
+                      : undefined
                   }
                 />
-              </TouchableOpacity>
+                {typeof onToggleFavorite === 'function' ? (
+                  <TouchableOpacity
+                    style={styles.newsFavoriteButton}
+                    accessibilityRole="button"
+                    hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
+                    onPress={() => onToggleFavorite(item)}>
+                    <Icon
+                      name={item.isFavorite ? 'star' : 'star-outline'}
+                      size={20}
+                      color={
+                        item.isFavorite
+                          ? COLORS.FAVORITE_GOLD
+                          : COLORS.STEAM_TEXT_GRAY
+                      }
+                    />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             ) : null}
           </View>
 
@@ -187,7 +205,13 @@ const NewsTab = ({
         </TouchableOpacity>
       );
     },
-    [formatDate, onToggleFavorite, openNews, steamId],
+    [
+      formatDate,
+      onToggleFavorite,
+      openNews,
+      steamId,
+      syncNewsFeedAfterFollowToggle,
+    ],
   );
 
   const newsKeyExtractor = useCallback(

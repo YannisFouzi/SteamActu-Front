@@ -18,6 +18,7 @@ const ActuTabs = () => {
     newsState,
     fetchNews,
     removeNewsByAppId,
+    syncNewsFeedAfterFollowToggle,
     setFavoritesOnlyFilter,
     toggleNewsFavorite,
   } = useNewsManager(steamId);
@@ -59,6 +60,7 @@ const ActuTabs = () => {
               fetchNews={fetchNews}
               onToggleFavoritesFilter={setFavoritesOnlyFilter}
               onToggleNewsFavorite={toggleNewsFavorite}
+              syncNewsFeedAfterFollowToggle={syncNewsFeedAfterFollowToggle}
             />
           )}
         </Tab.Screen>

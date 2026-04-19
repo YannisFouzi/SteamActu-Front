@@ -268,20 +268,60 @@ export const useNewsManager = steamId => {
         return;
       }
 
+      const appIdStr = appId.toString();
+      let nextItemsSnapshot = null;
+
       safeSetNewsState(prev => {
         const previous = prev.news || createInitialNewsState();
+        const nextItems = previous.items.filter(
+          item => item.appId?.toString() !== appIdStr,
+        );
+        nextItemsSnapshot = nextItems;
+
+        const favoriteIds = nextItems
+          .filter(item => Boolean(item?.isFavorite))
+          .map(item => buildNewsKey(item.appId, item.news?.id));
+
         return {
           ...prev,
           news: {
             ...previous,
-            items: previous.items.filter(
-              item => item.appId?.toString() !== appId.toString(),
-            ),
+            items: nextItems,
+            favoriteIds,
+            hasFavorites: favoriteIds.length > 0,
+            favoriteCount: favoriteIds.length,
           },
         };
       });
+
+      if (steamId && Array.isArray(nextItemsSnapshot)) {
+        persistNewsCache(nextItemsSnapshot, steamId).catch(error => {
+          debugError('[NEWS] Échec persistance cache après retrait jeu:', error);
+        });
+      }
     },
-    [createInitialNewsState, safeSetNewsState],
+    [createInitialNewsState, persistNewsCache, safeSetNewsState, steamId],
+  );
+
+  const syncNewsFeedAfterFollowToggle = useCallback(
+    ({appId, nextIsFollowed} = {}) => {
+      if (!appId) {
+        return;
+      }
+
+      if (nextIsFollowed) {
+        fetchNews({
+          silent: true,
+          favoritesOnly: favoritesOnlyRef.current,
+        }).catch(error => {
+          debugError('[NEWS] Rafraîchissement après suivi échoué:', error);
+        });
+        return;
+      }
+
+      removeNewsByAppId(appId);
+    },
+    [fetchNews, removeNewsByAppId],
   );
 
   const setFavoritesOnlyFilter = useCallback(
@@ -350,6 +390,7 @@ export const useNewsManager = steamId => {
     newsState,
     fetchNews,
     removeNewsByAppId,
+    syncNewsFeedAfterFollowToggle,
     setFavoritesOnlyFilter,
     toggleNewsFavorite,
   };

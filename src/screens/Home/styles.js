@@ -96,8 +96,16 @@ export default StyleSheet.create({
   newsMetadata: {
     flex: 1,
   },
+  newsCardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   newsFavoriteButton: {
     padding: 4,
+    marginLeft: 4,
+  },
+  newsFollowToggle: {
+    justifyContent: 'center',
   },
   newsGameName: {
     ...TEXT_STYLES.newsGameName,
