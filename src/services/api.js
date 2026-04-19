@@ -6,7 +6,7 @@ import {getCurrentAppLanguage, translate} from '../i18n';
 const API_CONFIG = {
   API_URL: APP_CONFIG.API_BASE_URL,
   DEFAULT_LIMITS: {
-    perGameLimit: 20,
+    perGameLimit: 5,
   },
 };
 

@@ -127,7 +127,7 @@ export const useNewsManager = steamId => {
 
       try {
         const response = await newsService.getNewsFeed(steamId, {
-          perGameLimit: 20,
+          perGameLimit: 5,
           language,
           favoritesOnly: requestedFavoritesOnly,
         });
