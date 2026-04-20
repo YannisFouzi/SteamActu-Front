@@ -1,5 +1,4 @@
 import { APP_CONFIG } from '../config/env';
-import { normalizeTimestamp, TIME_CONSTANTS } from './dateHelpers';
 import { isDefined, toNumber } from './numberHelpers';
 
 const STEAM_ICON_BASE_URL = `${APP_CONFIG.STEAM_MEDIA_CDN}/steamcommunity/public/images/apps`;
@@ -81,20 +80,6 @@ export const getLastPlayedValue = game => {
 };
 
 /**
- * Récupère le timestamp de dernière mise à jour.
- * @param {Object} game
- * @returns {number}
- */
-export const getLastUpdateValue = game => {
-  const raw =
-    game?.lastUpdateTimestamp ??
-    game?.rtime_last_played ??
-    game?.playtime?.lastPlayed ??
-    0;
-  return toNumber(raw);
-};
-
-/**
  * Normalise un identifiant d’application en string.
  * @param {Object} game
  * @returns {string}
@@ -124,17 +109,4 @@ export const getGameIconUrl = (appId, iconHash) => {
     return null;
   }
   return `${STEAM_ICON_BASE_URL}/${appId}/${iconHash}.jpg`;
-};
-
-/**
- * Indique si un jeu a été mis à jour récemment (24h).
- * @param {number} timestamp
- * @returns {boolean}
- */
-export const isRecentlyUpdated = timestamp => {
-  if (!timestamp) {
-    return false;
-  }
-  const normalizedTimestamp = normalizeTimestamp(timestamp);
-  return Date.now() - normalizedTimestamp < TIME_CONSTANTS.DAY_MS;
 };
