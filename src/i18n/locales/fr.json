@@ -81,7 +81,7 @@
     "languageSaveError": "Impossible de mettre à jour la langue pour le moment. Veuillez réessayer.",
     "autoFollowDescription": "Choisissez comment gérer le suivi des jeux détectés dans votre bibliothèque et votre wishlist.",
     "libraryDescription": "Choisissez comment gérer le suivi des jeux détectés dans votre bibliothèque.",
-    "libraryLabel": "Ma bibliothèque",
+    "libraryLabel": "Ma bibliothèque & Steam Famille",
     "newsNotificationsDescription": "Activez ce réglage pour recevoir une notification lorsqu'une nouvelle actualité est publiée sur vos jeux suivis.",
     "newsNotificationsLabel": "Notifications d'actualités",
     "confirmUnfollowTitle": "Ne plus suivre ce jeu ?",
@@ -360,7 +360,7 @@
         "description": "Activez ce bouton pour recevoir les actualités des jeux que vous suivez."
       },
       "settingsLibrary": {
-        "title": "Ma bibliothèque",
+        "title": "Ma bibliothèque & Steam Famille",
         "description": "Choisissez si les nouveaux jeux détectés dans votre bibliothèque sont ajoutés dans votre liste de jeux suivis automatiquement ou sur confirmation."
       },
       "settingsWishlist": {

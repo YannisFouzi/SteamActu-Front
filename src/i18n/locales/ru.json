@@ -81,7 +81,7 @@
     "languageSaveError": "Не удалось сохранить язык. Попробуйте позже.",
     "autoFollowDescription": "Как обрабатывать игры из библиотеки и списка желаемого.",
     "libraryDescription": "Как обрабатывать игры из вашей библиотеки.",
-    "libraryLabel": "Моя библиотека",
+    "libraryLabel": "Моя библиотека и Steam Family",
     "newsNotificationsDescription": "Включите, чтобы получать уведомления о новых новостях по отслеживаемым играм.",
     "newsNotificationsLabel": "Уведомления о новостях",
     "confirmUnfollowTitle": "Отписаться от этой игры?",
@@ -362,7 +362,7 @@
         "description": "Включите переключатель, чтобы получать новости по отслеживаемым играм."
       },
       "settingsLibrary": {
-        "title": "Моя библиотека",
+        "title": "Моя библиотека и Steam Family",
         "description": "Новые игры из библиотеки: добавлять в отслеживаемые автоматически или после подтверждения."
       },
       "settingsWishlist": {

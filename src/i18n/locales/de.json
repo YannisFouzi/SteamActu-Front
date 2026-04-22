@@ -81,7 +81,7 @@
     "languageSaveError": "Sprache konnte gerade nicht aktualisiert werden. Bitte erneut versuchen.",
     "autoFollowDescription": "Legen Sie fest, wie Spiele aus Bibliothek und Wunschliste behandelt werden.",
     "libraryDescription": "Legen Sie fest, wie Spiele aus Ihrer Bibliothek behandelt werden.",
-    "libraryLabel": "Meine Bibliothek",
+    "libraryLabel": "Meine Bibliothek & Steam Family",
     "newsNotificationsDescription": "Aktivieren Sie diese Option, um bei neuen Neuigkeiten zu gefolgten Spielen benachrichtigt zu werden.",
     "newsNotificationsLabel": "Neuigkeiten-Benachrichtigungen",
     "confirmUnfollowTitle": "Spiel nicht mehr folgen?",
@@ -360,7 +360,7 @@
         "description": "Schalter aktivieren, um Neuigkeiten zu gefolgten Spielen zu erhalten."
       },
       "settingsLibrary": {
-        "title": "Meine Bibliothek",
+        "title": "Meine Bibliothek & Steam Family",
         "description": "Neu erkannte Bibliotheks-Spiele automatisch folgen oder nach Bestätigung."
       },
       "settingsWishlist": {

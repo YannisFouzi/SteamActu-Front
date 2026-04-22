@@ -81,7 +81,7 @@
     "languageSaveError": "暂时无法更新语言，请稍后重试。",
     "autoFollowDescription": "如何处理在游戏库和愿望单中检测到的游戏。",
     "libraryDescription": "如何处理游戏库中检测到的游戏。",
-    "libraryLabel": "我的库",
+    "libraryLabel": "我的库 & Steam 家庭",
     "newsNotificationsDescription": "开启后，关注的游戏发布新资讯时会收到通知。",
     "newsNotificationsLabel": "资讯通知",
     "confirmUnfollowTitle": "取消关注此游戏？",
@@ -360,7 +360,7 @@
         "description": "打开开关以接收关注游戏的资讯。"
       },
       "settingsLibrary": {
-        "title": "我的库",
+        "title": "我的库 & Steam 家庭",
         "description": "库中新检测到的游戏：自动关注或需确认。"
       },
       "settingsWishlist": {
