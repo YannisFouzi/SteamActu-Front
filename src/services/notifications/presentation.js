@@ -200,6 +200,8 @@ function buildBaseNotification(payload) {
     android: {
       showTimestamp: true,
       channelId: NOTIFICATION_CHANNEL_ID,
+      smallIcon: 'ic_notification',
+      color: '#1b2838',
       pressAction: {
         id: isFollowPrompt ? ACTION_FOLLOW_GAME : ACTION_OPEN_NEWS,
         launchActivity: 'default',
@@ -214,8 +216,10 @@ function buildBaseNotification(payload) {
   };
 }
 
+const MEDIA_SUPPORTED_TYPES = new Set(['news', 'follow_prompt']);
+
 async function buildNotificationMediaOptions(payload) {
-  if (payload?.type !== 'news') {
+  if (!MEDIA_SUPPORTED_TYPES.has(payload?.type)) {
     return {
       hasMedia: false,
       imageStatus: 'not_applicable',
@@ -225,47 +229,87 @@ async function buildNotificationMediaOptions(payload) {
   }
 
   const requestedImageUrl = payload.imageUrl?.trim();
+  const requestedLogoUrl = payload.gameLogoUrl?.trim();
 
-  if (!requestedImageUrl) {
+  // follow_prompt : logo en largeIcon uniquement (pas de BigPicture, diff
+  // visuelle vs news qui elles s'affichent en grand via BigPictureStyle)
+  if (payload.type === 'follow_prompt') {
+    if (!requestedImageUrl) {
+      return {
+        hasMedia: false,
+        imageStatus: 'missing',
+        imageUrl: null,
+        android: {},
+        ios: {},
+      };
+    }
+
+    const validatedLogo = await validateNotificationImageUrl(requestedImageUrl);
+
+    if (!validatedLogo) {
+      return {
+        hasMedia: false,
+        imageStatus: 'invalid',
+        imageUrl: requestedImageUrl,
+        android: {},
+        ios: {},
+      };
+    }
+
     return {
-      hasMedia: false,
-      imageStatus: 'missing',
-      imageUrl: null,
-      android: {},
-      ios: {},
+      hasMedia: true,
+      imageStatus: 'valid',
+      imageUrl: validatedLogo,
+      android: { largeIcon: validatedLogo },
+      ios: { attachments: [{ url: validatedLogo }] },
     };
   }
 
-  const validatedImageUrl = await validateNotificationImageUrl(requestedImageUrl);
+  // news : image en grand via BigPictureStyle. Si pas d'image disponible,
+  // fallback sur le logo du jeu (largeIcon uniquement — le logo serait moche
+  // étiré en grand)
+  const validatedImageUrl = requestedImageUrl
+    ? await validateNotificationImageUrl(requestedImageUrl)
+    : null;
 
-  if (!validatedImageUrl) {
+  if (validatedImageUrl) {
     return {
-      hasMedia: false,
-      imageStatus: 'invalid',
-      imageUrl: requestedImageUrl,
-      android: {},
-      ios: {},
+      hasMedia: true,
+      imageStatus: 'valid',
+      imageUrl: validatedImageUrl,
+      android: {
+        largeIcon: validatedImageUrl,
+        style: {
+          type: AndroidStyle.BIGPICTURE,
+          picture: validatedImageUrl,
+        },
+      },
+      ios: {
+        attachments: [{ url: validatedImageUrl }],
+      },
+    };
+  }
+
+  const validatedLogoUrl = requestedLogoUrl
+    ? await validateNotificationImageUrl(requestedLogoUrl)
+    : null;
+
+  if (validatedLogoUrl) {
+    return {
+      hasMedia: true,
+      imageStatus: 'valid',
+      imageUrl: validatedLogoUrl,
+      android: { largeIcon: validatedLogoUrl },
+      ios: { attachments: [{ url: validatedLogoUrl }] },
     };
   }
 
   return {
-    hasMedia: true,
-    imageStatus: 'valid',
-    imageUrl: validatedImageUrl,
-    android: {
-      largeIcon: validatedImageUrl,
-      style: {
-        type: AndroidStyle.BIGPICTURE,
-        picture: validatedImageUrl,
-      },
-    },
-    ios: {
-      attachments: [
-        {
-          url: validatedImageUrl,
-        },
-      ],
-    },
+    hasMedia: false,
+    imageStatus: requestedImageUrl ? 'invalid' : 'missing',
+    imageUrl: requestedImageUrl || null,
+    android: {},
+    ios: {},
   };
 }
 
@@ -281,9 +325,9 @@ export async function displayNotificationPayload(payload) {
     const baseNotification = buildBaseNotification(payload);
     const mediaOptions = await buildNotificationMediaOptions(payload);
 
-    if (payload.type === 'news' && mediaOptions.imageStatus === 'invalid') {
+    if (MEDIA_SUPPORTED_TYPES.has(payload.type) && mediaOptions.imageStatus === 'invalid') {
       logNotificationWarning(
-        '[FCM] Notification news affichee sans image: image invalide',
+        `[FCM] Notification ${payload.type} affichee sans image: image invalide`,
         {
           notificationId: payload.id,
           appId: payload.data?.appId || null,

@@ -51,6 +51,7 @@ export function extractNotificationPayload(remoteMessage) {
     title,
     body,
     imageUrl: data.imageUrl || '',
+    gameLogoUrl: data.gameLogoUrl || '',
     type: data.type || 'general',
     allowUnfollow: data.allowUnfollow === 'true',
     data: {
