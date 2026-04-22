@@ -134,6 +134,7 @@
     "openLinkError": "无法打开 Steam 链接。"
   },
   "games": {
+    "familyBadge": "家庭",
     "followedEmptySubtext": "可在游戏卡片或资讯流中添加关注。",
     "followedEmptyText": "在游戏上开启小铃铛即可在此接收通知。",
     "followedEmptyTitle": "暂无关注游戏",

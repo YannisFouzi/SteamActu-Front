@@ -134,6 +134,7 @@
     "openLinkError": "Steam-Link konnte nicht geöffnet werden."
   },
   "games": {
+    "familyBadge": "Familie",
     "followedEmptySubtext": "Sie können ein Spiel von einer Karte oder aus dem Feed heraus folgen.",
     "followedEmptyText": "Aktivieren Sie die Glocke bei Ihren Spielen, um hier Benachrichtigungen zu erhalten.",
     "followedEmptyTitle": "Keine gefolgten Spiele",

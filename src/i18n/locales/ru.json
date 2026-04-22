@@ -134,6 +134,7 @@
     "openLinkError": "Не удалось открыть ссылку Steam."
   },
   "games": {
+    "familyBadge": "Семья",
     "followedEmptySubtext": "Подписку можно включить с карточки игры или из ленты новостей.",
     "followedEmptyText": "Включите колокольчик у игр, чтобы видеть уведомления здесь.",
     "followedEmptyTitle": "Нет отслеживаемых игр",

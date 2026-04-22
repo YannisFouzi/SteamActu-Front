@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { COLORS, CONTAINER_STYLES } from '../constants';
 import FollowToggle from './FollowToggle';
@@ -12,6 +13,7 @@ const GameCard = ({
   showDate = false,
   dateText = '',
 }) => {
+  const { t } = useTranslation();
   const [currentUrl, setCurrentUrl] = useState(imageUrl);
   const [imageError, setImageError] = useState(false);
 
@@ -27,6 +29,8 @@ const GameCard = ({
       setImageError(true);
     }
   }, [currentUrl, fallbackImageUrl]);
+
+  const isFamilyShared = Boolean(game?.isFamilyShared);
 
   return (
     <View style={styles.card}>
@@ -49,6 +53,14 @@ const GameCard = ({
             />
           </>
         )}
+        {isFamilyShared ? (
+          <View style={styles.familyBadge}>
+            <Icon name="people" size={10} color="#FFFFFF" />
+            <Text style={styles.familyBadgeText}>
+              {t('games.familyBadge')}
+            </Text>
+          </View>
+        ) : null}
       </View>
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={2}>
@@ -87,6 +99,25 @@ const styles = StyleSheet.create({
     width: 160,
     height: 80,
     overflow: 'hidden',
+    position: 'relative',
+  },
+  familyBadge: {
+    position: 'absolute',
+    top: 4,
+    left: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(102, 192, 244, 0.95)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    gap: 3,
+  },
+  familyBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
   image: {
     height: '100%',

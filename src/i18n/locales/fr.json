@@ -134,6 +134,7 @@
     "openLinkError": "Impossible d'ouvrir le lien sur Steam."
   },
   "games": {
+    "familyBadge": "Famille",
     "followedEmptySubtext": "Vous pouvez ajouter un suivi depuis une fiche jeu ou les actus.",
     "followedEmptyText": "Activez la cloche sur vos jeux pour recevoir les notifications ici.",
     "followedEmptyTitle": "Aucun jeu suivi",

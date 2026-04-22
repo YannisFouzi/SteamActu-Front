@@ -134,6 +134,7 @@
     "openLinkError": "Unable to open the Steam link."
   },
   "games": {
+    "familyBadge": "Family",
     "followedEmptySubtext": "You can add a follow from a game card or from the news feed.",
     "followedEmptyText": "Enable the bell on your games to receive notifications here.",
     "followedEmptyTitle": "No followed games",
