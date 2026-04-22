@@ -9,7 +9,7 @@
     "error": "Error",
     "gameWithId": "Game {{appId}}",
     "language": "Language",
-    "autoFollow": "Auto-follow",
+    "autoFollow": "New game follow-up",
     "information": "Information",
     "legal": "Legal",
     "loading": "Loading...",
@@ -81,7 +81,7 @@
     "languageSaveError": "Unable to update the language right now. Please try again.",
     "autoFollowDescription": "Choose how to manage games detected in your library and wishlist.",
     "libraryDescription": "Choose how to manage games detected in your library.",
-    "libraryLabel": "Purchased games",
+    "libraryLabel": "My library",
     "newsNotificationsDescription": "Enable this setting to receive a notification when new news is published for your followed games.",
     "newsNotificationsLabel": "News notifications",
     "confirmUnfollowTitle": "Unfollow this game?",
@@ -94,7 +94,7 @@
     "tutorialSummary": "Once your settings look right, tap \"Finish\" to fully enable notifications and automatic tracking.",
     "tutorialFinish": "Finish tutorial",
     "wishlistDescription": "Choose whether games added to your wishlist should be followed automatically.",
-    "wishlistLabel": "Wishlisted games"
+    "wishlistLabel": "My wishlist"
   },
   "followModes": {
     "autoSubtitleLibrary": "Every purchased game is added directly to your followed games.",
@@ -360,7 +360,7 @@
         "description": "Enable this switch to receive news for the games you follow."
       },
       "settingsLibrary": {
-        "title": "Purchased games",
+        "title": "My library",
         "description": "Choose whether newly detected games in your library are added to your followed games automatically or after confirmation."
       },
       "settingsWishlist": {

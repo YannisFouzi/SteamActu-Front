@@ -9,7 +9,7 @@
     "error": "Erreur",
     "gameWithId": "Jeu {{appId}}",
     "language": "Langue",
-    "autoFollow": "Suivi automatique",
+    "autoFollow": "Suivi des nouveaux jeux",
     "information": "Informations",
     "legal": "Légal",
     "loading": "Chargement...",
@@ -81,7 +81,7 @@
     "languageSaveError": "Impossible de mettre à jour la langue pour le moment. Veuillez réessayer.",
     "autoFollowDescription": "Choisissez comment gérer le suivi des jeux détectés dans votre bibliothèque et votre wishlist.",
     "libraryDescription": "Choisissez comment gérer le suivi des jeux détectés dans votre bibliothèque.",
-    "libraryLabel": "Jeux achetés",
+    "libraryLabel": "Ma bibliothèque",
     "newsNotificationsDescription": "Activez ce réglage pour recevoir une notification lorsqu'une nouvelle actualité est publiée sur vos jeux suivis.",
     "newsNotificationsLabel": "Notifications d'actualités",
     "confirmUnfollowTitle": "Ne plus suivre ce jeu ?",
@@ -94,7 +94,7 @@
     "tutorialSummary": "Dès que vos réglages vous conviennent, appuyez sur \"Terminer\" pour profiter pleinement des notifications et du suivi automatisé.",
     "tutorialFinish": "Terminer le tutoriel",
     "wishlistDescription": "Décidez si les jeux ajoutés à votre wishlist doivent être suivis automatiquement.",
-    "wishlistLabel": "Jeux wishlistés"
+    "wishlistLabel": "Ma wishlist"
   },
   "followModes": {
     "autoSubtitleLibrary": "Chaque jeu acheté est ajouté directement à vos jeux suivis.",
@@ -360,7 +360,7 @@
         "description": "Activez ce bouton pour recevoir les actualités des jeux que vous suivez."
       },
       "settingsLibrary": {
-        "title": "Jeux achetés",
+        "title": "Ma bibliothèque",
         "description": "Choisissez si les nouveaux jeux détectés dans votre bibliothèque sont ajoutés dans votre liste de jeux suivis automatiquement ou sur confirmation."
       },
       "settingsWishlist": {

@@ -9,7 +9,7 @@
     "error": "Fehler",
     "gameWithId": "Spiel {{appId}}",
     "language": "Sprache",
-    "autoFollow": "Auto-Follow",
+    "autoFollow": "Verfolgung neuer Spiele",
     "information": "Information",
     "legal": "Rechtliches",
     "loading": "Laden...",
@@ -81,7 +81,7 @@
     "languageSaveError": "Sprache konnte gerade nicht aktualisiert werden. Bitte erneut versuchen.",
     "autoFollowDescription": "Legen Sie fest, wie Spiele aus Bibliothek und Wunschliste behandelt werden.",
     "libraryDescription": "Legen Sie fest, wie Spiele aus Ihrer Bibliothek behandelt werden.",
-    "libraryLabel": "Gekaufte Spiele",
+    "libraryLabel": "Meine Bibliothek",
     "newsNotificationsDescription": "Aktivieren Sie diese Option, um bei neuen Neuigkeiten zu gefolgten Spielen benachrichtigt zu werden.",
     "newsNotificationsLabel": "Neuigkeiten-Benachrichtigungen",
     "confirmUnfollowTitle": "Spiel nicht mehr folgen?",
@@ -94,7 +94,7 @@
     "tutorialSummary": "Wenn die Einstellungen passen, tippen Sie auf „Fertig“, um Benachrichtigungen und automatisches Tracking voll zu aktivieren.",
     "tutorialFinish": "Tutorial beenden",
     "wishlistDescription": "Legen Sie fest, ob Spiele auf der Wunschliste automatisch gefolgt werden.",
-    "wishlistLabel": "Spiele auf der Wunschliste"
+    "wishlistLabel": "Meine Wunschliste"
   },
   "followModes": {
     "autoSubtitleLibrary": "Jedes gekaufte Spiel wird direkt zu den gefolgten Spielen hinzugefügt.",
@@ -360,7 +360,7 @@
         "description": "Schalter aktivieren, um Neuigkeiten zu gefolgten Spielen zu erhalten."
       },
       "settingsLibrary": {
-        "title": "Gekaufte Spiele",
+        "title": "Meine Bibliothek",
         "description": "Neu erkannte Bibliotheks-Spiele automatisch folgen oder nach Bestätigung."
       },
       "settingsWishlist": {

@@ -9,7 +9,7 @@
     "error": "错误",
     "gameWithId": "游戏 {{appId}}",
     "language": "语言",
-    "autoFollow": "自动关注",
+    "autoFollow": "新游戏关注",
     "information": "信息",
     "legal": "法律信息",
     "loading": "加载中...",
@@ -81,7 +81,7 @@
     "languageSaveError": "暂时无法更新语言，请稍后重试。",
     "autoFollowDescription": "如何处理在游戏库和愿望单中检测到的游戏。",
     "libraryDescription": "如何处理游戏库中检测到的游戏。",
-    "libraryLabel": "已购游戏",
+    "libraryLabel": "我的库",
     "newsNotificationsDescription": "开启后，关注的游戏发布新资讯时会收到通知。",
     "newsNotificationsLabel": "资讯通知",
     "confirmUnfollowTitle": "取消关注此游戏？",
@@ -94,7 +94,7 @@
     "tutorialSummary": "设置满意后，点击「完成」以启用通知与自动关注。",
     "tutorialFinish": "完成教程",
     "wishlistDescription": "愿望单中的游戏是否自动关注。",
-    "wishlistLabel": "愿望单游戏"
+    "wishlistLabel": "我的愿望单"
   },
   "followModes": {
     "autoSubtitleLibrary": "每个已购游戏会自动加入关注列表。",
@@ -360,7 +360,7 @@
         "description": "打开开关以接收关注游戏的资讯。"
       },
       "settingsLibrary": {
-        "title": "已购游戏",
+        "title": "我的库",
         "description": "库中新检测到的游戏：自动关注或需确认。"
       },
       "settingsWishlist": {
