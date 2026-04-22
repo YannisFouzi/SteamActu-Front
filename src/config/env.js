@@ -22,7 +22,7 @@ const API_BASE_URL = getEnvVar(
   'API_BASE_URL',
   isDevelopment
     ? 'http://192.168.0.37:5000/api'
-    : 'https://steamactu-back-production.up.railway.app/api',
+    : 'https://gamenotif.up.railway.app/api',
 );
 
 const STEAM_MEDIA_CDN = getEnvVar(
