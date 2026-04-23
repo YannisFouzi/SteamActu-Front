@@ -51,6 +51,11 @@ const deriveAuthBaseUrl = baseUrl => {
 
 const APP_SCHEME = getEnvVar('APP_SCHEME', 'steamnotif://');
 
+const SENTRY_DSN = getEnvVar(
+  'SENTRY_DSN_MOBILE',
+  'https://61fe39fa1a13a5d3ec716f83597731c7@o4511158959931392.ingest.de.sentry.io/4511265897185360',
+);
+
 export const APP_CONFIG = {
   ENVIRONMENT,
   API_BASE_URL,
@@ -60,4 +65,5 @@ export const APP_CONFIG = {
   ),
   APP_SCHEME,
   STEAM_MEDIA_CDN,
+  SENTRY_DSN,
 };

@@ -2,6 +2,10 @@
 android/app/google-services.json
 ios/GoogleService-Info.plist
 
+# Sentry auth token (ne jamais commit)
+android/sentry.properties
+ios/sentry.properties
+
 # OSX
 #
 .DS_Store

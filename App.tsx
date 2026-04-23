@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+import * as Sentry from '@sentry/react-native';
 import {PaperProvider} from 'react-native-paper';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {PAPER_THEME} from './src/constants';
@@ -30,4 +31,4 @@ function App(): React.JSX.Element {
   );
 }
 
-export default App;
+export default Sentry.wrap(App);

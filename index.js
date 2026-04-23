@@ -2,6 +2,7 @@
  * @format
  */
 
+import * as Sentry from '@sentry/react-native';
 import messaging from '@react-native-firebase/messaging';
 import notifee, {EventType} from '@notifee/react-native';
 import {AppRegistry} from 'react-native';
@@ -9,8 +10,25 @@ import 'react-native-gesture-handler';
 import './src/i18n';
 import App from './App';
 import {name as appName} from './app.json';
+import {APP_CONFIG} from './src/config/env';
 import {displayRemoteNotification} from './src/services/notificationService';
 import {setPendingNotification} from './src/services/initialNotificationStore';
+
+// Init Sentry AVANT tout autre top-level handler pour capturer les erreurs
+// de setup (notifee handlers, messaging handlers, getInitialNotification).
+// No-op si SENTRY_DSN absent — app tourne normalement.
+if (APP_CONFIG.SENTRY_DSN) {
+  Sentry.init({
+    dsn: APP_CONFIG.SENTRY_DSN,
+    environment: APP_CONFIG.ENVIRONMENT,
+    tracesSampleRate: __DEV__ ? 1.0 : 0.1,
+    sendDefaultPii: true,
+    enableNative: true,
+  });
+  console.log('[Sentry] Initialise (env:', APP_CONFIG.ENVIRONMENT, ')');
+} else {
+  console.log('[Sentry] Desactive (SENTRY_DSN_MOBILE non defini)');
+}
 
 // Background Notifee Event Handler — DOIT etre enregistre au top-level (index.js)
 // pour fonctionner en headless mode (app killed). Les imports dynamiques
