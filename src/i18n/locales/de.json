@@ -1,7 +1,7 @@
 {
   "common": {
     "about": "Über",
-    "appName": "GameNotif",
+    "appName": "Game News",
     "cancel": "Abbrechen",
     "contact": "Kontakt",
     "delete": "Löschen",
@@ -68,7 +68,7 @@
   },
   "settings": {
     "aboutBody": "Mit dieser App erhalten Sie Benachrichtigungen zu den Steam-Spielen, denen Sie folgen.",
-    "aboutVersion": "GameNotif v1.0.0",
+    "aboutVersion": "Game News v1.0.0",
     "sectionSupportTitle": "Kontakt & rechtliche Hinweise",
     "deleteAccount": "Konto löschen",
     "deleteAccountConfirmMessage": "Möchten Sie Ihr Konto wirklich löschen? Dieser Vorgang kann nicht rückgängig gemacht werden. Alle Daten werden dauerhaft gelöscht.",
@@ -108,10 +108,10 @@
     "promptTitle": "Bestätigungs-Hinweis"
   },
   "notifications": {
-    "blockedMessage": "Android blockiert Benachrichtigungen für GameNotif. Bitte in den Einstellungen aktivieren.",
+    "blockedMessage": "Android blockiert Benachrichtigungen für Game News. Bitte in den Einstellungen aktivieren.",
     "blockedTitle": "Benachrichtigungen blockiert",
     "channelDescription": "Push-Benachrichtigungen zu Neuigkeiten gefolgter Spiele",
-    "channelName": "GameNotif",
+    "channelName": "Game News",
     "disabledMessage": "Benachrichtigungen können gerade nicht aktiviert werden. Bitte später erneut versuchen.",
     "disabledTitle": "Benachrichtigungen aus",
     "followUnavailableMessage": "Spiel kann gerade nicht zu den gefolgten Spielen hinzugefügt werden. Später erneut versuchen.",
@@ -201,15 +201,15 @@
         "sections": [
           {
             "title": "1. Annahme der Bedingungen",
-            "content": "Durch die Nutzung der Anwendung GameNotif akzeptieren Sie diese Nutzungsbedingungen vollständig. Wenn Sie nicht einverstanden sind, stellen Sie die Nutzung ein und löschen Sie Ihr Konto in den Einstellungen."
+            "content": "Durch die Nutzung der Anwendung Game News akzeptieren Sie diese Nutzungsbedingungen vollständig. Wenn Sie nicht einverstanden sind, stellen Sie die Nutzung ein und löschen Sie Ihr Konto in den Einstellungen."
           },
           {
             "title": "2. Anbieter des Dienstes",
-            "content": "GameNotif wird von einem unabhängigen Entwickler betrieben. Bei Fragen zum Dienst oder zu diesen Bedingungen: contact@fouzi-dev.fr."
+            "content": "Game News wird von einem unabhängigen Entwickler betrieben. Bei Fragen zum Dienst oder zu diesen Bedingungen: contact@fouzi-dev.fr."
           },
           {
             "title": "3. Leistungsbeschreibung",
-            "content": "GameNotif fasst Neuigkeiten aus dem Steam-Ökosystem zu Spielen zusammen, denen Sie folgen, und zeigt sie an. Der Dienst dient ausschließlich der Information; er kann sich ändern oder jederzeit eingestellt werden."
+            "content": "Game News fasst Neuigkeiten aus dem Steam-Ökosystem zu Spielen zusammen, denen Sie folgen, und zeigt sie an. Der Dienst dient ausschließlich der Information; er kann sich ändern oder jederzeit eingestellt werden."
           },
           {
             "title": "4. Nutzung der Anwendung",
@@ -221,7 +221,7 @@
           },
           {
             "title": "6. Benachrichtigungen und Inhalte",
-            "content": "Benachrichtigungen und Inhalte stammen aus öffentlichen Quellen oder Steam-bezogenen Informationen. Richtigkeit, Vollständigkeit und Verfügbarkeit sind nicht garantiert. GameNotif haftet nicht für Inhalte Dritter (einschließlich Valve oder Spielepublisher)."
+            "content": "Benachrichtigungen und Inhalte stammen aus öffentlichen Quellen oder Steam-bezogenen Informationen. Richtigkeit, Vollständigkeit und Verfügbarkeit sind nicht garantiert. Game News haftet nicht für Inhalte Dritter (einschließlich Valve oder Spielepublisher)."
           },
           {
             "title": "7. Verfügbarkeit",
@@ -229,11 +229,11 @@
           },
           {
             "title": "8. Geistiges Eigentum",
-            "content": "Elemente, die GameNotif eigen sind (Benutzeroberfläche, App-Texte abgesehen von Drittinhalten, ggf. der Name GameNotif), verbleiben beim Herausgeber. Steam, Valve und zugehörige Marken sind Eigentum der Valve Corporation."
+            "content": "Elemente, die Game News eigen sind (Benutzeroberfläche, App-Texte abgesehen von Drittinhalten, ggf. der Name Game News), verbleiben beim Herausgeber. Steam, Valve und zugehörige Marken sind Eigentum der Valve Corporation."
           },
           {
             "title": "9. Haftungsbeschränkung",
-            "content": "Soweit gesetzlich zulässig, wird GameNotif „wie besehen“ bereitgestellt. Etwaige Haftung beschränkt sich auf den für eine kostenlose oder preisgünstige App typischerweise vorhersehbaren Umfang; mittelbare Schäden oder Datenverluste, die Dritten oder Ihrer Hardware zuzuschreiben sind, sind ausgeschlossen, sofern zwingendes Recht nichts anderes vorsieht."
+            "content": "Soweit gesetzlich zulässig, wird Game News „wie besehen“ bereitgestellt. Etwaige Haftung beschränkt sich auf den für eine kostenlose oder preisgünstige App typischerweise vorhersehbaren Umfang; mittelbare Schäden oder Datenverluste, die Dritten oder Ihrer Hardware zuzuschreiben sind, sind ausgeschlossen, sofern zwingendes Recht nichts anderes vorsieht."
           },
           {
             "title": "10. Anwendbares Recht und Streitigkeiten",
@@ -241,7 +241,7 @@
           },
           {
             "title": "11. Änderungen der Bedingungen",
-            "content": "Diese Bedingungen können aktualisiert werden. Maßgeblich ist die in der App mit Aktualisierungsdatum angezeigte Fassung. Nutzen Sie GameNotif nach Veröffentlichung einer neuen Fassung weiter, gilt dies als Zustimmung, sofern das Gesetz keine gesonderte Einwilligung verlangt."
+            "content": "Diese Bedingungen können aktualisiert werden. Maßgeblich ist die in der App mit Aktualisierungsdatum angezeigte Fassung. Nutzen Sie Game News nach Veröffentlichung einer neuen Fassung weiter, gilt dies als Zustimmung, sofern das Gesetz keine gesonderte Einwilligung verlangt."
           },
           {
             "title": "12. Kontakt",
@@ -254,7 +254,7 @@
         "sections": [
           {
             "title": "1. Verantwortlicher",
-            "content": "Verantwortlicher für die über GameNotif verarbeiteten personenbezogenen Daten ist der Herausgeber der Anwendung, erreichbar unter: contact@fouzi-dev.fr."
+            "content": "Verantwortlicher für die über Game News verarbeiteten personenbezogenen Daten ist der Herausgeber der Anwendung, erreichbar unter: contact@fouzi-dev.fr."
           },
           {
             "title": "2. Verarbeitete Daten",

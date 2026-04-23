@@ -1,7 +1,7 @@
 {
   "name": "GameNotif",
-  "displayName": "GameNotif",
-  "slug": "game-notif",
+  "displayName": "Game News",
+  "slug": "game-news",
   "version": "1.0.0",
   "orientation": "portrait",
   "scheme": "steamnotif",

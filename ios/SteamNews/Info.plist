@@ -12,7 +12,7 @@
 		<string>es</string>
 	</array>
 	<key>CFBundleDisplayName</key>
-	<string>GameNotif</string>
+	<string>Game News</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

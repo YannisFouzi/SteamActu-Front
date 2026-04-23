@@ -49,7 +49,7 @@ class MainApplication : Application(), ReactApplication {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val channel = NotificationChannel(
         "steam_news",
-        "GameNotif",
+        "Game News",
         NotificationManager.IMPORTANCE_HIGH
       ).apply {
         description = "Notifications d'actualités sur vos jeux suivis"

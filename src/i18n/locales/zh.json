@@ -1,7 +1,7 @@
 {
   "common": {
     "about": "关于",
-    "appName": "GameNotif",
+    "appName": "Game News",
     "cancel": "取消",
     "contact": "联系",
     "delete": "删除",
@@ -68,7 +68,7 @@
   },
   "settings": {
     "aboutBody": "本应用可为你关注的 Steam 游戏推送资讯通知。",
-    "aboutVersion": "GameNotif v1.0.0",
+    "aboutVersion": "Game News v1.0.0",
     "sectionSupportTitle": "联系与法律信息",
     "deleteAccount": "删除我的账户",
     "deleteAccountConfirmMessage": "确定删除账户吗？此操作不可恢复，所有数据将被永久删除。",
@@ -108,10 +108,10 @@
     "promptTitle": "通知确认"
   },
   "notifications": {
-    "blockedMessage": "Android 正在拦截 GameNotif 的通知，请在系统设置中开启。",
+    "blockedMessage": "Android 正在拦截 Game News 的通知，请在系统设置中开启。",
     "blockedTitle": "通知被拦截",
     "channelDescription": "已关注游戏的资讯推送",
-    "channelName": "GameNotif",
+    "channelName": "Game News",
     "disabledMessage": "暂时无法启用通知，请稍后重试。",
     "disabledTitle": "通知已关闭",
     "followUnavailableMessage": "暂时无法关注该游戏，请稍后重试。",
@@ -201,15 +201,15 @@
         "sections": [
           {
             "title": "1. 条款的接受",
-            "content": "使用 GameNotif 应用程序，即表示您完全接受本服务条款。若您不同意，请停止使用应用程序，并在「设置」中删除账户。"
+            "content": "使用 Game News 应用程序，即表示您完全接受本服务条款。若您不同意，请停止使用应用程序，并在「设置」中删除账户。"
           },
           {
             "title": "2. 服务运营方",
-            "content": "GameNotif 由独立开发者运营。有关本服务或本条款的问题，请联系：contact@fouzi-dev.fr。"
+            "content": "Game News 由独立开发者运营。有关本服务或本条款的问题，请联系：contact@fouzi-dev.fr。"
           },
           {
             "title": "3. 服务说明",
-            "content": "GameNotif 汇总并展示与您所关注游戏相关的 Steam 生态系统资讯。本服务仅供信息参考，可能随时变更或中止。"
+            "content": "Game News 汇总并展示与您所关注游戏相关的 Steam 生态系统资讯。本服务仅供信息参考，可能随时变更或中止。"
           },
           {
             "title": "4. 应用程序的使用",
@@ -221,7 +221,7 @@
           },
           {
             "title": "6. 通知与内容",
-            "content": "通知与内容来自公开来源或与 Steam 相关的信息。我们不保证其准确性、完整性或可用性。GameNotif 对第三方（包括 Valve 或游戏发行商）发布的内容不承担责任。"
+            "content": "通知与内容来自公开来源或与 Steam 相关的信息。我们不保证其准确性、完整性或可用性。Game News 对第三方（包括 Valve 或游戏发行商）发布的内容不承担责任。"
           },
           {
             "title": "7. 服务可用性",
@@ -229,11 +229,11 @@
           },
           {
             "title": "8. 知识产权",
-            "content": "GameNotif 自身要素（界面、除第三方内容外的应用内文字、以及 GameNotif 名称，如适用）归运营方所有。Steam、Valve 及相关资产归 Valve Corporation 所有。"
+            "content": "Game News 自身要素（界面、除第三方内容外的应用内文字、以及 Game News 名称，如适用）归运营方所有。Steam、Valve 及相关资产归 Valve Corporation 所有。"
           },
           {
             "title": "9. 责任限制",
-            "content": "在法律允许的最大范围内，GameNotif 按「现状」提供。若须承担责任，其范围不超过对免费或低价应用通常可预见之限度；因第三方或您设备原因造成的间接损害或数据损失，除强制性法律规定外，不予赔偿。"
+            "content": "在法律允许的最大范围内，Game News 按「现状」提供。若须承担责任，其范围不超过对免费或低价应用通常可预见之限度；因第三方或您设备原因造成的间接损害或数据损失，除强制性法律规定外，不予赔偿。"
           },
           {
             "title": "10. 适用法律与争议",
@@ -241,7 +241,7 @@
           },
           {
             "title": "11. 条款的变更",
-            "content": "本条款可能更新；具有约束力的版本为应用程序中显示的版本及其更新日期。在新版本公布后您继续使用 GameNotif，视为接受变更，除非法律要求另行取得同意。"
+            "content": "本条款可能更新；具有约束力的版本为应用程序中显示的版本及其更新日期。在新版本公布后您继续使用 Game News，视为接受变更，除非法律要求另行取得同意。"
           },
           {
             "title": "12. 联系方式",
@@ -254,7 +254,7 @@
         "sections": [
           {
             "title": "1. 数据控制者",
-            "content": "通过 GameNotif 处理的个人数据由本应用程序的运营方负责，联系方式：contact@fouzi-dev.fr。"
+            "content": "通过 Game News 处理的个人数据由本应用程序的运营方负责，联系方式：contact@fouzi-dev.fr。"
           },
           {
             "title": "2. 处理的数据",

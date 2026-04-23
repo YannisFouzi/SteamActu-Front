@@ -31,7 +31,7 @@ public class NotificationChannelModule extends ReactContextBaseJavaModule {
 
                 NotificationChannel channel = new NotificationChannel(
                     "steam_news",
-                    "GameNotif",
+                    "Game News",
                     NotificationManager.IMPORTANCE_HIGH
                 );
                 channel.setDescription("Notifications d'actualités sur vos jeux suivis");

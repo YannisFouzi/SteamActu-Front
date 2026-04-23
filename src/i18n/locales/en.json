@@ -1,7 +1,7 @@
 {
   "common": {
     "about": "About",
-    "appName": "GameNotif",
+    "appName": "Game News",
     "cancel": "Cancel",
     "contact": "Contact",
     "delete": "Delete",
@@ -68,7 +68,7 @@
   },
   "settings": {
     "aboutBody": "This app lets you receive notifications about the Steam games you follow.",
-    "aboutVersion": "GameNotif v1.0.0",
+    "aboutVersion": "Game News v1.0.0",
     "sectionSupportTitle": "Contact & legal information",
     "deleteAccount": "Delete my account",
     "deleteAccountConfirmMessage": "Are you sure you want to delete your account? This action is irreversible. All your data will be permanently deleted.",
@@ -108,10 +108,10 @@
     "promptTitle": "Confirmation alert"
   },
   "notifications": {
-    "blockedMessage": "Android is blocking notifications for GameNotif. Enable them in settings.",
+    "blockedMessage": "Android is blocking notifications for Game News. Enable them in settings.",
     "blockedTitle": "Notifications blocked",
     "channelDescription": "Push notifications for news about followed games",
-    "channelName": "GameNotif",
+    "channelName": "Game News",
     "disabledMessage": "Unable to enable notifications right now. Please try again later.",
     "disabledTitle": "Notifications disabled",
     "followUnavailableMessage": "Unable to add this game to followed games right now. Try again later.",
@@ -201,15 +201,15 @@
         "sections": [
           {
             "title": "1. Acceptance of terms",
-            "content": "By using the GameNotif application, you accept these Terms of Service in full. If you do not agree, stop using the application and delete your account from the Settings screen."
+            "content": "By using the Game News application, you accept these Terms of Service in full. If you do not agree, stop using the application and delete your account from the Settings screen."
           },
           {
             "title": "2. Service provider",
-            "content": "GameNotif is operated by an independent developer. For any questions about the service or these terms: contact@fouzi-dev.fr."
+            "content": "Game News is operated by an independent developer. For any questions about the service or these terms: contact@fouzi-dev.fr."
           },
           {
             "title": "3. Service description",
-            "content": "GameNotif aggregates and presents news from the Steam ecosystem for games you follow. The service is provided for information only; it may change or be discontinued at any time."
+            "content": "Game News aggregates and presents news from the Steam ecosystem for games you follow. The service is provided for information only; it may change or be discontinued at any time."
           },
           {
             "title": "4. Use of the application",
@@ -221,7 +221,7 @@
           },
           {
             "title": "6. Notifications and content",
-            "content": "Notifications and content come from public sources or Steam-related information. Accuracy, completeness, and availability are not guaranteed. GameNotif is not liable for third-party content (including Valve or game publishers)."
+            "content": "Notifications and content come from public sources or Steam-related information. Accuracy, completeness, and availability are not guaranteed. Game News is not liable for third-party content (including Valve or game publishers)."
           },
           {
             "title": "7. Service availability",
@@ -229,11 +229,11 @@
           },
           {
             "title": "8. Intellectual property",
-            "content": "Elements specific to GameNotif (interface, in-app text excluding third-party content, the GameNotif name where applicable) remain the property of the publisher. Steam, Valve, and related assets are the property of Valve Corporation."
+            "content": "Elements specific to Game News (interface, in-app text excluding third-party content, the Game News name where applicable) remain the property of the publisher. Steam, Valve, and related assets are the property of Valve Corporation."
           },
           {
             "title": "9. Limitation of liability",
-            "content": "To the fullest extent permitted by law, GameNotif is provided \"as is\". Where liability is established, it shall not exceed what is typically foreseeable for a free or low-cost app; indirect damages or data loss attributable to third parties or your equipment are excluded except where mandatory law provides otherwise."
+            "content": "To the fullest extent permitted by law, Game News is provided \"as is\". Where liability is established, it shall not exceed what is typically foreseeable for a free or low-cost app; indirect damages or data loss attributable to third parties or your equipment are excluded except where mandatory law provides otherwise."
           },
           {
             "title": "10. Governing law and disputes",
@@ -241,7 +241,7 @@
           },
           {
             "title": "11. Changes to the terms",
-            "content": "These terms may be updated. The binding version is the one displayed in the application with its update date. If you continue to use GameNotif after a new version is published, you are deemed to accept the changes unless the law requires separate consent."
+            "content": "These terms may be updated. The binding version is the one displayed in the application with its update date. If you continue to use Game News after a new version is published, you are deemed to accept the changes unless the law requires separate consent."
           },
           {
             "title": "12. Contact",
@@ -254,7 +254,7 @@
         "sections": [
           {
             "title": "1. Data controller",
-            "content": "The controller of personal data processed through GameNotif is the publisher of the application, reachable at: contact@fouzi-dev.fr."
+            "content": "The controller of personal data processed through Game News is the publisher of the application, reachable at: contact@fouzi-dev.fr."
           },
           {
             "title": "2. Data we process",
