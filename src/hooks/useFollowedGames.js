@@ -172,7 +172,6 @@ export const useFollowedGames = ({
     }
 
     let isActive = true;
-    followedGamesHydratedFromCacheRef.current = false;
 
     const hydrateFromCache = async () => {
       const cacheKey = buildStorageKey('followedGames', steamId);
