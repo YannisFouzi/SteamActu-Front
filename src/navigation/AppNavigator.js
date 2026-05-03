@@ -11,6 +11,16 @@ import {useAppContext} from '../context/AppContext';
 import {debugError} from '../hooks/hooksLogger';
 import LoginScreen from '../screens/LoginScreen';
 import StartupScreen from '../screens/StartupScreen';
+import {
+  consumeNavigationInitialNotification,
+  isInitialNotificationBootstrapResolved,
+  subscribeInitialNotificationBootstrap,
+} from '../services/initialNotificationStore';
+import {extractNotificationPayload} from '../services/notifications/helpers';
+import {
+  registerNavigationRef as registerGlobalNavigationRef,
+  unregisterNavigationRef as unregisterGlobalNavigationRef,
+} from '../services/navigationService';
 import {useTutorial} from '../tutorial/useTutorial';
 import {
   DEFAULT_STACK_SCREEN_OPTIONS,
@@ -58,17 +68,59 @@ const linking = {
   },
 };
 
+const buildStartupIntent = followPromptData => {
+  const params = {initialSort: 'recent'};
+
+  if (followPromptData?.gameName) {
+    params.confirmedGameName = String(followPromptData.gameName);
+  }
+
+  return {
+    tabName: 'Actu',
+    screenName: 'JeuxSuivis',
+    params,
+  };
+};
+
+const extractStartupIntentFromNotification = notification => {
+  if (!notification) {
+    return undefined;
+  }
+
+  if (notification.source === 'firebase') {
+    const payload = extractNotificationPayload(notification.data);
+    return payload?.type === 'follow_prompt'
+      ? buildStartupIntent(payload.data)
+      : undefined;
+  }
+
+  if (notification.source === 'notifee') {
+    const candidate = notification.data?.notification?.data;
+    return candidate?.type === 'follow_prompt'
+      ? buildStartupIntent(candidate)
+      : undefined;
+  }
+
+  if (notification.source === 'follow_prompt_action') {
+    return buildStartupIntent({
+      appId: notification.data?.appId,
+      gameName: notification.data?.gameName,
+    });
+  }
+
+  return undefined;
+};
+
 const AppNavigator = () => {
   const {isBootstrapping, isAuthenticated, user} = useAppContext();
   const navigationRef = useNavigationContainerRef();
   const navigationReadyRef = React.useRef(false);
+  const [initialNotificationResolved, setInitialNotificationResolved] =
+    React.useState(isInitialNotificationBootstrapResolved());
+  const [startupIntent, setStartupIntent] = React.useState(null);
   const {registerNavigationRef, startTutorialIfNeeded, state: tutorialState} =
     useTutorial();
-  const navigatorKey = isBootstrapping
-    ? 'bootstrap-stack'
-    : isAuthenticated
-    ? 'auth-stack'
-    : 'guest-stack';
+  const navigatorKey = isAuthenticated ? 'auth-stack' : 'guest-stack';
 
   const hideBootSplashIfReady = React.useCallback(async () => {
     if (!navigationReadyRef.current || isBootstrapping) {
@@ -87,6 +139,11 @@ const AppNavigator = () => {
   }, [navigationRef, registerNavigationRef]);
 
   React.useEffect(() => {
+    registerGlobalNavigationRef(navigationRef);
+    return () => unregisterGlobalNavigationRef(navigationRef);
+  }, [navigationRef]);
+
+  React.useEffect(() => {
     if (isAuthenticated && user && tutorialState.status !== 'running') {
       startTutorialIfNeeded();
     }
@@ -95,6 +152,29 @@ const AppNavigator = () => {
   React.useEffect(() => {
     hideBootSplashIfReady();
   }, [hideBootSplashIfReady]);
+
+  React.useEffect(() => {
+    return subscribeInitialNotificationBootstrap(setInitialNotificationResolved);
+  }, []);
+
+  React.useEffect(() => {
+    if (!initialNotificationResolved) {
+      return;
+    }
+
+    const notification = consumeNavigationInitialNotification();
+    setStartupIntent(
+      extractStartupIntentFromNotification(notification) || undefined,
+    );
+  }, [initialNotificationResolved]);
+
+  if (
+    isBootstrapping ||
+    !initialNotificationResolved ||
+    startupIntent === null
+  ) {
+    return <StartupScreen />;
+  }
 
   return (
     <NavigationContainer
@@ -108,18 +188,10 @@ const AppNavigator = () => {
       <Stack.Navigator
         key={navigatorKey}
         screenOptions={DEFAULT_STACK_SCREEN_OPTIONS}>
-        {isBootstrapping ? (
-          <Stack.Screen
-            name="Startup"
-            component={StartupScreen}
-            options={ROOT_STACK_SCREEN_OPTIONS.startup}
-          />
-        ) : isAuthenticated ? (
-          <Stack.Screen
-            name="Home"
-            component={MainTabNavigator}
-            options={ROOT_STACK_SCREEN_OPTIONS.home}
-          />
+        {isAuthenticated ? (
+          <Stack.Screen name="Home" options={ROOT_STACK_SCREEN_OPTIONS.home}>
+            {() => <MainTabNavigator startupIntent={startupIntent} />}
+          </Stack.Screen>
         ) : (
           <Stack.Screen
             name="Login"

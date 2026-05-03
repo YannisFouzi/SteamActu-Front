@@ -114,6 +114,7 @@
     "channelName": "Game News",
     "disabledMessage": "暂时无法启用通知，请稍后重试。",
     "disabledTitle": "通知已关闭",
+    "followConfirmedMessage": "已关注 {{gameName}}",
     "followUnavailableMessage": "暂时无法关注该游戏，请稍后重试。",
     "followUnavailableTitle": "无法关注",
     "unfollowUnavailableMessage": "暂时无法取消关注，请稍后重试。",

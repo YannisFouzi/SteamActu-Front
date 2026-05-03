@@ -4,6 +4,7 @@ import {Platform} from 'react-native';
 import {debugError, showAlert} from '../../hooks/hooksLogger';
 import {translate} from '../../i18n';
 import {userService} from '../api';
+import {pushPendingFollowConfirm} from '../pendingFollowConfirmStore';
 import {
   queueNotificationAction,
   reconcileNotificationUnfollowCaches,
@@ -199,6 +200,8 @@ export async function executeFollowPromptAction({
     return;
   }
 
+  let followCommitted = false;
+
   try {
     console.log(`[FCM] Appel POST /follow steamId=${resolvedSteamId} appId=${appId}`);
     await userService.followGame(
@@ -208,20 +211,51 @@ export async function executeFollowPromptAction({
       data.imageUrl || '',
     );
     console.log(`[FCM] POST /follow SUCCESS pour appId=${appId}`);
+    followCommitted = true;
+  } catch (error) {
+    // Idempotence : en cold-boot via tap notif, le headless background event peut
+    // exécuter le POST une première fois, puis consumePendingInitialNotification
+    // rejoue à l'app mount. Le 2e POST renvoie 400 "déjà suivi" — sémantiquement,
+    // le résultat est le même, donc on continue vers les side-effects (nav, toast)
+    // au lieu d'afficher une fausse alerte d'erreur.
+    const status = error?.status || error?.response?.status;
+    const message =
+      error?.data?.message || error?.response?.data?.message || '';
+    const alreadyFollowed =
+      status === 400 && /d[eé]j[aà]\s+suivi/i.test(message);
 
+    if (alreadyFollowed) {
+      console.log(`[FCM] follow_prompt: jeu déjà suivi (idempotent), continue side-effects pour appId=${appId}`);
+      followCommitted = true;
+    } else {
+      debugError('[FCM] Erreur follow_prompt:', error);
+      showAlert(
+        translate('notifications.followUnavailableTitle'),
+        translate('notifications.followUnavailableMessage'),
+      );
+      return;
+    }
+  }
+
+  if (followCommitted) {
     if (typeof onFollowPromptConfirm === 'function') {
-      onFollowPromptConfirm(appId);
+      // Contexte React dispo : optimistic update + sync via le callback.
+      // La navigation et le toast sont gérés indépendamment par le système
+      // `linking` de RN (cf. AppNavigator.js > linking.subscribe).
+      onFollowPromptConfirm(appId, data?.gameName || '');
       console.log(`[FCM] onFollowPromptConfirm appelé pour appId=${appId}`);
     } else {
-      console.log('[FCM] onFollowPromptConfirm NON DISPONIBLE (background?)');
+      // Headless (cold-boot via tap notif) : pas de callback React. On
+      // enqueue pour que useAppNotificationsBridge applique l'optimistic
+      // update au mount du React tree. La navigation est gérée par
+      // linking.getInitialURL au 1er render du NavigationContainer.
+      pushPendingFollowConfirm(appId, data?.gameName || '');
+      console.log(
+        `[FCM] follow_prompt enqueued for replay (appId=${appId}, gameName="${
+          data?.gameName || ''
+        }")`,
+      );
     }
-  } catch (error) {
-    debugError('[FCM] Erreur follow_prompt:', error);
-    showAlert(
-      translate('notifications.followUnavailableTitle'),
-      translate('notifications.followUnavailableMessage'),
-    );
-    return;
   }
 
   try {

@@ -114,6 +114,7 @@
     "channelName": "Game News",
     "disabledMessage": "Сейчас нельзя включить уведомления. Попробуйте позже.",
     "disabledTitle": "Уведомления отключены",
+    "followConfirmedMessage": "Вы подписались на {{gameName}}",
     "followUnavailableMessage": "Не удалось подписаться на игру. Попробуйте позже.",
     "followUnavailableTitle": "Не удалось подписаться",
     "unfollowUnavailableMessage": "Не удалось отписаться от игры. Попробуйте позже.",

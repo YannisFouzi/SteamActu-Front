@@ -16,7 +16,7 @@ const TAB_ICONS = {
   MonCompte: 'person-circle-outline',
 };
 
-const TabBarButton = (props) => (
+const TabBarButton = props => (
   <Pressable
     {...props}
     android_ripple={{color: 'rgba(102, 192, 244, 0.12)', borderless: false}}
@@ -43,16 +43,18 @@ const createScreenOptions = ({route}) => ({
   tabBarButton: TabBarButton,
 });
 
-const MainTabNavigator = () => {
+const MainTabNavigator = ({startupIntent = undefined}) => {
   const {t} = useTranslation();
+  const initialRouteName =
+    startupIntent?.tabName === 'Actu' ? 'Actu' : undefined;
 
   return (
-    <Tab.Navigator screenOptions={createScreenOptions}>
-      <Tab.Screen
-        name="Actu"
-        component={ActuTabs}
-        options={{title: t('nav.news')}}
-      />
+    <Tab.Navigator
+      initialRouteName={initialRouteName}
+      screenOptions={createScreenOptions}>
+      <Tab.Screen name="Actu" options={{title: t('nav.news')}}>
+        {() => <ActuTabs startupIntent={startupIntent} />}
+      </Tab.Screen>
       <Tab.Screen
         name="SuivreUnJeu"
         component={FollowTabs}

@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Pressable, StyleSheet} from 'react-native';
+import {Pressable, StyleSheet, View} from 'react-native';
 import {
   Button,
   Checkbox,
@@ -8,7 +8,7 @@ import {
   Snackbar,
   Text,
 } from 'react-native-paper';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Ionicons';
 import {COLORS, PAPER_THEME, RADIUS, SPACING} from '../constants';
 import {translate} from '../i18n';
 import {
@@ -30,14 +30,20 @@ const SNACKBAR_VARIANT_STYLES = {
   info: {
     backgroundColor: COLORS.STEAM_NAVY,
     accentColor: COLORS.STEAM_BLUE,
+    iconName: 'information-circle-outline',
+    iconBubbleBg: 'rgba(102, 192, 244, 0.15)',
   },
   success: {
-    backgroundColor: '#173822',
+    backgroundColor: COLORS.STEAM_NAVY,
     accentColor: '#7BE495',
+    iconName: 'checkmark-circle-outline',
+    iconBubbleBg: 'rgba(123, 228, 149, 0.15)',
   },
   error: {
-    backgroundColor: '#4A1F24',
+    backgroundColor: COLORS.STEAM_NAVY,
     accentColor: '#FF9F9F',
+    iconName: 'alert-circle-outline',
+    iconBubbleBg: 'rgba(255, 159, 159, 0.15)',
   },
 };
 
@@ -102,18 +108,6 @@ const getDialogAccentColor = tone => {
   }
 };
 
-const buildSnackbarMessage = snackbar => {
-  if (!snackbar) {
-    return '';
-  }
-
-  if (snackbar.title && snackbar.message) {
-    return `${snackbar.title}: ${snackbar.message}`;
-  }
-
-  return snackbar.message || snackbar.title || '';
-};
-
 const resolveDialogButtonProps = (button, index, buttonsLength) => {
   if (button?.style === 'destructive') {
     return {
@@ -150,7 +144,6 @@ const resolveDialogButtonProps = (button, index, buttonsLength) => {
 };
 
 const FeedbackProvider = ({children}) => {
-  const insets = useSafeAreaInsets();
   const dialogQueueRef = useRef([]);
   const snackbarQueueRef = useRef([]);
   const [activeDialog, setActiveDialog] = useState(null);
@@ -359,12 +352,13 @@ const FeedbackProvider = ({children}) => {
           duration={activeSnackbar?.duration || DEFAULT_SNACKBAR_DURATION}
           style={[
             styles.snackbar,
-            {backgroundColor: snackbarVariantStyle.backgroundColor},
+            {
+              backgroundColor: snackbarVariantStyle.backgroundColor,
+              borderColor: snackbarVariantStyle.accentColor,
+            },
           ]}
-          wrapperStyle={[
-            styles.snackbarWrapper,
-            {bottom: insets.bottom + SPACING.lg},
-          ]}
+          wrapperStyle={styles.snackbarWrapper}
+          contentStyle={styles.snackbarContent}
           theme={{
             ...PAPER_THEME,
             colors: {
@@ -379,12 +373,38 @@ const FeedbackProvider = ({children}) => {
               ? {
                   label: activeSnackbar.actionLabel,
                   onPress: handleSnackbarActionPress,
+                  textColor: snackbarVariantStyle.accentColor,
                 }
               : undefined
           }>
-          <Text style={styles.snackbarText}>
-            {buildSnackbarMessage(activeSnackbar)}
-          </Text>
+          <Pressable
+            onPress={dismissSnackbar}
+            style={styles.snackbarRow}
+            android_ripple={{color: 'rgba(255,255,255,0.06)', borderless: false}}>
+            <View
+              style={[
+                styles.snackbarIconBubble,
+                {backgroundColor: snackbarVariantStyle.iconBubbleBg},
+              ]}>
+              <Icon
+                name={snackbarVariantStyle.iconName}
+                size={24}
+                color={snackbarVariantStyle.accentColor}
+              />
+            </View>
+            <View style={styles.snackbarTextColumn}>
+              {activeSnackbar?.title ? (
+                <Text style={styles.snackbarTitle} numberOfLines={2}>
+                  {activeSnackbar.title}
+                </Text>
+              ) : null}
+              {activeSnackbar?.message ? (
+                <Text style={styles.snackbarMessage} numberOfLines={4}>
+                  {activeSnackbar.message}
+                </Text>
+              ) : null}
+            </View>
+          </Pressable>
         </Snackbar>
       </Portal>
     </>
@@ -435,17 +455,60 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   snackbar: {
+    margin: 0,
     borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.STEAM_BORDER,
-    marginHorizontal: SPACING.lg,
+    borderWidth: 1.5,
+    width: '90%',
+    maxWidth: 460,
+    alignSelf: 'center',
+    elevation: 12,
+    shadowColor: COLORS.BLACK,
+    shadowOffset: {width: 0, height: 6},
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
   },
   snackbarWrapper: {
+    top: 0,
+    bottom: 0,
     left: 0,
     right: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  snackbarText: {
+  snackbarContent: {
+    marginHorizontal: 0,
+    marginVertical: 0,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.md,
+    flex: 1,
+  },
+  snackbarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.md,
+  },
+  snackbarIconBubble: {
+    width: 40,
+    height: 40,
+    borderRadius: RADIUS.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  snackbarTextColumn: {
+    flex: 1,
+    flexDirection: 'column',
+    gap: 2,
+  },
+  snackbarTitle: {
     color: COLORS.WHITE,
+    fontSize: 15,
+    fontWeight: '700',
+    lineHeight: 20,
+    letterSpacing: 0.2,
+  },
+  snackbarMessage: {
+    color: COLORS.STEAM_TEXT_GRAY,
+    fontSize: 14,
     lineHeight: 20,
   },
 });

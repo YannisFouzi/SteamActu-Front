@@ -11,12 +11,12 @@ import './src/i18n';
 import App from './App';
 import {name as appName} from './app.json';
 import {APP_CONFIG} from './src/config/env';
+import {
+  markInitialNotificationBootstrapResolved,
+  setPendingNotification,
+} from './src/services/initialNotificationStore';
 import {displayRemoteNotification} from './src/services/notificationService';
-import {setPendingNotification} from './src/services/initialNotificationStore';
 
-// Init Sentry AVANT tout autre top-level handler pour capturer les erreurs
-// de setup (notifee handlers, messaging handlers, getInitialNotification).
-// No-op si SENTRY_DSN absent — app tourne normalement.
 if (APP_CONFIG.SENTRY_DSN) {
   Sentry.init({
     dsn: APP_CONFIG.SENTRY_DSN,
@@ -30,21 +30,25 @@ if (APP_CONFIG.SENTRY_DSN) {
   console.log('[Sentry] Desactive (SENTRY_DSN_MOBILE non defini)');
 }
 
-// Background Notifee Event Handler — DOIT etre enregistre au top-level (index.js)
-// pour fonctionner en headless mode (app killed). Les imports dynamiques
-// (require) garantissent que le handler reste leger au boot.
+// Background Notifee Event Handler : DOIT etre enregistre au top-level
+// pour fonctionner en headless mode (app killed).
 notifee.onBackgroundEvent(async event => {
-  console.log('[FCM] [BOOT] onBackgroundEvent type=' + event.type + ' pressAction=' + event.detail?.pressAction?.id + ' dataType=' + event.detail?.notification?.data?.type);
+  console.log(
+    '[FCM] [BOOT] onBackgroundEvent type=' +
+      event.type +
+      ' pressAction=' +
+      event.detail?.pressAction?.id +
+      ' dataType=' +
+      event.detail?.notification?.data?.type,
+  );
 
-  if (
-    event.type !== EventType.PRESS &&
-    event.type !== EventType.ACTION_PRESS
-  ) {
+  if (event.type !== EventType.PRESS && event.type !== EventType.ACTION_PRESS) {
     return;
   }
 
-  const {handleBackgroundNotifeeEvent, getBackgroundEventHandlers} =
-    require('./src/services/notifications/events');
+  const {handleBackgroundNotifeeEvent, getBackgroundEventHandlers} = require(
+    './src/services/notifications/events',
+  );
 
   const handlers = getBackgroundEventHandlers();
   console.log('[FCM] [BOOT] handlers.length=' + handlers.length);
@@ -63,46 +67,62 @@ notifee.onBackgroundEvent(async event => {
   }
 });
 
-// Capturer l'intent initial le plus tot possible (avant le render React)
-// Si l'app a ete lancee par un tap sur une notification, on stocke l'info
-// pour la consommer des que steamId est disponible
-messaging()
+// Capturer l'intent initial le plus tot possible (avant le render React).
+// AppNavigator attend explicitement la resolution de ce bootstrap avant de
+// monter NavigationContainer, pour choisir le bon ecran initial sans flash.
+const firebaseInitialNotificationPromise = messaging()
   .getInitialNotification()
   .then(remoteMessage => {
     if (remoteMessage) {
-      console.log('[FCM] [BOOT] Firebase getInitialNotification → OUI', remoteMessage.messageId, JSON.stringify(remoteMessage.data));
+      console.log(
+        '[FCM] [BOOT] Firebase getInitialNotification -> OUI',
+        remoteMessage.messageId,
+        JSON.stringify(remoteMessage.data),
+      );
       setPendingNotification({source: 'firebase', data: remoteMessage});
     } else {
-      console.log('[FCM] [BOOT] Firebase getInitialNotification → null');
+      console.log('[FCM] [BOOT] Firebase getInitialNotification -> null');
     }
   })
-  .catch(err => console.error('[FCM] Erreur getInitialNotification bootstrap:', err));
+  .catch(err =>
+    console.error('[FCM] Erreur getInitialNotification bootstrap:', err),
+  );
 
-notifee
+const notifeeInitialNotificationPromise = notifee
   .getInitialNotification()
   .then(initialNotification => {
     if (initialNotification) {
-      console.log('[FCM] [BOOT] Notifee getInitialNotification → OUI', JSON.stringify(initialNotification?.notification?.data));
+      console.log(
+        '[FCM] [BOOT] Notifee getInitialNotification -> OUI',
+        JSON.stringify(initialNotification?.notification?.data),
+      );
       setPendingNotification({source: 'notifee', data: initialNotification});
     } else {
-      console.log('[FCM] [BOOT] Notifee getInitialNotification → null');
+      console.log('[FCM] [BOOT] Notifee getInitialNotification -> null');
     }
   })
-  .catch(err => console.error('[FCM] Erreur notifee.getInitialNotification bootstrap:', err));
+  .catch(err =>
+    console.error('[FCM] Erreur notifee.getInitialNotification bootstrap:', err),
+  );
+
+Promise.allSettled([
+  firebaseInitialNotificationPromise,
+  notifeeInitialNotificationPromise,
+]).finally(() => {
+  markInitialNotificationBootstrapResolved();
+});
 
 // Background Message Handler - DOIT etre defini au top-level avant AppRegistry
 // Deux cas :
-// 1. Message notification+data (sans bouton action) → FCM l'a deja affichee, rien a faire
-// 2. Message data-only (news avec unfollow, follow_prompt) → Notifee affiche avec boutons
+// 1. Message notification+data (sans bouton action) : FCM l'a deja affichee
+// 2. Message data-only : Notifee affiche avec boutons
 messaging().setBackgroundMessageHandler(async remoteMessage => {
   console.log('[FCM] Message recu en background:', remoteMessage);
 
   if (remoteMessage?.notification) {
-    // FCM a deja affiche la notification nativement
     return;
   }
 
-  // Data-only : affichage via Notifee (avec boutons action si applicable)
   await displayRemoteNotification(remoteMessage);
 });
 

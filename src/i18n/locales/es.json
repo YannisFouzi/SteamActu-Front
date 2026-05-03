@@ -114,6 +114,7 @@
     "channelName": "Game News",
     "disabledMessage": "No se pueden activar las notificaciones ahora. Inténtalo más tarde.",
     "disabledTitle": "Notificaciones desactivadas",
+    "followConfirmedMessage": "{{gameName}} se está siguiendo",
     "followUnavailableMessage": "No se puede añadir este juego a los seguidos ahora. Inténtalo más tarde.",
     "followUnavailableTitle": "No se puede seguir",
     "unfollowUnavailableMessage": "No se puede quitar este juego de los seguidos ahora. Inténtalo más tarde.",

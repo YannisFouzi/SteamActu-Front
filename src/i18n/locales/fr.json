@@ -114,6 +114,7 @@
     "channelName": "Game News",
     "disabledMessage": "Impossible d'activer les notifications pour le moment. Veuillez réessayer plus tard.",
     "disabledTitle": "Notifications désactivées",
+    "followConfirmedMessage": "{{gameName}} a bien été suivi",
     "followUnavailableMessage": "Impossible d'ajouter ce jeu aux suivis pour le moment. Réessayez plus tard.",
     "followUnavailableTitle": "Suivi impossible",
     "unfollowUnavailableMessage": "Impossible de retirer ce jeu des suivis pour le moment. Réessayez plus tard.",

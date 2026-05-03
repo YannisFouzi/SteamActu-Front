@@ -11,9 +11,15 @@ import NewsFeedScreen from '../screens/NewsFeedScreen';
 
 const Tab = createMaterialTopTabNavigator();
 
-const ActuTabs = () => {
+const ActuTabs = ({startupIntent = undefined}) => {
   const {t} = useTranslation();
   const {steamId, registerNotificationSyncHandler} = useAppContext();
+  const initialRouteName =
+    startupIntent?.screenName === 'JeuxSuivis' ? 'JeuxSuivis' : 'Fil';
+  const followedGamesInitialParams =
+    startupIntent?.screenName === 'JeuxSuivis'
+      ? startupIntent.params
+      : undefined;
   const {
     newsState,
     fetchNews,
@@ -42,6 +48,7 @@ const ActuTabs = () => {
   return (
     <SafeAreaView style={localStyles.safeArea} edges={['top']}>
       <Tab.Navigator
+        initialRouteName={initialRouteName}
         screenOptions={{
           lazy: true,
           tabBarIndicatorStyle: {backgroundColor: COLORS.STEAM_BLUE},
@@ -66,6 +73,7 @@ const ActuTabs = () => {
         </Tab.Screen>
         <Tab.Screen
           name="JeuxSuivis"
+          initialParams={followedGamesInitialParams}
           options={{title: t('nav.followedGames')}}>
           {() => <FollowedGamesScreen />}
         </Tab.Screen>

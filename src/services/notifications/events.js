@@ -1,5 +1,8 @@
 import { EventType } from '@notifee/react-native';
-import { consumePendingNotification } from '../initialNotificationStore';
+import {
+  consumePendingNotification,
+  setPendingNavigationFollowPromptIntent,
+} from '../initialNotificationStore';
 import {
   executeFollowPromptAction,
   executeNotificationUnfollow,
@@ -122,12 +125,10 @@ export async function consumePendingInitialNotification({
       return;
     }
 
+    // follow_prompt : déjà traité par handleBackgroundNotifeeEvent (POST follow
+    // + push pendingFollowConfirmStore) au cold-boot, et la navigation est
+    // gérée par linking.getInitialURL. Re-jouer ici causerait un double POST.
     if (payload.type === 'follow_prompt') {
-      await executeFollowPromptAction({
-        steamId,
-        data: payload.data,
-        onFollowPromptConfirm,
-      });
       processedNotificationIds.add(payload.id);
       return;
     }
@@ -144,6 +145,14 @@ export async function consumePendingInitialNotification({
     const notificationId = data.notification?.id;
 
     if (notificationId && processedNotificationIds.has(notificationId)) {
+      return;
+    }
+
+    // Idem : follow_prompt est entièrement géré ailleurs (cf. ci-dessus).
+    if (data.notification?.data?.type === 'follow_prompt') {
+      if (notificationId) {
+        processedNotificationIds.add(notificationId);
+      }
       return;
     }
 
@@ -208,6 +217,15 @@ export async function handleBackgroundNotifeeEvent(event) {
       const notification = event.detail?.notification || null;
       const data = notification?.data || {};
       const steamId = data?.steamId;
+
+      // Pose l'intent de navigation SYNCHRONIQUEMENT, avant tout await.
+      // AppNavigator lira ce store une fois le React tree monte pour atterrir
+      // sur "Jeux suivis". Sans ca, getInitialNotification (deja resolu a null
+      // au boot headless) ne fournit pas l'intent et l'app reste sur Fil.
+      setPendingNavigationFollowPromptIntent({
+        appId: data?.appId,
+        gameName: data?.gameName || '',
+      });
 
       await executeFollowPromptAction({
         steamId,

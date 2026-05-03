@@ -1,10 +1,12 @@
 import {useEffect} from 'react';
 import {debugError, debugLog} from '../../hooks/hooksLogger';
+import {navigateToFollowedGamesTab} from '../../services/navigationService';
 import {
   registerFCMToken,
   setupNotificationHandlers,
 } from '../../services/notificationService';
 import {consumeNotificationActionsForSteamId} from '../../services/notifications/actionJournal';
+import {consumePendingFollowConfirms} from '../../services/pendingFollowConfirmStore';
 import {
   requiresNotifications,
   USER_SETTINGS_STATUS,
@@ -66,6 +68,47 @@ export const useAppNotificationsBridge = ({
       }
     }
 
+    // Side-effects React pour un follow_prompt confirme :
+    // optimistic update, sync, et navigation immediate si le navigator existe
+    // deja. Le cold-start, lui, est gere via l'etat initial de navigation.
+    const applyFollowConfirm = (appId, gameName = '', options = {}) => {
+      const {shouldNavigate = true} = options;
+
+      if (!appId) {
+        return;
+      }
+      const appIdString = String(appId);
+      const trimmedName = String(gameName || '').trim();
+
+      if (pendingFollowsRef?.current) {
+        pendingFollowsRef.current.add(appIdString);
+      }
+      setUser(prevUser => {
+        if (!prevUser) {
+          return prevUser;
+        }
+        const current = Array.isArray(prevUser.followedGames)
+          ? prevUser.followedGames.slice()
+          : [];
+        if (current.includes(appIdString)) {
+          return prevUser;
+        }
+        return {
+          ...prevUser,
+          followedGames: [...current, appIdString],
+        };
+      });
+
+      if (shouldNavigate) {
+        navigateToFollowedGamesTab({
+          initialSort: 'recent',
+          confirmedGameName: trimmedName || undefined,
+        });
+      }
+
+      notifyNotificationSync('followed', appIdString);
+    };
+
     if (steamId) {
       debugLog('[FCM] Configuration des notifications pour:', steamId);
 
@@ -113,37 +156,26 @@ export const useAppNotificationsBridge = ({
         onWishlistUnfollow: appId => notifyNotificationSync('wishlist', appId),
         onFollowedGamesTabUnfollow: appId =>
           notifyNotificationSync('followed', appId),
-        onFollowPromptConfirm: appId => {
-          if (appId) {
-            const appIdString = String(appId);
-            if (pendingFollowsRef?.current) {
-              pendingFollowsRef.current.add(appIdString);
-            }
-            setUser(prevUser => {
-              if (!prevUser) {
-                return prevUser;
-              }
-              const current = Array.isArray(prevUser.followedGames)
-                ? prevUser.followedGames.slice()
-                : [];
-              if (current.includes(appIdString)) {
-                return prevUser;
-              }
-              return {
-                ...prevUser,
-                followedGames: [...current, appIdString],
-              };
-            });
-          }
-          notifyNotificationSync('followed', appId);
-        },
+        onFollowPromptConfirm: applyFollowConfirm,
       });
 
+      // Drain headless au cold-start : on rejoue l'optimistic update + sync,
+      // mais pas la navigation. L'ecran cible est deja fourni au navigator
+      // via son etat initial.
+      const queuedConfirms = consumePendingFollowConfirms();
+      if (queuedConfirms.length > 0) {
+        debugLog(
+          `[FCM] Drain pendingFollowConfirms (count=${queuedConfirms.length})`,
+        );
+        for (const entry of queuedConfirms) {
+          applyFollowConfirm(entry.appId, entry.gameName, {
+            shouldNavigate: false,
+          });
+        }
+      }
+
       registrationTimeout = setTimeout(() => {
-        if (
-          !canceled &&
-          settingsStatus === USER_SETTINGS_STATUS.READY
-        ) {
+        if (!canceled && settingsStatus === USER_SETTINGS_STATUS.READY) {
           initializeNotifications();
         }
       }, NOTIFICATION_REGISTRATION_DELAY_MS);

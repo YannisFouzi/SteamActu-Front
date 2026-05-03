@@ -32,6 +32,10 @@ export const useFollowedGames = ({
   const [followedGames, setFollowedGames] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  // True UNIQUEMENT après une réponse réseau (success ou error). Sert au tab
+  // à savoir si l'état affiché reflète une réponse serveur ou seulement le
+  // cache local (pattern stale-while-revalidate).
+  const [hasFetchedFromNetwork, setHasFetchedFromNetwork] = useState(false);
 
   const isMountedRef = useRef(true);
   const followedGamesHydratedFromCacheRef = useRef(false);
@@ -119,6 +123,7 @@ export const useFollowedGames = ({
         fetchInFlightRef.current = false;
         safeSetValue(setLoading, false);
         safeSetValue(setRefreshing, false);
+        safeSetValue(setHasFetchedFromNetwork, true);
       }
     },
     [persistFollowedGamesCache, safeSetValue, steamId],
@@ -210,16 +215,38 @@ export const useFollowedGames = ({
     }
 
     if (normalizedFollowedIds.length === 0) {
+      // On ne wipe PAS le cache durable depuis cet effet : il peut fire en
+      // état transitoire (user briefly null au cold-boot → followedAppIds=[]).
+      // Le cache n'est purgé que par removeFollowedGame ou par un fetch dont
+      // la réponse serveur est []. setFollowedGames([]) reste pour clear le
+      // local en cas de vrai unfollow du dernier jeu (le tab gère le rendu
+      // empty state via gating sur user + hasFetchedFromNetwork).
       safeSetValue(setFollowedGames, []);
-      persistFollowedGamesCache([], steamId).catch(err => {
-        debugError('[FOLLOWED_GAMES] Erreur purge cache:', err);
-      });
       return;
     }
 
-    safeUpdateFollowedGames(currentGames =>
-      reconcileFollowedGames(currentGames, normalizedFollowedIds),
-    );
+    // Reconcile in-place : retire les jeux qui ne sont plus follow et calcule
+    // le nombre d'items connus localement (= ceux dont on a déjà name/image).
+    let reconciledCount = 0;
+    safeUpdateFollowedGames(currentGames => {
+      const reconciled = reconcileFollowedGames(
+        currentGames,
+        normalizedFollowedIds,
+      );
+      reconciledCount = reconciled.length;
+      return reconciled;
+    });
+
+    // Skip le fetch si on a déjà tous les détails en local — typique d'un
+    // unfollow via cloche (la signature change mais aucun nouveau jeu à
+    // résoudre). Évite un re-fetch silencieux qui flashe le RefreshControl.
+    if (
+      followedGamesHydratedFromCacheRef.current &&
+      reconciledCount === normalizedFollowedIds.length
+    ) {
+      debugLog('[FOLLOWED_GAMES] Reconcile local suffisant, fetch skip');
+      return;
+    }
 
     fetchFollowedGames({
       silent: followedGamesHydratedFromCacheRef.current,
@@ -259,6 +286,7 @@ export const useFollowedGames = ({
     followedGames,
     loading,
     refreshing,
+    hasFetchedFromNetwork,
     handleRefresh,
     removeFollowedGame,
   };
