@@ -21,6 +21,7 @@ const buildInitialNewsState = (overrides = {}) => ({
   hasFavorites: false,
   favoriteIds: [],
   favoriteCount: 0,
+  lastSeenAt: null,
   ...overrides,
 });
 
@@ -68,6 +69,11 @@ export const useNewsManager = steamId => {
     [language],
   );
 
+  const getLastSeenKey = useCallback(
+    targetSteamId => buildStorageKey('newsLastSeen', targetSteamId),
+    [],
+  );
+
   const persistNewsCache = useCallback(
     async (items, targetSteamId = steamId) => {
       const cacheKey = getCacheKey(targetSteamId);
@@ -78,6 +84,17 @@ export const useNewsManager = steamId => {
       debugLog('[NEWS] Cache sauvegarde', {count: items.length, language});
     },
     [getCacheKey, language, steamId],
+  );
+
+  const persistLastSeen = useCallback(
+    async (value, targetSteamId = steamId) => {
+      const key = getLastSeenKey(targetSteamId);
+      if (!key) {
+        return;
+      }
+      await setJSONItem(key, value);
+    },
+    [getLastSeenKey, steamId],
   );
 
   const fetchNews = useCallback(
@@ -140,14 +157,26 @@ export const useNewsManager = steamId => {
           ? response.data.items
           : [];
         const favoriteStats = response.data?.metadata?.favoriteStats || {};
+        const serverLastSeenAt =
+          typeof response.data?.metadata?.lastNewsFeedSeenAt === 'number'
+            ? response.data.metadata.lastNewsFeedSeenAt
+            : null;
         const favoriteIds = items
           .filter(item => item?.isFavorite)
           .map(item => buildNewsKey(item.appId, item.news?.id));
 
         await persistNewsCache(items);
 
+        let mergedLastSeenSnapshot = null;
         safeSetNewsState(prev => {
           const previous = prev.news || createInitialNewsState();
+          const localLastSeenAt = previous.lastSeenAt;
+          const mergedLastSeenAt =
+            serverLastSeenAt !== null && localLastSeenAt !== null
+              ? Math.max(serverLastSeenAt, localLastSeenAt)
+              : serverLastSeenAt ?? localLastSeenAt;
+          mergedLastSeenSnapshot = mergedLastSeenAt;
+
           return {
             ...prev,
             news: {
@@ -162,8 +191,13 @@ export const useNewsManager = steamId => {
                 Boolean(favoriteStats.hasFavorites) || favoriteIds.length > 0,
               favoriteIds,
               favoriteCount: favoriteStats.count ?? favoriteIds.length,
+              lastSeenAt: mergedLastSeenAt,
             },
           };
+        });
+
+        persistLastSeen(mergedLastSeenSnapshot).catch(error => {
+          debugError('[NEWS] persist lastSeen erreur:', error);
         });
 
         return items;
@@ -191,7 +225,7 @@ export const useNewsManager = steamId => {
         return [];
       }
     },
-    [createInitialNewsState, language, persistNewsCache, safeSetNewsState, steamId],
+    [createInitialNewsState, language, persistLastSeen, persistNewsCache, safeSetNewsState, steamId],
   );
 
   useEffect(() => {
@@ -217,7 +251,21 @@ export const useNewsManager = steamId => {
       }
 
       const cacheKey = getCacheKey(steamId);
+      const lastSeenKey = getLastSeenKey(steamId);
+
+      const cachedLastSeen = lastSeenKey
+        ? await getJSONItem(lastSeenKey, null).catch(() => null)
+        : null;
+      const hydratedLastSeen =
+        typeof cachedLastSeen === 'number' ? cachedLastSeen : null;
+
       if (!cacheKey) {
+        if (hydratedLastSeen !== null) {
+          safeSetNewsState(prev => ({
+            ...prev,
+            news: {...(prev.news || createInitialNewsState()), lastSeenAt: hydratedLastSeen},
+          }));
+        }
         await fetchNews();
         return;
       }
@@ -233,11 +281,13 @@ export const useNewsManager = steamId => {
             news: buildInitialNewsState({
               items: cachedNews,
               initialized: true,
+              lastSeenAt: hydratedLastSeen,
             }),
           });
           debugLog('[NEWS] Hydrate depuis le cache', {
             count: cachedNews.length,
             language,
+            lastSeenAt: hydratedLastSeen,
           });
           fetchNews({silent: true}).catch(error => {
             debugError('[NEWS] Refresh silencieux post-cache échoué:', error);
@@ -252,6 +302,13 @@ export const useNewsManager = steamId => {
         return;
       }
 
+      if (hydratedLastSeen !== null) {
+        safeSetNewsState(prev => ({
+          ...prev,
+          news: {...(prev.news || createInitialNewsState()), lastSeenAt: hydratedLastSeen},
+        }));
+      }
+
       await fetchNews();
     };
 
@@ -260,7 +317,7 @@ export const useNewsManager = steamId => {
     return () => {
       canceled = true;
     };
-  }, [fetchNews, getCacheKey, language, safeSetNewsState, steamId]);
+  }, [createInitialNewsState, fetchNews, getCacheKey, getLastSeenKey, language, safeSetNewsState, steamId]);
 
   const removeNewsByAppId = useCallback(
     appId => {
@@ -331,6 +388,42 @@ export const useNewsManager = steamId => {
     [fetchNews],
   );
 
+  const markFeedSeen = useCallback(() => {
+    if (!steamId) {
+      return;
+    }
+
+    const ts = Date.now();
+    let shouldSendRequest = false;
+
+    safeSetNewsState(prev => {
+      const previous = prev.news || createInitialNewsState();
+      if (previous.lastSeenAt !== null && previous.lastSeenAt >= ts) {
+        return prev;
+      }
+      shouldSendRequest = true;
+      return {
+        ...prev,
+        news: {
+          ...previous,
+          lastSeenAt: ts,
+        },
+      };
+    });
+
+    if (!shouldSendRequest) {
+      return;
+    }
+
+    persistLastSeen(ts).catch(error => {
+      debugError('[NEWS] persist lastSeen erreur:', error);
+    });
+
+    userService.markNewsFeedSeen(steamId, ts).catch(error => {
+      debugError('[NEWS] markNewsFeedSeen erreur:', error);
+    });
+  }, [createInitialNewsState, persistLastSeen, safeSetNewsState, steamId]);
+
   const toggleNewsFavorite = useCallback(
     async newsItem => {
       if (!steamId || !newsItem?.news?.id || !newsItem?.appId || !newsItem.news?.date) {
@@ -393,5 +486,6 @@ export const useNewsManager = steamId => {
     syncNewsFeedAfterFollowToggle,
     setFavoritesOnlyFilter,
     toggleNewsFavorite,
+    markFeedSeen,
   };
 };

@@ -71,6 +71,9 @@ export default StyleSheet.create({
     padding: 16,
     marginBottom: 12,
   },
+  newsCardSeen: {
+    backgroundColor: '#B8C2CE',
+  },
   newsCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',

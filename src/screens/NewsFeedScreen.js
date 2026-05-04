@@ -10,6 +10,7 @@ const NewsFeedScreen = ({
   onToggleFavoritesFilter,
   onToggleNewsFavorite,
   syncNewsFeedAfterFollowToggle,
+  onMarkFeedSeen,
 }) => {
   const activeState = newsState?.news || {};
   return (
@@ -23,6 +24,7 @@ const NewsFeedScreen = ({
         onToggleFavoritesFilter={onToggleFavoritesFilter}
         onToggleFavorite={onToggleNewsFavorite}
         syncNewsFeedAfterFollowToggle={syncNewsFeedAfterFollowToggle}
+        onMarkFeedSeen={onMarkFeedSeen}
       />
     </View>
   );

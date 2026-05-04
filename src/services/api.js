@@ -75,6 +75,8 @@ const userService = {
     api.post(`/users/${steamId}/fcm-token`, {token, platform}),
   unregisterFCMToken: (steamId, token) =>
     api.delete(`/users/${steamId}/fcm-token`, {data: {token}}),
+  markNewsFeedSeen: (steamId, seenAt) =>
+    api.put(`/users/${steamId}/news/seen`, {seenAt}),
 };
 
 const newsService = {

@@ -27,6 +27,7 @@ const ActuTabs = ({startupIntent = undefined}) => {
     syncNewsFeedAfterFollowToggle,
     setFavoritesOnlyFilter,
     toggleNewsFavorite,
+    markFeedSeen,
   } = useNewsManager(steamId);
 
   useEffect(() => {
@@ -68,6 +69,7 @@ const ActuTabs = ({startupIntent = undefined}) => {
               onToggleFavoritesFilter={setFavoritesOnlyFilter}
               onToggleNewsFavorite={toggleNewsFavorite}
               syncNewsFeedAfterFollowToggle={syncNewsFeedAfterFollowToggle}
+              onMarkFeedSeen={markFeedSeen}
             />
           )}
         </Tab.Screen>

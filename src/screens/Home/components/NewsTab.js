@@ -1,5 +1,6 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
+  AppState,
   FlatList,
   Image,
   Linking,
@@ -9,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 import FollowToggle from '../../../components/FollowToggle';
@@ -74,16 +76,42 @@ const NewsTab = ({
   onToggleFavoritesFilter,
   onToggleFavorite,
   syncNewsFeedAfterFollowToggle,
+  onMarkFeedSeen,
 }) => {
   const {t, i18n} = useTranslation();
   const activeNewsState = newsState?.news || null;
   const hasNewsItems = (activeNewsState?.items?.length || 0) > 0;
+  const lastSeenAt = activeNewsState?.lastSeenAt ?? null;
   const shouldShowInitialLoader =
     !activeNewsState?.initialized ||
     (activeNewsState?.loading && !hasNewsItems);
   const showFavoritesToggle =
     (hasFavorites || favoritesOnly) &&
     typeof onToggleFavoritesFilter === 'function';
+
+  const markFeedSeenRef = useRef(onMarkFeedSeen);
+  useEffect(() => {
+    markFeedSeenRef.current = onMarkFeedSeen;
+  }, [onMarkFeedSeen]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const appStateSub = AppState.addEventListener('change', state => {
+        if (state === 'background' || state === 'inactive') {
+          if (typeof markFeedSeenRef.current === 'function') {
+            markFeedSeenRef.current();
+          }
+        }
+      });
+
+      return () => {
+        appStateSub.remove();
+        if (typeof markFeedSeenRef.current === 'function') {
+          markFeedSeenRef.current();
+        }
+      };
+    }, []),
+  );
 
   const formatDate = useCallback(
     timestamp =>
@@ -150,9 +178,15 @@ const NewsTab = ({
         return null;
       }
 
+      const inFeedAtMs = item.inFeedAt
+        ? new Date(item.inFeedAt).getTime()
+        : 0;
+      const isSeen =
+        lastSeenAt !== null && inFeedAtMs > 0 && inFeedAtMs <= lastSeenAt;
+
       return (
         <TouchableOpacity
-          style={styles.newsCard}
+          style={[styles.newsCard, isSeen && styles.newsCardSeen]}
           activeOpacity={0.9}
           onPress={() => openNews(item)}>
           <View style={styles.newsCardHeader}>
@@ -207,6 +241,7 @@ const NewsTab = ({
     },
     [
       formatDate,
+      lastSeenAt,
       onToggleFavorite,
       openNews,
       steamId,
