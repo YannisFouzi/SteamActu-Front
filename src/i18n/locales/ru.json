@@ -33,7 +33,6 @@
     "myGames": "Мои игры",
     "news": "Новости",
     "privacyPolicy": "Политика конфиденциальности",
-    "search": "Поиск",
     "settings": "Настройки",
     "termsOfService": "Условия использования",
     "wishlist": "Список желаемого"
@@ -161,9 +160,6 @@
     "checkVisibilitySuccess": "Профиль открыт! Синхронизация...",
     "checkVisibilityStillPrivate": "Профиль всё ещё закрыт. Проверьте «Сведения об играх» → «Все».",
     "wishlistAccessDenied": "Доступ к списку желаемого запрещён (закрытый профиль).",
-    "searchMyGamesPlaceholder": "Поиск в моих играх...",
-    "searchSteamPlaceholder": "Поиск игры Steam...",
-    "searchWishlistPlaceholder": "Поиск в списке желаемого...",
     "sortAZ": "А–Я",
     "topPlayed": "Больше всего часов",
     "wishlistEmptyText": "Список желаемого не виден. В настройках приватности Steam для «Сведений об играх» выберите «Все».",
@@ -176,14 +172,18 @@
     "wishlistProfilePublicHint": "Не удалось загрузить список желаемого. Убедитесь, что профиль Steam открыт."
   },
   "search": {
-    "hint": "Введите не менее 2 символов",
     "loading": "Поиск...",
     "placeholderFollowed": "Поиск среди отслеживаемых...",
-    "title": "Найти игру"
+    "unifiedPlaceholder": "Поиск игры..."
   },
   "emptyStates": {
     "noResultsText": "Попробуйте другие слова",
     "noResultsTitle": "Ничего не найдено"
+  },
+  "unifiedResults": {
+    "sectionMyGames": "В моих играх",
+    "sectionWishlist": "В списке желаемого",
+    "sectionStore": "В магазине Steam"
   },
   "contact": {
     "directTitle": "Прямой контакт",

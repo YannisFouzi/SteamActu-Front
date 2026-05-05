@@ -33,7 +33,6 @@
     "myGames": "Meine Spiele",
     "news": "Neuigkeiten",
     "privacyPolicy": "Datenschutz",
-    "search": "Suche",
     "settings": "Einstellungen",
     "termsOfService": "Nutzungsbedingungen",
     "wishlist": "Wunschliste"
@@ -159,9 +158,6 @@
     "checkVisibilitySuccess": "Öffentliches Profil erkannt! Synchronisiere...",
     "checkVisibilityStillPrivate": "Ihr Profil ist noch privat. „Spieldetails“ sollte auf „Jeder“ stehen.",
     "wishlistAccessDenied": "Zugriff auf die Wunschliste verweigert (privates Profil).",
-    "searchMyGamesPlaceholder": "In meinen Spielen suchen...",
-    "searchSteamPlaceholder": "Steam-Spiel suchen...",
-    "searchWishlistPlaceholder": "In meiner Wunschliste suchen...",
     "sortAZ": "A-Z",
     "topPlayed": "Meistgespielt",
     "wishlistEmptyText": "Ihre Wunschliste ist nicht sichtbar. Prüfen Sie, ob „Spieldetails“ auf „Jeder“ steht.",
@@ -174,14 +170,18 @@
     "wishlistProfilePublicHint": "Wunschliste konnte nicht geladen werden. Stellen Sie sicher, dass Ihr Steam-Profil öffentlich ist."
   },
   "search": {
-    "hint": "Mindestens 2 Zeichen eingeben",
     "loading": "Suche läuft...",
     "placeholderFollowed": "In gefolgten Spielen suchen...",
-    "title": "Spiel suchen"
+    "unifiedPlaceholder": "Spiel suchen..."
   },
   "emptyStates": {
     "noResultsText": "Andere Suchbegriffe versuchen",
     "noResultsTitle": "Keine Ergebnisse"
+  },
+  "unifiedResults": {
+    "sectionMyGames": "In meinen Spielen",
+    "sectionWishlist": "In meiner Wunschliste",
+    "sectionStore": "Im Steam-Store"
   },
   "contact": {
     "directTitle": "Direkter Kontakt",

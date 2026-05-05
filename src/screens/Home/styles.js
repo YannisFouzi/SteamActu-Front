@@ -135,6 +135,7 @@ export default StyleSheet.create({
   sortOptionsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
+    paddingTop: 12,
     paddingBottom: 12,
   },
   sortOptionButton: {

@@ -1,20 +1,22 @@
 import React, {useEffect} from 'react';
 import {createMaterialTopTabNavigator} from '@react-navigation/material-top-tabs';
 import {useTranslation} from 'react-i18next';
-import {StyleSheet} from 'react-native';
+import {StyleSheet, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
+import GlobalSearchBar from '../components/GlobalSearchBar';
 import {COLORS} from '../constants';
 import {useAppContext} from '../context/AppContext';
 import {useWishlist} from '../hooks/useWishlist';
 import MyGamesScreen from '../screens/MyGamesScreen';
-import SearchGamesScreen from '../screens/SearchGamesScreen';
+import UnifiedSearchView from '../screens/UnifiedSearchView';
 import WishlistScreen from '../screens/WishlistScreen';
 
 const Tab = createMaterialTopTabNavigator();
 
 const FollowTabs = () => {
   const {t} = useTranslation();
-  const {steamId, registerNotificationSyncHandler} = useAppContext();
+  const {steamId, registerNotificationSyncHandler, searchQuery} =
+    useAppContext();
 
   const {
     wishlist,
@@ -51,38 +53,45 @@ const FollowTabs = () => {
     loading,
     refreshing,
     handleRefresh,
-    filterWishlist,
     updateWishlistFollowState,
     maybeRefreshWishlist,
   };
 
+  const isSearching = (searchQuery || '').trim().length > 0;
+
   return (
     <SafeAreaView style={localStyles.safeArea} edges={['top']}>
-      <Tab.Navigator
-        screenOptions={{
-          lazy: true,
-          tabBarIndicatorStyle: {backgroundColor: COLORS.STEAM_BLUE},
-          tabBarActiveTintColor: COLORS.WHITE,
-          tabBarInactiveTintColor: COLORS.STEAM_TEXT_GRAY,
-          tabBarStyle: {
-            backgroundColor: COLORS.STEAM_NAVY,
-            borderBottomColor: COLORS.STEAM_BORDER,
-          },
-        }}>
-        <Tab.Screen
-          name="MesJeux"
-          component={MyGamesScreen}
-          options={{title: t('nav.myGames')}}
-        />
-        <Tab.Screen name="Wishlist" options={{title: t('nav.wishlist')}}>
-          {() => <WishlistScreen {...wishlistProps} />}
-        </Tab.Screen>
-        <Tab.Screen
-          name="Rechercher"
-          component={SearchGamesScreen}
-          options={{title: t('nav.search')}}
-        />
-      </Tab.Navigator>
+      <GlobalSearchBar />
+      {isSearching ? (
+        <View style={localStyles.unifiedContainer}>
+          <UnifiedSearchView
+            wishlist={wishlist}
+            filterWishlist={filterWishlist}
+            onWishlistFollowToggle={updateWishlistFollowState}
+          />
+        </View>
+      ) : (
+        <Tab.Navigator
+          screenOptions={{
+            lazy: true,
+            tabBarIndicatorStyle: {backgroundColor: COLORS.STEAM_BLUE},
+            tabBarActiveTintColor: COLORS.WHITE,
+            tabBarInactiveTintColor: COLORS.STEAM_TEXT_GRAY,
+            tabBarStyle: {
+              backgroundColor: COLORS.STEAM_NAVY,
+              borderBottomColor: COLORS.STEAM_BORDER,
+            },
+          }}>
+          <Tab.Screen
+            name="MesJeux"
+            component={MyGamesScreen}
+            options={{title: t('nav.myGames')}}
+          />
+          <Tab.Screen name="Wishlist" options={{title: t('nav.wishlist')}}>
+            {() => <WishlistScreen {...wishlistProps} />}
+          </Tab.Screen>
+        </Tab.Navigator>
+      )}
     </SafeAreaView>
   );
 };
@@ -91,6 +100,9 @@ const localStyles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: COLORS.STEAM_NAVY,
+  },
+  unifiedContainer: {
+    flex: 1,
   },
 });
 

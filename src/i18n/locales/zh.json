@@ -33,7 +33,6 @@
     "myGames": "我的游戏",
     "news": "资讯",
     "privacyPolicy": "隐私政策",
-    "search": "搜索",
     "settings": "设置",
     "termsOfService": "服务条款",
     "wishlist": "愿望单"
@@ -159,9 +158,6 @@
     "checkVisibilitySuccess": "检测到公开资料！正在同步...",
     "checkVisibilityStillPrivate": "资料仍为私密，请确认「游戏详情」为「公开」。",
     "wishlistAccessDenied": "无法访问愿望单（资料为私密）。",
-    "searchMyGamesPlaceholder": "在我的游戏中搜索...",
-    "searchSteamPlaceholder": "搜索 Steam 游戏...",
-    "searchWishlistPlaceholder": "在愿望单中搜索...",
     "sortAZ": "A-Z",
     "topPlayed": "游戏时间最长",
     "wishlistEmptyText": "看不到愿望单。请在 Steam 隐私设置中将「游戏详情」设为「公开」。",
@@ -174,14 +170,18 @@
     "wishlistProfilePublicHint": "无法加载愿望单，请确认 Steam 资料为公开。"
   },
   "search": {
-    "hint": "至少输入 2 个字符",
     "loading": "搜索中...",
     "placeholderFollowed": "在已关注游戏中搜索...",
-    "title": "搜索游戏"
+    "unifiedPlaceholder": "搜索游戏..."
   },
   "emptyStates": {
     "noResultsText": "试试其他关键词",
     "noResultsTitle": "无结果"
+  },
+  "unifiedResults": {
+    "sectionMyGames": "在我的游戏中",
+    "sectionWishlist": "在愿望单中",
+    "sectionStore": "在 Steam 商店"
   },
   "contact": {
     "directTitle": "直接联系",

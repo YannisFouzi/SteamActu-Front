@@ -10,8 +10,6 @@ import {steamService} from '../services/api';
 import {showDialog} from '../hooks/hooksLogger';
 import {getGameImageFallback, getGameImageUrl} from '../utils/steamHelpers';
 import EmptyStateMessage from './Home/components/EmptyStateMessage';
-import NoResultsPlaceholder from './Home/components/NoResultsPlaceholder';
-import SearchInput from './Home/components/SearchInput';
 import SortOptions from './Home/components/SortOptions';
 import styles from './Home/styles';
 
@@ -22,13 +20,11 @@ const WishlistScreen = ({
   loading,
   refreshing,
   handleRefresh,
-  filterWishlist,
   updateWishlistFollowState,
   maybeRefreshWishlist,
 }) => {
   const {t} = useTranslation();
   const {steamId} = useAppContext();
-  const [wishlistSearchQuery, setWishlistSearchQuery] = useState('');
   const [wishlistSortBy, setWishlistSortBy] = useState('recent');
   const [checking, setChecking] = useState(false);
   const listRef = useRef(null);
@@ -55,23 +51,20 @@ const WishlistScreen = ({
     }
   }, [wishlistSortBy]);
 
-  const getSortedWishlist = useCallback(() => {
-    const filtered = wishlistSearchQuery
-      ? filterWishlist(wishlistSearchQuery)
-      : wishlist;
-
-    if (wishlistSortBy === 'recent') {
-      return [...filtered].sort((a, b) => b.date_added - a.date_added);
+  const sortedWishlist = useMemo(() => {
+    if (!Array.isArray(wishlist)) {
+      return [];
     }
-
+    if (wishlistSortBy === 'recent') {
+      return [...wishlist].sort((a, b) => b.date_added - a.date_added);
+    }
     if (wishlistSortBy === 'alphabetical') {
-      return [...filtered].sort((a, b) =>
+      return [...wishlist].sort((a, b) =>
         a.name.toLowerCase().localeCompare(b.name.toLowerCase()),
       );
     }
-
-    return filtered;
-  }, [filterWishlist, wishlist, wishlistSearchQuery, wishlistSortBy]);
+    return wishlist;
+  }, [wishlist, wishlistSortBy]);
 
   const checkVisibility = useCallback(async () => {
     if (!steamId || checking) {
@@ -109,12 +102,8 @@ const WishlistScreen = ({
     }
   }, [checking, handleRefresh, steamId, t]);
 
-  const wishlistEmptyComponent = useMemo(() => {
-    if (wishlistSearchQuery !== '') {
-      return <NoResultsPlaceholder styles={styles} />;
-    }
-
-    return (
+  const wishlistEmptyComponent = useMemo(
+    () => (
       <EmptyStateMessage
         styles={styles}
         iconName="lock-closed-outline"
@@ -126,8 +115,9 @@ const WishlistScreen = ({
         onSecondaryAction={checkVisibility}
         secondaryActionLoading={checking}
       />
-    );
-  }, [checkVisibility, checking, t, wishlistSearchQuery]);
+    ),
+    [checkVisibility, checking, t],
+  );
 
   const renderWishlistItem = useCallback(
     ({item}) => {
@@ -168,12 +158,6 @@ const WishlistScreen = ({
 
   return (
     <View style={styles.container}>
-      <SearchInput
-        value={wishlistSearchQuery}
-        onChangeText={setWishlistSearchQuery}
-        placeholder={t('games.searchWishlistPlaceholder')}
-      />
-
       <SortOptions
         options={sortOptions}
         selectedValue={wishlistSortBy}
@@ -185,7 +169,7 @@ const WishlistScreen = ({
       ) : (
         <FlatList
           ref={listRef}
-          data={getSortedWishlist()}
+          data={sortedWishlist}
           renderItem={renderWishlistItem}
           keyExtractor={(item, index) =>
             item.appid ? item.appid.toString() : `wishlist-${index}`

@@ -33,7 +33,6 @@
     "myGames": "My games",
     "news": "News",
     "privacyPolicy": "Privacy policy",
-    "search": "Search",
     "settings": "Settings",
     "termsOfService": "Terms of service",
     "wishlist": "Wishlist"
@@ -159,9 +158,6 @@
     "checkVisibilitySuccess": "Public profile detected! Syncing...",
     "checkVisibilityStillPrivate": "Your profile is still private. Check that \"Game Details\" is set to \"Everyone\".",
     "wishlistAccessDenied": "Access to the wishlist was denied (private profile).",
-    "searchMyGamesPlaceholder": "Search in my games...",
-    "searchSteamPlaceholder": "Search for a Steam game...",
-    "searchWishlistPlaceholder": "Search in my wishlist...",
     "sortAZ": "A-Z",
     "topPlayed": "Most played",
     "wishlistEmptyText": "Your wishlist is not visible. Check that \"Game Details\" is set to \"Everyone\" in your Steam privacy settings.",
@@ -174,14 +170,18 @@
     "wishlistProfilePublicHint": "Unable to load your wishlist. Make sure your Steam profile is public."
   },
   "search": {
-    "hint": "Type at least 2 characters to start",
     "loading": "Searching...",
     "placeholderFollowed": "Search in followed games...",
-    "title": "Search for a game"
+    "unifiedPlaceholder": "Search a game..."
   },
   "emptyStates": {
     "noResultsText": "Try different keywords",
     "noResultsTitle": "No results"
+  },
+  "unifiedResults": {
+    "sectionMyGames": "In my games",
+    "sectionWishlist": "In my wishlist",
+    "sectionStore": "On the Steam store"
   },
   "contact": {
     "directTitle": "Direct contact",

@@ -5,9 +5,12 @@ import {
   getPlaytimeRecentValue,
 } from '../../utils';
 
-export const useGamesFiltering = games => {
+/**
+ * Filtre + trie la liste des jeux en fonction de la query de recherche
+ * globale (passee en parametre) et de la sortOption locale.
+ */
+export const useGamesFiltering = (games, searchQuery = '') => {
   const [filteredGames, setFilteredGames] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [sortOption, setSortOption] = useState('lastTwoWeeks');
 
   const filterAndSortGames = useCallback(() => {
@@ -99,8 +102,6 @@ export const useGamesFiltering = games => {
 
   return {
     filteredGames,
-    searchQuery,
-    setSearchQuery,
     sortOption,
     setSortOption,
     filterAndSortGames,

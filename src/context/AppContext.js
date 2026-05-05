@@ -24,6 +24,7 @@ import { useAppNotificationsBridge } from './app/useAppNotificationsBridge';
 import { useFollowedGamesActions } from './app/useFollowedGamesActions';
 import { useGamesFiltering } from './app/useGamesFiltering';
 import { useGamesLibraryController } from './app/useGamesLibraryController';
+import { useGlobalSearch } from './app/useGlobalSearch';
 import { useNotificationSyncBus } from './app/useNotificationSyncBus';
 import { useUserSettingsController } from './app/useUserSettingsController';
 
@@ -81,14 +82,14 @@ export const AppProvider = ({children, navigation = null}) => {
     pendingFollowsRef,
   });
 
+  const {searchQuery, setSearchQuery, clearSearchQuery} = useGlobalSearch();
+
   const {
     filteredGames,
-    searchQuery,
-    setSearchQuery,
     sortOption,
     setSortOption,
     filterAndSortGames,
-  } = useGamesFiltering(games);
+  } = useGamesFiltering(games, searchQuery);
 
   const {
     applyNotificationUnfollowCommit,
@@ -168,7 +169,7 @@ export const AppProvider = ({children, navigation = null}) => {
       resetUserSettingsState();
       applySignedOutSession();
       setWishlistVersion(null);
-      setSearchQuery('');
+      clearSearchQuery();
       await setSortOption('default');
 
       if (!navigation) {
@@ -192,7 +193,7 @@ export const AppProvider = ({children, navigation = null}) => {
     navigation,
     resetUserSettingsState,
     resetGamesLibraryState,
-    setSearchQuery,
+    clearSearchQuery,
     setSortOption,
     steamId,
   ]);

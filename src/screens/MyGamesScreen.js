@@ -5,7 +5,6 @@ import {useTranslation} from 'react-i18next';
 import LoadingContainer from '../components/LoadingContainer';
 import {useAppContext} from '../context/AppContext';
 import GamesList from './Home/components/GamesList';
-import SearchBar from './Home/components/SearchBar';
 import SortOptions from './Home/components/SortOptions';
 import styles from './Home/styles';
 
@@ -48,7 +47,6 @@ const MyGamesScreen = () => {
 
   return (
     <View style={styles.container}>
-      <SearchBar />
       <SortOptions
         options={sortOptions}
         selectedValue={sortOption}

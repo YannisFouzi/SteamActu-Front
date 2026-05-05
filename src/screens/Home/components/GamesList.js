@@ -9,13 +9,12 @@ import {getGameAppId} from '../../../utils';
 import styles from '../styles';
 import EmptyStateMessage from './EmptyStateMessage';
 import GameItemAlt from './GameItemAlt';
-import NoResultsPlaceholder from './NoResultsPlaceholder';
 
 const STEAM_PRIVACY_URL = 'https://steamcommunity.com/my/edit/settings';
 
 const GamesList = React.memo(({listRef}) => {
   const {t} = useTranslation();
-  const {filteredGames, refreshing, handleRefresh, searchQuery, sortOption, steamId, loadData} =
+  const {filteredGames, refreshing, handleRefresh, sortOption, steamId, loadData} =
     useAppContext();
   const [checking, setChecking] = useState(false);
 
@@ -60,9 +59,7 @@ const GamesList = React.memo(({listRef}) => {
   }, [checking, loadData, steamId, t]);
 
   const renderEmptyList = () =>
-    searchQuery && searchQuery.trim() !== '' ? (
-      <NoResultsPlaceholder styles={styles} />
-    ) : sortOption === 'recentsPlus' ? (
+    sortOption === 'recentsPlus' ? (
       <EmptyStateMessage
         styles={styles}
         iconName="time-outline"

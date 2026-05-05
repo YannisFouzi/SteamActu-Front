@@ -110,8 +110,8 @@ const steamService = {
   getUserWishlist: (steamId, config = {}) =>
     api.get(`/steam/wishlist/${steamId}`, config),
   getProfile: steamId => api.get(`/steam/profile/${steamId}`),
-  searchGames: (query, limit = 5) =>
-    api.get('/steam/search', {params: {q: query, limit}}),
+  searchGames: (query, limit = 5, config = {}) =>
+    api.get('/steam/search', {params: {q: query, limit}, ...config}),
   fetchStatus: (steamId, config = {}) =>
     api.get(`/steam/status/${steamId}`, config),
   checkVisibility: steamId =>

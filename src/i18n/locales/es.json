@@ -33,7 +33,6 @@
     "myGames": "Mis juegos",
     "news": "Noticias",
     "privacyPolicy": "Privacidad",
-    "search": "Buscar",
     "settings": "Ajustes",
     "termsOfService": "Términos del servicio",
     "wishlist": "Lista de deseos"
@@ -159,9 +158,6 @@
     "checkVisibilitySuccess": "¡Perfil público detectado! Sincronizando...",
     "checkVisibilityStillPrivate": "Tu perfil sigue siendo privado. «Detalles del juego» debe estar en «Todos».",
     "wishlistAccessDenied": "Acceso a la lista de deseos denegado (perfil privado).",
-    "searchMyGamesPlaceholder": "Buscar en mis juegos...",
-    "searchSteamPlaceholder": "Buscar un juego de Steam...",
-    "searchWishlistPlaceholder": "Buscar en mi lista de deseos...",
     "sortAZ": "A-Z",
     "topPlayed": "Más jugados",
     "wishlistEmptyText": "Tu lista de deseos no es visible. Comprueba que «Detalles del juego» esté en «Todos».",
@@ -174,14 +170,18 @@
     "wishlistProfilePublicHint": "No se pudo cargar la lista de deseos. Asegúrate de que tu perfil de Steam sea público."
   },
   "search": {
-    "hint": "Escribe al menos 2 caracteres",
     "loading": "Buscando...",
     "placeholderFollowed": "Buscar en juegos seguidos...",
-    "title": "Buscar un juego"
+    "unifiedPlaceholder": "Buscar un juego..."
   },
   "emptyStates": {
     "noResultsText": "Prueba otras palabras clave",
     "noResultsTitle": "Sin resultados"
+  },
+  "unifiedResults": {
+    "sectionMyGames": "En mis juegos",
+    "sectionWishlist": "En mi lista de deseos",
+    "sectionStore": "En la tienda de Steam"
   },
   "contact": {
     "directTitle": "Contacto directo",
