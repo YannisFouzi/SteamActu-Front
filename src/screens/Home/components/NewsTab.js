@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useFocusEffect} from '@react-navigation/native';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 import FollowToggle from '../../../components/FollowToggle';
@@ -21,6 +21,7 @@ import {
   showErrorMessage,
   showInfoMessage,
 } from '../../../hooks/hooksLogger';
+import {useAppContext} from '../../../context/AppContext';
 import {formatRelativeDate} from '../../../utils';
 import styles from '../styles';
 import EmptyStateMessage from './EmptyStateMessage';
@@ -79,8 +80,15 @@ const NewsTab = ({
   onMarkFeedSeen,
 }) => {
   const {t, i18n} = useTranslation();
+  const navigation = useNavigation();
+  const {user} = useAppContext();
   const activeNewsState = newsState?.news || null;
   const hasNewsItems = (activeNewsState?.items?.length || 0) > 0;
+  const hasLoadedUser = Boolean(user);
+  const followedAppIds = Array.isArray(user?.followedGames)
+    ? user.followedGames
+    : [];
+  const hasFollowedGames = followedAppIds.length > 0;
   const lastSeenAt = activeNewsState?.lastSeenAt ?? null;
   const shouldShowInitialLoader =
     !activeNewsState?.initialized ||
@@ -149,6 +157,16 @@ const NewsTab = ({
     [t],
   );
 
+  const navigateToFollowGame = useCallback(() => {
+    const parentNavigation = navigation.getParent?.();
+    if (parentNavigation) {
+      parentNavigation.navigate('SuivreUnJeu');
+      return;
+    }
+
+    navigation.navigate('SuivreUnJeu');
+  }, [navigation]);
+
   const renderEmptyNewsList = useMemo(() => {
     if (!steamId) {
       return () => (
@@ -162,6 +180,19 @@ const NewsTab = ({
       );
     }
 
+    if (hasLoadedUser && !hasFollowedGames) {
+      return () => (
+        <EmptyStateMessage
+          styles={styles}
+          iconName="newspaper-outline"
+          title={t('news.noFollowedGamesTitle')}
+          text={t('news.noFollowedGamesText')}
+          actionText={t('news.noFollowedGamesAction')}
+          onAction={navigateToFollowGame}
+        />
+      );
+    }
+
     return () => (
       <EmptyStateMessage
         styles={styles}
@@ -170,7 +201,7 @@ const NewsTab = ({
         text={t('news.noRecentNewsText')}
       />
     );
-  }, [steamId, t]);
+  }, [hasFollowedGames, hasLoadedUser, navigateToFollowGame, steamId, t]);
 
   const renderNewsItem = useCallback(
     ({item}) => {

@@ -24,7 +24,7 @@ const WishlistScreen = ({
   maybeRefreshWishlist,
 }) => {
   const {t} = useTranslation();
-  const {steamId} = useAppContext();
+  const {steamId, loadData, updateVisibilityHint} = useAppContext();
   const [wishlistSortBy, setWishlistSortBy] = useState('recent');
   const [checking, setChecking] = useState(false);
   const listRef = useRef(null);
@@ -73,19 +73,34 @@ const WishlistScreen = ({
 
     setChecking(true);
     try {
-      const response = await steamService.checkVisibility(steamId);
+      const response = await steamService.checkWishlistVisibility(steamId);
       if (response.data?.visible) {
+        const gamesAlsoVisible = response.data?.gamesVisible === true;
+        updateVisibilityHint({
+          gameDetailsVisible: true,
+          gamesVisible: gamesAlsoVisible,
+          playtimeVisible: response.data?.playtimeVisible === true,
+        });
         showDialog({
           title: t('common.success'),
           message: t('games.checkVisibilityWishlistSuccess'),
           tone: 'success',
-          buttons: [{text: 'OK'}],
+          buttons: [
+            {
+              text: 'OK',
+              onPress: () => {
+                handleRefresh();
+                if (gamesAlsoVisible && typeof loadData === 'function') {
+                  loadData(true, 'checkWishlistVisibility');
+                }
+              },
+            },
+          ],
         });
-        handleRefresh();
       } else {
         showDialog({
           title: t('common.info'),
-          message: t('games.checkVisibilityStillPrivate'),
+          message: t('games.checkVisibilityWishlistStillPrivate'),
           tone: 'warning',
           buttons: [{text: 'OK'}],
         });
@@ -93,14 +108,14 @@ const WishlistScreen = ({
     } catch (error) {
       showDialog({
         title: t('common.info'),
-        message: t('games.checkVisibilityStillPrivate'),
+        message: t('games.checkVisibilityWishlistStillPrivate'),
         tone: 'warning',
         buttons: [{text: 'OK'}],
       });
     } finally {
       setChecking(false);
     }
-  }, [checking, handleRefresh, steamId, t]);
+  }, [checking, handleRefresh, loadData, steamId, t, updateVisibilityHint]);
 
   const wishlistEmptyComponent = useMemo(
     () => (
@@ -108,7 +123,7 @@ const WishlistScreen = ({
         styles={styles}
         iconName="lock-closed-outline"
         title={t('games.wishlistEmptyTitle')}
-        text={t('games.wishlistEmptyText')}
+        instructions={[t('games.privacyGameDetailsStep')]}
         actionText={t('games.wishlistEmptyPrivacyAction')}
         onAction={() => Linking.openURL(STEAM_PRIVACY_URL)}
         secondaryActionText={t('games.checkVisibilityAction')}
@@ -156,6 +171,21 @@ const WishlistScreen = ({
     }
   }, [handleRefresh]);
 
+  const hasWishlist = Array.isArray(wishlist) && wishlist.length > 0;
+  const showLockedState = !loading && !hasWishlist;
+
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.container}>
+        <LoadingContainer text={t('games.wishlistLoading')} />
+      </View>
+    );
+  }
+
+  if (showLockedState) {
+    return <View style={styles.container}>{wishlistEmptyComponent}</View>;
+  }
+
   return (
     <View style={styles.container}>
       <SortOptions
@@ -163,30 +193,24 @@ const WishlistScreen = ({
         selectedValue={wishlistSortBy}
         onSelect={setWishlistSortBy}
       />
-
-      {loading && !refreshing ? (
-        <LoadingContainer text={t('games.wishlistLoading')} />
-      ) : (
-        <FlatList
-          ref={listRef}
-          data={sortedWishlist}
-          renderItem={renderWishlistItem}
-          keyExtractor={(item, index) =>
-            item.appid ? item.appid.toString() : `wishlist-${index}`
-          }
-          contentContainerStyle={styles.wishlistList}
-          keyboardShouldPersistTaps="handled"
-          ListEmptyComponent={wishlistEmptyComponent}
-          refreshControl={
-            <RefreshControl
-              refreshing={Boolean(refreshing)}
-              onRefresh={onRefresh}
-              tintColor={COLORS.STEAM_BLUE}
-              colors={[COLORS.STEAM_BLUE]}
-            />
-          }
-        />
-      )}
+      <FlatList
+        ref={listRef}
+        data={sortedWishlist}
+        renderItem={renderWishlistItem}
+        keyExtractor={(item, index) =>
+          item.appid ? item.appid.toString() : `wishlist-${index}`
+        }
+        contentContainerStyle={styles.wishlistList}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl
+            refreshing={Boolean(refreshing)}
+            onRefresh={onRefresh}
+            tintColor={COLORS.STEAM_BLUE}
+            colors={[COLORS.STEAM_BLUE]}
+          />
+        }
+      />
     </View>
   );
 };

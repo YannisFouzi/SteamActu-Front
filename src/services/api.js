@@ -116,6 +116,8 @@ const steamService = {
     api.get(`/steam/status/${steamId}`, config),
   checkVisibility: steamId =>
     api.post(`/steam/check-visibility/${steamId}`),
+  checkWishlistVisibility: steamId =>
+    api.post(`/steam/check-wishlist-visibility/${steamId}`),
 };
 
 const authApi = axios.create({

@@ -34,6 +34,7 @@ export const useGamesFiltering = (games, searchQuery = '') => {
         filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case 'mostPlayed':
+        filtered = filtered.filter(game => getPlaytimeForeverValue(game) > 0);
         filtered.sort(
           (a, b) => getPlaytimeForeverValue(b) - getPlaytimeForeverValue(a),
         );

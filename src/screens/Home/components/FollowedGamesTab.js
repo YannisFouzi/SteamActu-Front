@@ -97,6 +97,16 @@ const FollowedGamesTab = React.memo(({styles}) => {
     [t],
   );
 
+  const navigateToFollowGame = useCallback(() => {
+    const parentNavigation = navigation.getParent?.();
+    if (parentNavigation) {
+      parentNavigation.navigate('SuivreUnJeu');
+      return;
+    }
+
+    navigation.navigate('SuivreUnJeu');
+  }, [navigation]);
+
   const sortedFollowedGames = useMemo(() => {
     const list = Array.isArray(followedGames) ? followedGames.slice() : [];
 
@@ -179,7 +189,8 @@ const FollowedGamesTab = React.memo(({styles}) => {
           iconName="notifications-off-outline"
           title={t('games.followedEmptyTitle')}
           text={t('games.followedEmptyText')}
-          subtext={t('games.followedEmptySubtext')}
+          actionText={t('games.followedEmptyAction')}
+          onAction={navigateToFollowGame}
         />
       );
     }

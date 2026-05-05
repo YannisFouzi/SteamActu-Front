@@ -3,6 +3,7 @@ import React, {
     createContext,
     useCallback,
     useContext,
+    useEffect,
     useMemo,
     useRef,
     useState,
@@ -42,6 +43,19 @@ export const AppProvider = ({children, navigation = null}) => {
   const [user, setUser] = useState(null);
   const [steamProfile, setSteamProfile] = useState(null);
   const [wishlistVersion, setWishlistVersion] = useState(null);
+  const [visibilityHint, setVisibilityHint] = useState(null);
+
+  const updateVisibilityHint = useCallback(partial => {
+    if (!partial) {
+      setVisibilityHint(null);
+      return;
+    }
+    setVisibilityHint(prev => ({...(prev || {}), ...partial}));
+  }, []);
+
+  useEffect(() => {
+    setVisibilityHint(null);
+  }, [steamId]);
 
   const onLogoutRef = useRef(null);
   const pendingFollowsRef = useRef(new Set());
@@ -266,6 +280,8 @@ export const AppProvider = ({children, navigation = null}) => {
       isFollowPending,
       maybeRefreshGames,
       registerNotificationSyncHandler,
+      visibilityHint,
+      updateVisibilityHint,
     }),
     [
       filterAndSortGames,
@@ -307,6 +323,8 @@ export const AppProvider = ({children, navigation = null}) => {
       user,
       wishlistVersion,
       wishlistFollowMode,
+      visibilityHint,
+      updateVisibilityHint,
     ],
   );
 

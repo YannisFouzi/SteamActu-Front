@@ -1,84 +1,94 @@
-import React, {useCallback, useState} from 'react';
-import {FlatList, Linking, RefreshControl} from 'react-native';
+import React from 'react';
+import {FlatList, RefreshControl} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import {COLORS} from '../../../constants';
 import {useAppContext} from '../../../context/AppContext';
-import {steamService} from '../../../services/api';
-import {showDialog} from '../../../hooks/hooksLogger';
-import {getGameAppId} from '../../../utils';
+import {
+  getGameAppId,
+  getLastPlayedValue,
+  getPlaytimeForeverValue,
+  getPlaytimeRecentValue,
+} from '../../../utils';
 import styles from '../styles';
 import EmptyStateMessage from './EmptyStateMessage';
 import GameItemAlt from './GameItemAlt';
-
-const STEAM_PRIVACY_URL = 'https://steamcommunity.com/my/edit/settings';
+import NoResultsPlaceholder from './NoResultsPlaceholder';
 
 const GamesList = React.memo(({listRef}) => {
   const {t} = useTranslation();
-  const {filteredGames, refreshing, handleRefresh, sortOption, steamId, loadData} =
-    useAppContext();
-  const [checking, setChecking] = useState(false);
+  const {
+    filteredGames,
+    games,
+    refreshing,
+    handleRefresh,
+    sortOption,
+    searchQuery,
+  } = useAppContext();
 
-  const openSteamPrivacy = useCallback(() => {
-    Linking.openURL(STEAM_PRIVACY_URL);
-  }, []);
-
-  const checkVisibility = useCallback(async () => {
-    if (!steamId || checking) {
-      return;
-    }
-
-    setChecking(true);
-    try {
-      const response = await steamService.checkVisibility(steamId);
-      if (response.data?.visible) {
-        showDialog({
-          title: t('common.success'),
-          message: t('games.checkVisibilitySuccess'),
-          tone: 'success',
-          buttons: [{text: 'OK'}],
-        });
-        loadData(true, 'checkVisibility');
-      } else {
-        showDialog({
-          title: t('common.info'),
-          message: t('games.checkVisibilityStillPrivate'),
-          tone: 'warning',
-          buttons: [{text: 'OK'}],
-        });
-      }
-    } catch (error) {
-      showDialog({
-        title: t('common.info'),
-        message: t('games.checkVisibilityStillPrivate'),
-        tone: 'warning',
-        buttons: [{text: 'OK'}],
-      });
-    } finally {
-      setChecking(false);
-    }
-  }, [checking, loadData, steamId, t]);
-
-  const renderEmptyList = () =>
-    sortOption === 'recentsPlus' ? (
-      <EmptyStateMessage
-        styles={styles}
-        iconName="time-outline"
-        title={t('games.recentsPlusEmptyTitle')}
-        text={t('games.recentsPlusEmptyText')}
-      />
-    ) : (
-      <EmptyStateMessage
-        styles={styles}
-        iconName="lock-closed-outline"
-        title={t('games.libraryEmptyTitle')}
-        text={t('games.libraryEmptyText')}
-        actionText={t('games.libraryEmptyPrivacyAction')}
-        onAction={openSteamPrivacy}
-        secondaryActionText={t('games.checkVisibilityAction')}
-        onSecondaryAction={checkVisibility}
-        secondaryActionLoading={checking}
-      />
+  const hasLibraryGames = Array.isArray(games) && games.length > 0;
+  const hasSearchQuery =
+    typeof searchQuery === 'string' && searchQuery.trim().length > 0;
+  const hasTotalPlaytime =
+    hasLibraryGames && games.some(game => getPlaytimeForeverValue(game) > 0);
+  const hasPlaytimeData =
+    hasLibraryGames &&
+    games.some(
+      game =>
+        game?.hasPlaytimeData === true ||
+        getPlaytimeForeverValue(game) > 0 ||
+        getPlaytimeRecentValue(game) > 0 ||
+        getLastPlayedValue(game) > 0,
     );
+
+  const renderPlaytimePrivateEmpty = () => (
+    <EmptyStateMessage
+      styles={styles}
+      iconName="time-outline"
+      title={t('games.playtimePrivateTitle')}
+      text={t('games.playtimePrivateShortText')}
+      instructions={[t('games.privacyPlaytimeStep')]}
+    />
+  );
+
+  const renderEmptyList = () => {
+    if (hasSearchQuery) {
+      return <NoResultsPlaceholder styles={styles} />;
+    }
+
+    if (sortOption === 'lastTwoWeeks' || sortOption === 'recentsPlus') {
+      if (!hasPlaytimeData) {
+        return renderPlaytimePrivateEmpty();
+      }
+
+      return (
+        <EmptyStateMessage
+          styles={styles}
+          iconName="time-outline"
+          title={t('games.lastTwoWeeksEmptyTitle')}
+          text={t('games.lastTwoWeeksEmptyText')}
+        />
+      );
+    }
+
+    if (sortOption === 'mostPlayed') {
+      if (!hasPlaytimeData) {
+        return renderPlaytimePrivateEmpty();
+      }
+
+      if (!hasTotalPlaytime) {
+        return (
+          <EmptyStateMessage
+            styles={styles}
+            iconName="time-outline"
+            title={t('games.noPlaytimeTitle')}
+            text={t('games.noPlaytimeText')}
+          />
+        );
+      }
+    }
+
+    return null;
+  };
 
   return (
     <FlatList
