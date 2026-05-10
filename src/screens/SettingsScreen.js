@@ -273,7 +273,7 @@ const SettingsScreen = () => {
         />
       </SettingsGroup>
 
-      <SettingsGroup>
+      <SettingsGroup title={t('settings.feedbackSectionTitle')}>
         <SettingsFeedbackForm steamId={steamId} />
       </SettingsGroup>
 
@@ -296,7 +296,7 @@ const SettingsScreen = () => {
           android_ripple={{color: 'rgba(192, 57, 43, 0.08)'}}>
           <Ionicons name="log-out-outline" size={20} color={COLORS.ERROR} style={styles.actionIcon} />
           <Text style={styles.destructiveText}>
-            {loggingOut ? t('auth.loggingIn') : t('auth.logout')}
+            {loggingOut ? t('auth.loggingOut') : t('auth.logout')}
           </Text>
         </Pressable>
         <Pressable
