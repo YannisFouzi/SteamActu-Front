@@ -19,6 +19,21 @@ export default StyleSheet.create({
   actionIcon: {
     marginRight: SPACING.md,
   },
+  adminHeaderButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 34,
+    paddingHorizontal: SPACING.md,
+    marginRight: SPACING.sm,
+    borderRadius: 8,
+    backgroundColor: COLORS.STEAM_BLUE,
+  },
+  adminHeaderButtonText: {
+    color: COLORS.STEAM_DARK_BLUE,
+    fontSize: 13,
+    fontWeight: '800',
+    marginLeft: SPACING.xs,
+  },
   destructiveText: {
     color: COLORS.ERROR,
     fontSize: 15,

@@ -211,6 +211,23 @@
     "linkUnavailableMessage": "Не удалось открыть ссылку.",
     "website": "Сайт"
   },
+  "feedback": {
+    "emailInvalid": "Введите действительный email.",
+    "emailPlaceholder": "Ваш email",
+    "messagePlaceholder": "Опишите проблему или предложение...",
+    "messageTooShort": "Добавьте минимум 5 символов.",
+    "send": "Отправить",
+    "sendErrorMessage": "Не удалось отправить сообщение сейчас.",
+    "sendErrorTitle": "Отправка невозможна",
+    "sending": "Отправка...",
+    "sentMessage": "Спасибо, ваше сообщение отправлено.",
+    "sentTitle": "Сообщение отправлено",
+    "types": {
+      "bug": "Bug",
+      "feature": "Идея"
+    },
+    "validationTitle": "Сообщение неполное"
+  },
   "legal": {
     "documentFallbackNotice": "Юридический текст ниже показан на другом языке.",
     "frenchOnlyNotice": "Этот юридический текст доступен не на всех языках.",

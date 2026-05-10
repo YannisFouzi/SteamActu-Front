@@ -209,6 +209,23 @@
     "linkUnavailableMessage": "No se puede abrir este enlace ahora.",
     "website": "Sitio web"
   },
+  "feedback": {
+    "emailInvalid": "Introduce un correo valido.",
+    "emailPlaceholder": "Tu correo",
+    "messagePlaceholder": "Describe el problema o tu sugerencia...",
+    "messageTooShort": "Anade al menos 5 caracteres.",
+    "send": "Enviar",
+    "sendErrorMessage": "No se puede enviar tu mensaje ahora.",
+    "sendErrorTitle": "Envio imposible",
+    "sending": "Enviando...",
+    "sentMessage": "Gracias, tu mensaje se ha enviado.",
+    "sentTitle": "Mensaje enviado",
+    "types": {
+      "bug": "Bug",
+      "feature": "Idea"
+    },
+    "validationTitle": "Mensaje incompleto"
+  },
   "legal": {
     "documentFallbackNotice": "La información legal siguiente se muestra en inglés.",
     "frenchOnlyNotice": "Este aviso legal solo aplica si faltan textos en tu idioma.",

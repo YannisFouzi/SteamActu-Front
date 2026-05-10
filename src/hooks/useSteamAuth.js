@@ -19,6 +19,7 @@ import {
   waitForI18nInitialization,
 } from '../i18n';
 import {steamAuthService, userService} from '../services/api';
+import {persistMobileSession} from '../services/mobileSessionStore';
 import {
   debugError,
   debugLog,
@@ -44,12 +45,12 @@ const sleep = durationMs =>
 const isSteamAuthRedirect = url =>
   typeof url === 'string' && url.startsWith(steamAuthService.AUTH_REDIRECT_URL);
 
-const extractSteamIdFromUrl = url => {
+const extractQueryParamFromUrl = (url, name) => {
   if (typeof url !== 'string' || url.length === 0) {
     return '';
   }
 
-  const match = url.match(/[?&]steamId=([^&#]+)/i);
+  const match = url.match(new RegExp(`[?&]${name}=([^&#]+)`, 'i'));
   if (!match?.[1]) {
     return '';
   }
@@ -60,6 +61,10 @@ const extractSteamIdFromUrl = url => {
     return String(match[1]).trim();
   }
 };
+
+const extractSteamIdFromUrl = url => extractQueryParamFromUrl(url, 'steamId');
+const extractAuthTokenFromUrl = url =>
+  extractQueryParamFromUrl(url, 'authToken');
 
 const maskAuthUrl = url => {
   if (typeof url !== 'string' || url.length === 0) {
@@ -141,14 +146,28 @@ export const useSteamAuth = () => {
   // --- Ordre de declaration important : handleSteamIdReceived → pollAuthStatus → checkExistingUser → handleUrl → handleSteamLogin ---
 
   const handleSteamIdReceived = useCallback(
-    async steamId => {
+    async authResult => {
       try {
+        const steamId =
+          typeof authResult === 'string' ? authResult : authResult?.steamId;
+        const mobileSession =
+          authResult?.sessionToken || authResult?.sessionExpiresAt
+            ? {
+                token: authResult.sessionToken,
+                expiresAt: authResult.sessionExpiresAt,
+              }
+            : null;
+
         authAttemptActiveRef.current = false;
         authWentBackgroundRef.current = false;
         await AsyncStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
 
         debugLog('[LOGIN] Starting Steam authentication callback handling...');
         debugLog('[LOGIN] steamId:', maskSteamId(steamId));
+
+        if (!steamId) {
+          throw new Error('SteamID missing from authentication result');
+        }
 
         if (isMountedRef.current) {
           setLoading(true);
@@ -225,6 +244,7 @@ export const useSteamAuth = () => {
 
         debugLog('[LOGIN] Saving steamId to AsyncStorage');
         await AsyncStorage.setItem('steamId', steamId);
+        await persistMobileSession(mobileSession);
 
         let steamProfile = null;
         try {
@@ -278,7 +298,7 @@ export const useSteamAuth = () => {
           if (result.status === 'succeeded' && result.steamId) {
             logAuthTrace('Auth poll: succeeded');
             await AsyncStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-            await handleSteamIdReceived(result.steamId);
+            await handleSteamIdReceived(result);
             return true;
           }
 
@@ -346,6 +366,22 @@ export const useSteamAuth = () => {
         processingAuthRef.current = true;
 
         try {
+          const authToken = extractAuthTokenFromUrl(url);
+
+          if (authToken) {
+            const result = await steamAuthService.checkAuthStatus(authToken);
+
+            if (result.status === 'succeeded' && result.steamId) {
+              logAuthTrace('Steam auth callback confirmed by backend', {
+                steamId: maskSteamId(result.steamId),
+              });
+              await handleSteamIdReceived(result);
+              return true;
+            }
+
+            throw new Error(`Steam auth callback not confirmed: ${result.status}`);
+          }
+
           const steamId = extractSteamIdFromUrl(url);
           logAuthTrace('SteamID extracted from callback', {
             steamId: maskSteamId(steamId),

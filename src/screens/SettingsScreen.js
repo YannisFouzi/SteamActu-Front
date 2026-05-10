@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useLayoutEffect, useMemo, useState} from 'react';
 import {Pressable, ScrollView, Text, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
@@ -13,9 +13,10 @@ import {LANGUAGE_NATIVE_LABELS, SUPPORTED_LANGUAGES} from '../i18n';
 import {useAppLanguage} from '../hooks/useAppLanguage';
 import {debugError, showAlert, showDialog} from '../hooks/hooksLogger';
 import {useUserSettings} from '../hooks/useUserSettings';
-import {userService} from '../services/api';
+import {adminService, userService} from '../services/api';
 import {useTutorial} from '../tutorial/useTutorial';
 import ProfileHeader from './settings/components/ProfileHeader';
+import SettingsFeedbackForm from './settings/components/SettingsFeedbackForm';
 import SettingsGroup from './settings/components/SettingsGroup';
 import SettingsRow from './settings/components/SettingsRow';
 import styles from './settings/SettingsScreen.styles';
@@ -26,12 +27,35 @@ const SUPPORT_LINKS = [
   {labelKey: 'nav.privacyPolicy', icon: 'shield-checkmark-outline', route: 'PrivacyPolicy'},
 ];
 
+const EmptyHeaderButton = () => null;
+
+const AdminHeaderButton = () => {
+  const navigation = useNavigation();
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Admin"
+      hitSlop={8}
+      style={styles.adminHeaderButton}
+      onPress={() => navigation.navigate('AdminStats')}>
+      <Ionicons
+        name="shield-checkmark-outline"
+        size={16}
+        color={COLORS.STEAM_DARK_BLUE}
+      />
+      <Text style={styles.adminHeaderButtonText}>Admin</Text>
+    </Pressable>
+  );
+};
+
 const SettingsScreen = () => {
   const navigation = useNavigation();
   const {t} = useTranslation();
   const {handleLogout, steamId} = useAppContext();
   const [loggingOut, setLoggingOut] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [hasAdminAccess, setHasAdminAccess] = useState(false);
 
   const {
     loading: settingsLoading,
@@ -56,6 +80,41 @@ const SettingsScreen = () => {
     useAppLanguage(steamId);
 
   const isTutorialActive = tutorialState.status === 'running';
+
+  useEffect(() => {
+    let cancelled = false;
+
+    setHasAdminAccess(false);
+
+    if (!steamId) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    adminService
+      .getAccess()
+      .then(response => {
+        if (!cancelled) {
+          setHasAdminAccess(Boolean(response.data?.isAdmin));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setHasAdminAccess(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [steamId]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: hasAdminAccess ? AdminHeaderButton : EmptyHeaderButton,
+    });
+  }, [hasAdminAccess, navigation]);
 
   const followOptions = useMemo(
     () => [
@@ -150,6 +209,7 @@ const SettingsScreen = () => {
   return (
     <ScrollView
       style={styles.container}
+      keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.scrollContent}>
       <ProfileHeader />
 
@@ -211,6 +271,10 @@ const SettingsScreen = () => {
           }
           onPress={isTutorialActive ? completeTutorial : restartTutorial}
         />
+      </SettingsGroup>
+
+      <SettingsGroup>
+        <SettingsFeedbackForm steamId={steamId} />
       </SettingsGroup>
 
       <SettingsGroup title={t('settings.sectionSupportTitle')}>

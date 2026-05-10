@@ -209,6 +209,23 @@
     "linkUnavailableMessage": "Dieser Link kann gerade nicht geöffnet werden.",
     "website": "Website"
   },
+  "feedback": {
+    "emailInvalid": "Gib eine gueltige E-Mail-Adresse ein.",
+    "emailPlaceholder": "Deine E-Mail",
+    "messagePlaceholder": "Beschreibe das Problem oder deinen Vorschlag...",
+    "messageTooShort": "Fuege mindestens 5 Zeichen hinzu.",
+    "send": "Senden",
+    "sendErrorMessage": "Deine Nachricht kann derzeit nicht gesendet werden.",
+    "sendErrorTitle": "Senden fehlgeschlagen",
+    "sending": "Senden...",
+    "sentMessage": "Danke, dein Feedback wurde gesendet.",
+    "sentTitle": "Nachricht gesendet",
+    "types": {
+      "bug": "Bug",
+      "feature": "Idee"
+    },
+    "validationTitle": "Feedback unvollstaendig"
+  },
   "legal": {
     "documentFallbackNotice": "Die folgenden Rechtstexte werden auf Englisch angezeigt.",
     "frenchOnlyNotice": "Dieser rechtliche Hinweis gilt nur, wenn Inhalte in Ihrer Sprache fehlen.",

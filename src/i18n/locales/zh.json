@@ -209,6 +209,23 @@
     "linkUnavailableMessage": "暂时无法打开此链接。",
     "website": "网站"
   },
+  "feedback": {
+    "emailInvalid": "请输入有效的邮箱地址。",
+    "emailPlaceholder": "你的邮箱",
+    "messagePlaceholder": "描述问题或你的建议...",
+    "messageTooShort": "至少输入 5 个字符。",
+    "send": "发送",
+    "sendErrorMessage": "暂时无法发送你的消息。",
+    "sendErrorTitle": "发送失败",
+    "sending": "发送中...",
+    "sentMessage": "谢谢，你的反馈已发送。",
+    "sentTitle": "消息已发送",
+    "types": {
+      "bug": "Bug",
+      "feature": "想法"
+    },
+    "validationTitle": "反馈不完整"
+  },
   "legal": {
     "documentFallbackNotice": "以下法律条文以其他语言显示。",
     "frenchOnlyNotice": "部分语言可能未提供此法律文本。",

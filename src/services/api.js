@@ -2,6 +2,7 @@ import axios from 'axios';
 import {APP_CONFIG} from '../config/env';
 import {debugError} from '../hooks/hooksLogger';
 import {getCurrentAppLanguage, translate} from '../i18n';
+import {getMobileSession} from './mobileSessionStore';
 
 const API_CONFIG = {
   API_URL: APP_CONFIG.API_BASE_URL,
@@ -104,6 +105,10 @@ const newsService = {
   },
 };
 
+const supportFeedbackService = {
+  submit: payload => api.post('/feedback', payload, {timeout: 15000}),
+};
+
 const steamService = {
   getUserGames: (steamId, config = {}) =>
     api.get(`/steam/games/${steamId}`, config),
@@ -118,6 +123,41 @@ const steamService = {
     api.post(`/steam/check-visibility/${steamId}`),
   checkWishlistVisibility: steamId =>
     api.post(`/steam/check-wishlist-visibility/${steamId}`),
+};
+
+const adminService = {
+  getAccess: async () => {
+    const session = await getMobileSession();
+
+    if (!session?.token) {
+      const error = new Error(translate('errors.sessionExpiredMessage'));
+      error.status = 401;
+      throw error;
+    }
+
+    return api.get('/admin/access', {
+      headers: {
+        Authorization: `Bearer ${session.token}`,
+      },
+      timeout: 10000,
+    });
+  },
+  getStats: async () => {
+    const session = await getMobileSession();
+
+    if (!session?.token) {
+      const error = new Error(translate('errors.sessionExpiredMessage'));
+      error.status = 401;
+      throw error;
+    }
+
+    return api.get('/admin/stats', {
+      headers: {
+        Authorization: `Bearer ${session.token}`,
+      },
+      timeout: 15000,
+    });
+  },
 };
 
 const authApi = axios.create({
@@ -156,4 +196,11 @@ const steamAuthService = {
   },
 };
 
-export {newsService, steamAuthService, steamService, userService};
+export {
+  adminService,
+  newsService,
+  steamAuthService,
+  steamService,
+  supportFeedbackService,
+  userService,
+};

@@ -209,6 +209,23 @@
     "linkUnavailableMessage": "Unable to open this link right now.",
     "website": "Website"
   },
+  "feedback": {
+    "emailInvalid": "Enter a valid email address.",
+    "emailPlaceholder": "Your email",
+    "messagePlaceholder": "Describe the issue or your suggestion...",
+    "messageTooShort": "Add at least 5 characters.",
+    "send": "Send",
+    "sendErrorMessage": "Unable to send your message right now.",
+    "sendErrorTitle": "Send failed",
+    "sending": "Sending...",
+    "sentMessage": "Thanks, your feedback was sent.",
+    "sentTitle": "Message sent",
+    "types": {
+      "bug": "Bug",
+      "feature": "Idea"
+    },
+    "validationTitle": "Incomplete feedback"
+  },
   "legal": {
     "documentFallbackNotice": "The legal text below is shown in English.",
     "frenchOnlyNotice": "This legal content is currently available in French only.",

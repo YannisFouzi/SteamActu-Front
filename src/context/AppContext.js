@@ -17,6 +17,7 @@ import {
 import { useLastVerificationDate } from '../hooks/useAsyncStorage';
 import { useGameSync } from '../hooks/useGameSync';
 import { translate } from '../i18n';
+import { clearMobileSession } from '../services/mobileSessionStore';
 import { unregisterFCMToken } from '../services/notificationService';
 import { getUserScopedStorageKeys } from './app/libraryHelpers';
 import { useAppBootstrap } from './app/useAppBootstrap';
@@ -177,6 +178,7 @@ export const AppProvider = ({children, navigation = null}) => {
       ].filter(Boolean);
 
       await AsyncStorage.multiRemove(storageKeys);
+      await clearMobileSession();
       debugLog('[LOGOUT] AsyncStorage cleared', storageKeys);
 
       resetGamesLibraryState();

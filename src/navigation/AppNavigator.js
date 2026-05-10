@@ -57,6 +57,7 @@ const linking = {
             path: 'compte',
             screens: {
               Settings: 'settings',
+              AdminStats: 'admin',
               Contact: 'contact',
               TermsOfService: 'terms',
               PrivacyPolicy: 'privacy',

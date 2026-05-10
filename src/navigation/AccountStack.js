@@ -1,6 +1,7 @@
 import React from 'react';
 import {createStackNavigator} from '@react-navigation/stack';
 import {useTranslation} from 'react-i18next';
+import AdminStatsScreen from '../screens/AdminStatsScreen';
 import ContactScreen from '../screens/ContactScreen';
 import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -23,6 +24,11 @@ const AccountStack = () => {
         name="Contact"
         component={ContactScreen}
         options={{title: t('nav.contact')}}
+      />
+      <Stack.Screen
+        name="AdminStats"
+        component={AdminStatsScreen}
+        options={{title: 'Admin'}}
       />
       <Stack.Screen
         name="TermsOfService"

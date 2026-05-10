@@ -19,7 +19,7 @@ const SECTION_KEYS = {
 
 const STORE_MIN_LENGTH = 3;
 
-const UnifiedSearchView = ({wishlist, filterWishlist, onWishlistFollowToggle}) => {
+const UnifiedSearchView = ({filterWishlist, onWishlistFollowToggle}) => {
   const {t} = useTranslation();
   const {searchQuery, filteredGames} = useAppContext();
   const {results: storeResults, loading: storeLoading} =
@@ -34,7 +34,7 @@ const UnifiedSearchView = ({wishlist, filterWishlist, onWishlistFollowToggle}) =
       return [];
     }
     return filterWishlist(trimmed);
-  }, [filterWishlist, searchQuery, wishlist]);
+  }, [filterWishlist, searchQuery]);
 
   // Dedup par appId entre sections, priorite Mes jeux > Wishlist > Boutique.
   // Un meme jeu n'apparait qu'une seule fois, dans la section la plus haute ou il existe.
