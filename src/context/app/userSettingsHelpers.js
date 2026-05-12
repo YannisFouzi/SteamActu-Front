@@ -99,6 +99,21 @@ export const requiresNotifications = (
   Boolean(newsNotifications) ||
   shouldEnablePrompts(libraryFollowMode, wishlistFollowMode);
 
+export const buildNotificationSettingsPayload = snapshot => {
+  const resolvedSnapshot = resolveUserSettingsSnapshot(snapshot);
+
+  return {
+    newsNotifications: resolvedSnapshot.newsNotifications,
+    followPromptNotifications: shouldEnablePrompts(
+      resolvedSnapshot.libraryFollowMode,
+      resolvedSnapshot.wishlistFollowMode,
+    ),
+    libraryFollowMode: resolvedSnapshot.libraryFollowMode,
+    wishlistFollowMode: resolvedSnapshot.wishlistFollowMode,
+    confirmUnfollowGames: resolvedSnapshot.confirmUnfollowGames,
+  };
+};
+
 export const persistUserSettingsToStorage = async ({
   newsNotifications,
   libraryFollowMode,

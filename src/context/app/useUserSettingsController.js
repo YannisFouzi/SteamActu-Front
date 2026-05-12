@@ -4,10 +4,13 @@ import {Linking, Platform} from 'react-native';
 import {translate} from '../../i18n';
 import {userService} from '../../services/api';
 import {
-  registerFCMToken,
-  unregisterFCMToken,
-} from '../../services/notificationService';
-import {debugError, showAlert} from '../../hooks/hooksLogger';
+  getSettingsNotificationTokenAction,
+  hasQueuedUserSettingsSync,
+  queueUserSettingsSync,
+  syncQueuedUserSettings,
+} from '../../services/userSettingsSync';
+import {ensureNotificationPermission} from '../../services/notifications/presentation';
+import {debugError, debugLog, showAlert} from '../../hooks/hooksLogger';
 import {
   DEFAULT_USER_SETTINGS,
   FOLLOW_MODES,
@@ -81,6 +84,20 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
   const syncServerSettings = useCallback(
     async ({targetSteamId, localSnapshot, requestId}) => {
       try {
+        const hasPendingLocalSync = await hasQueuedUserSettingsSync(
+          targetSteamId,
+        );
+
+        if (hasPendingLocalSync) {
+          debugLog(
+            '[SETTINGS] Pending local settings sync found, keeping local values',
+          );
+          syncQueuedUserSettings({steamId: targetSteamId}).catch(error => {
+            debugError('[SETTINGS] queued settings sync failed:', error);
+          });
+          return;
+        }
+
         const response = await userService.getUser(targetSteamId);
         const resolvedServerSnapshot = resolveUserSettingsSnapshot(
           response?.data?.notificationSettings,
@@ -180,8 +197,8 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
 
   const ensureNotificationsPermission = useCallback(async () => {
     try {
-      const result = await registerFCMToken(steamId);
-      if (result?.success) {
+      const result = await ensureNotificationPermission();
+      if (result?.granted) {
         return true;
       }
 
@@ -226,10 +243,10 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
       );
       return false;
     }
-  }, [steamId]);
+  }, []);
 
   const persistSettings = useCallback(
-    async nextSnapshot => {
+    async (nextSnapshot, options = {}) => {
       if (!steamId) {
         debugError('[SETTINGS] Cannot persist settings without steamId');
         showAlert(
@@ -246,14 +263,12 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
         applySettingsSnapshot(nextSnapshot);
         await persistUserSettingsToStorage(nextSnapshot);
 
-        await userService.updateNotificationSettings(steamId, {
-          newsNotifications: nextSnapshot.newsNotifications,
-          followPromptNotifications:
-            nextSnapshot.libraryFollowMode === 'prompt' ||
-            nextSnapshot.wishlistFollowMode === 'prompt',
-          libraryFollowMode: nextSnapshot.libraryFollowMode,
-          wishlistFollowMode: nextSnapshot.wishlistFollowMode,
-          confirmUnfollowGames: nextSnapshot.confirmUnfollowGames,
+        await queueUserSettingsSync(steamId, nextSnapshot, {
+          notificationTokenAction: options.notificationTokenAction,
+        });
+
+        syncQueuedUserSettings({steamId}).catch(error => {
+          debugError('[SETTINGS] background settings sync failed', error);
         });
 
         return true;
@@ -291,6 +306,16 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
         nextSnapshot.libraryFollowMode,
         nextSnapshot.wishlistFollowMode,
       );
+      const previousSnapshot = {
+        newsNotifications,
+        libraryFollowMode,
+        wishlistFollowMode,
+        confirmUnfollowGames,
+      };
+      const notificationTokenAction = getSettingsNotificationTokenAction(
+        previousSnapshot,
+        nextSnapshot,
+      );
 
       if (!previousRequires && nextRequires) {
         const granted = await ensureNotificationsPermission();
@@ -299,13 +324,10 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
         }
       }
 
-      if (previousRequires && !nextRequires) {
-        await unregisterFCMToken(steamId);
-      }
-
-      return persistSettings(nextSnapshot);
+      return persistSettings(nextSnapshot, {notificationTokenAction});
     },
     [
+      confirmUnfollowGames,
       ensureNotificationsPermission,
       libraryFollowMode,
       newsNotifications,

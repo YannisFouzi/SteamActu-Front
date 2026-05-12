@@ -17,6 +17,12 @@ import {
 import { useLastVerificationDate } from '../hooks/useAsyncStorage';
 import { useGameSync } from '../hooks/useGameSync';
 import { translate } from '../i18n';
+import {
+  clearQueuedLanguagePreferenceSync,
+} from '../services/languagePreferenceSync';
+import {
+  clearQueuedUserSettingsSync,
+} from '../services/userSettingsSync';
 import { clearMobileSession } from '../services/mobileSessionStore';
 import { unregisterFCMToken } from '../services/notificationService';
 import { getUserScopedStorageKeys } from './app/libraryHelpers';
@@ -28,6 +34,7 @@ import { useGamesFiltering } from './app/useGamesFiltering';
 import { useGamesLibraryController } from './app/useGamesLibraryController';
 import { useGlobalSearch } from './app/useGlobalSearch';
 import { useNotificationSyncBus } from './app/useNotificationSyncBus';
+import { useOfflineSyncRuntime } from './app/useOfflineSyncRuntime';
 import { useUserSettingsController } from './app/useUserSettingsController';
 
 const AppContext = createContext();
@@ -178,6 +185,12 @@ export const AppProvider = ({children, navigation = null}) => {
       ].filter(Boolean);
 
       await AsyncStorage.multiRemove(storageKeys);
+      await clearQueuedLanguagePreferenceSync().catch(error => {
+        debugError('[LOGOUT] Failed to clear queued language sync:', error);
+      });
+      await clearQueuedUserSettingsSync().catch(error => {
+        debugError('[LOGOUT] Failed to clear queued settings sync:', error);
+      });
       await clearMobileSession();
       debugLog('[LOGOUT] AsyncStorage cleared', storageKeys);
 
@@ -215,6 +228,11 @@ export const AppProvider = ({children, navigation = null}) => {
   ]);
 
   onLogoutRef.current = handleLogout;
+
+  useOfflineSyncRuntime({
+    enabled: isAuthenticated,
+    scopeKey: steamId,
+  });
 
   useAppNotificationsBridge({
     steamId,

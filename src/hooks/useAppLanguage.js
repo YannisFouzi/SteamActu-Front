@@ -7,7 +7,10 @@ import {
   SUPPORTED_LANGUAGES,
 } from '../i18n';
 import {debugError, showAlert} from './hooksLogger';
-import {userService} from '../services/api';
+import {
+  queueLanguagePreferenceSync,
+  syncQueuedLanguagePreference,
+} from '../services/languagePreferenceSync';
 
 export const useAppLanguage = steamId => {
   const {t, i18n} = useTranslation();
@@ -30,20 +33,24 @@ export const useAppLanguage = steamId => {
         return true;
       }
 
-      const previousLanguage = getCurrentAppLanguage();
-
       try {
         setSavingLanguage(true);
         await changeAppLanguage(nextLanguage);
 
         if (steamId) {
-          await userService.updateLanguage(steamId, nextLanguage);
+          try {
+            await queueLanguagePreferenceSync(steamId, nextLanguage);
+            syncQueuedLanguagePreference({steamId}).catch(error => {
+              debugError('[i18n] background language sync failed', error);
+            });
+          } catch (syncError) {
+            debugError('[i18n] language sync queue failed', syncError);
+          }
         }
 
         return true;
       } catch (error) {
         debugError('[i18n] language update failed', error);
-        await changeAppLanguage(previousLanguage);
         showAlert(
           t('common.error'),
           t('settings.languageSaveError'),
