@@ -20,6 +20,8 @@ import { translate } from '../i18n';
 import {
   clearQueuedLanguagePreferenceSync,
 } from '../services/languagePreferenceSync';
+import { clearPendingFollowMutations } from '../services/followStateLocalStore';
+import { clearQueuedFollowSync } from '../services/followSync';
 import {
   clearQueuedUserSettingsSync,
 } from '../services/userSettingsSync';
@@ -66,7 +68,6 @@ export const AppProvider = ({children, navigation = null}) => {
   }, [steamId]);
 
   const onLogoutRef = useRef(null);
-  const pendingFollowsRef = useRef(new Set());
 
   const {
     authStatus,
@@ -101,7 +102,6 @@ export const AppProvider = ({children, navigation = null}) => {
     updateVerificationDate,
     syncRecentActiveGames,
     onLogoutRef,
-    pendingFollowsRef,
   });
 
   const {searchQuery, setSearchQuery, clearSearchQuery} = useGlobalSearch();
@@ -129,6 +129,7 @@ export const AppProvider = ({children, navigation = null}) => {
       persistGamesCache,
       persistGamesVersion,
       markSkipNextGamesRefresh,
+      notifyNotificationSync,
     });
 
   const {
@@ -191,6 +192,12 @@ export const AppProvider = ({children, navigation = null}) => {
       await clearQueuedUserSettingsSync().catch(error => {
         debugError('[LOGOUT] Failed to clear queued settings sync:', error);
       });
+      await clearQueuedFollowSync(currentSteamId).catch(error => {
+        debugError('[LOGOUT] Failed to clear queued follow sync:', error);
+      });
+      await clearPendingFollowMutations(currentSteamId).catch(error => {
+        debugError('[LOGOUT] Failed to clear pending follow mutations:', error);
+      });
       await clearMobileSession();
       debugLog('[LOGOUT] AsyncStorage cleared', storageKeys);
 
@@ -243,7 +250,6 @@ export const AppProvider = ({children, navigation = null}) => {
     notifyNotificationSync,
     onNotificationUnfollowCommitted: applyNotificationUnfollowCommit,
     setUser,
-    pendingFollowsRef,
   });
 
   useAppLifecycleRefresh({

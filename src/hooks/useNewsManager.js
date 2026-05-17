@@ -2,6 +2,10 @@ import {useCallback, useEffect, useRef, useState} from 'react';
 import {useTranslation} from 'react-i18next';
 import {normalizeLanguage, translate} from '../i18n';
 import {newsService, userService} from '../services/api';
+import {
+  applyPendingFollowOverlayToNewsFeed,
+  readPendingFollowMutations,
+} from '../services/followStateLocalStore';
 import {debugError, debugLog, maskSteamId} from './hooksLogger';
 import {
   buildStorageKey,
@@ -153,9 +157,15 @@ export const useNewsManager = steamId => {
           return [];
         }
 
-        const items = Array.isArray(response.data?.items)
+        const serverItems = Array.isArray(response.data?.items)
           ? response.data.items
           : [];
+        const pendingFollowMutations =
+          await readPendingFollowMutations(steamId);
+        const items = applyPendingFollowOverlayToNewsFeed(
+          serverItems,
+          pendingFollowMutations,
+        );
         const favoriteStats = response.data?.metadata?.favoriteStats || {};
         const serverLastSeenAt =
           typeof response.data?.metadata?.lastNewsFeedSeenAt === 'number'
@@ -277,15 +287,21 @@ export const useNewsManager = steamId => {
         }
 
         if (Array.isArray(cachedNews) && cachedNews.length > 0) {
+          const pendingFollowMutations =
+            await readPendingFollowMutations(steamId);
+          const cachedNewsWithOverlay = applyPendingFollowOverlayToNewsFeed(
+            cachedNews,
+            pendingFollowMutations,
+          );
           safeSetNewsState({
             news: buildInitialNewsState({
-              items: cachedNews,
+              items: cachedNewsWithOverlay,
               initialized: true,
               lastSeenAt: hydratedLastSeen,
             }),
           });
           debugLog('[NEWS] Hydrate depuis le cache', {
-            count: cachedNews.length,
+            count: cachedNewsWithOverlay.length,
             language,
             lastSeenAt: hydratedLastSeen,
           });

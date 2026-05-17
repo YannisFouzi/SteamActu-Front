@@ -23,7 +23,6 @@ export const useAppNotificationsBridge = ({
   notifyNotificationSync,
   onNotificationUnfollowCommitted,
   setUser,
-  pendingFollowsRef,
 }) => {
   useEffect(() => {
     let cleanupNotifications;
@@ -80,9 +79,6 @@ export const useAppNotificationsBridge = ({
       const appIdString = String(appId);
       const trimmedName = String(gameName || '').trim();
 
-      if (pendingFollowsRef?.current) {
-        pendingFollowsRef.current.add(appIdString);
-      }
       setUser(prevUser => {
         if (!prevUser) {
           return prevUser;
@@ -196,7 +192,6 @@ export const useAppNotificationsBridge = ({
     newsNotifications,
     notifyNotificationSync,
     onNotificationUnfollowCommitted,
-    pendingFollowsRef,
     setUser,
     settingsStatus,
     steamId,

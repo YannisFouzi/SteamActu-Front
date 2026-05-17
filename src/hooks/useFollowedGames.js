@@ -1,5 +1,9 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {userService} from '../services/api';
+import {
+  applyPendingFollowOverlayToFollowedGames,
+  readPendingFollowMutations,
+} from '../services/followStateLocalStore';
 import {debugError, debugLog} from './hooksLogger';
 import {buildStorageKey, getJSONItem, setJSONItem} from './useAsyncStorage';
 
@@ -106,16 +110,23 @@ export const useFollowedGames = ({
         const remoteGames = Array.isArray(response?.data?.followedGames)
           ? response.data.followedGames
           : [];
+        const pendingFollowMutations =
+          await readPendingFollowMutations(steamId);
+        const remoteGamesWithOverlay =
+          applyPendingFollowOverlayToFollowedGames(
+            remoteGames,
+            pendingFollowMutations,
+          );
 
-        safeSetValue(setFollowedGames, remoteGames);
+        safeSetValue(setFollowedGames, remoteGamesWithOverlay);
         followedGamesHydratedFromCacheRef.current = true;
-        await persistFollowedGamesCache(remoteGames, steamId);
+        await persistFollowedGamesCache(remoteGamesWithOverlay, steamId);
 
         debugLog('[FOLLOWED_GAMES] Jeux suivis charges', {
-          count: remoteGames.length,
+          count: remoteGamesWithOverlay.length,
         });
 
-        return remoteGames;
+        return remoteGamesWithOverlay;
       } catch (err) {
         debugError('[FOLLOWED_GAMES] Erreur recuperation:', err);
         return [];
@@ -186,9 +197,14 @@ export const useFollowedGames = ({
         }
 
         if (Array.isArray(cachedGames)) {
-          const reconciledGames = reconcileFollowedGames(
-            cachedGames,
-            normalizedFollowedIds,
+          const pendingFollowMutations =
+            await readPendingFollowMutations(steamId);
+          const reconciledGames = applyPendingFollowOverlayToFollowedGames(
+            reconcileFollowedGames(
+              cachedGames,
+              normalizedFollowedIds,
+            ),
+            pendingFollowMutations,
           );
           followedGamesHydratedFromCacheRef.current = true;
           safeSetValue(setFollowedGames, reconciledGames);

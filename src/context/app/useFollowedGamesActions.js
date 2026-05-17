@@ -1,8 +1,26 @@
-import {useCallback, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {showAlert, debugError, debugLog} from '../../hooks/hooksLogger';
 import {translate} from '../../i18n';
-import {userService} from '../../services/api';
+import {
+  applyLocalFollowState,
+  buildFollowGameRef,
+  normalizeFollowAppId,
+  readPendingFollowMutations,
+} from '../../services/followStateLocalStore';
+import {
+  queueFollowSync,
+  reconcilePendingFollowMutations,
+  syncQueuedFollow,
+} from '../../services/followSync';
 import {getGameAppId, getGameIconUrl} from '../../utils';
+
+const buildPendingFollowStates = pendingMutations =>
+  Object.values(pendingMutations || {}).reduce((acc, mutation) => {
+    if (mutation?.appId) {
+      acc[String(mutation.appId)] = Boolean(mutation.targetIsFollowed);
+    }
+    return acc;
+  }, {});
 
 export const useFollowedGamesActions = ({
   steamId,
@@ -13,75 +31,128 @@ export const useFollowedGamesActions = ({
   persistGamesCache,
   persistGamesVersion,
   markSkipNextGamesRefresh,
+  notifyNotificationSync,
 }) => {
   const followRequestsInFlightRef = useRef(new Set());
-  const [optimisticFollowStates, setOptimisticFollowStates] = useState({});
+  const [pendingFollowStates, setPendingFollowStates] = useState({});
 
-  const setOptimisticFollowState = useCallback((appId, isFollowed) => {
-    if (!appId) {
+  const refreshPendingFollowStates = useCallback(async () => {
+    if (!steamId) {
+      setPendingFollowStates({});
+      return {};
+    }
+
+    const pendingMutations = await readPendingFollowMutations(steamId);
+    setPendingFollowStates(buildPendingFollowStates(pendingMutations));
+    return pendingMutations;
+  }, [steamId]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const hydrateAndReconcile = async () => {
+      if (!steamId) {
+        if (isActive) {
+          setPendingFollowStates({});
+        }
+        return;
+      }
+
+      try {
+        const requeuedCount = await reconcilePendingFollowMutations({steamId});
+        if (requeuedCount > 0) {
+          debugLog('[FOLLOW] Reconciliation re-enqueued orphan mutations', {
+            count: requeuedCount,
+          });
+          syncQueuedFollow({steamId, reason: 'boot-reconcile'}).catch(error => {
+            debugError('[FOLLOW] Reconciliation sync failed:', error);
+          });
+        }
+      } catch (error) {
+        debugError('[FOLLOW] Reconciliation failed:', error);
+      }
+
+      try {
+        const pendingMutations = await readPendingFollowMutations(steamId);
+        if (isActive) {
+          setPendingFollowStates(buildPendingFollowStates(pendingMutations));
+        }
+      } catch (error) {
+        debugError('[FOLLOW] Pending follow hydration failed:', error);
+      }
+    };
+
+    hydrateAndReconcile();
+
+    return () => {
+      isActive = false;
+    };
+  }, [steamId]);
+
+  const setPendingFollowState = useCallback((appId, isFollowed) => {
+    const normalizedAppId = normalizeFollowAppId(appId);
+    if (!normalizedAppId) {
       return;
     }
 
-    setOptimisticFollowStates(previousState => ({
+    setPendingFollowStates(previousState => ({
       ...previousState,
-      [String(appId)]: Boolean(isFollowed),
+      [normalizedAppId]: Boolean(isFollowed),
     }));
   }, []);
 
-  const clearOptimisticFollowState = useCallback(appId => {
-    if (!appId) {
+  const clearPendingFollowState = useCallback(appId => {
+    const normalizedAppId = normalizeFollowAppId(appId);
+    if (!normalizedAppId) {
       return;
     }
 
-    setOptimisticFollowStates(previousState => {
-      const appIdString = String(appId);
-      if (!Object.prototype.hasOwnProperty.call(previousState, appIdString)) {
+    setPendingFollowStates(previousState => {
+      if (!Object.prototype.hasOwnProperty.call(previousState, normalizedAppId)) {
         return previousState;
       }
 
       const nextState = {...previousState};
-      delete nextState[appIdString];
+      delete nextState[normalizedAppId];
       return nextState;
     });
   }, []);
 
   const isGameFollowed = useCallback(
     appId => {
-      if (!appId) {
+      const appIdString = normalizeFollowAppId(appId);
+      if (!appIdString) {
         return false;
       }
 
-      const appIdString = String(appId);
-
       if (
         Object.prototype.hasOwnProperty.call(
-          optimisticFollowStates,
+          pendingFollowStates,
           appIdString,
         )
       ) {
-        return optimisticFollowStates[appIdString];
+        return pendingFollowStates[appIdString];
       }
 
       return !!user?.followedGames && user.followedGames.includes(appIdString);
     },
-    [optimisticFollowStates, user],
+    [pendingFollowStates, user],
   );
 
   const getResolvedFollowState = useCallback(
     (appId, fallbackValue) => {
-      if (!appId) {
+      const appIdString = normalizeFollowAppId(appId);
+      if (!appIdString) {
         return typeof fallbackValue === 'boolean' ? fallbackValue : false;
       }
 
-      const appIdString = String(appId);
-
       if (
         Object.prototype.hasOwnProperty.call(
-          optimisticFollowStates,
+          pendingFollowStates,
           appIdString,
         )
       ) {
-        return optimisticFollowStates[appIdString];
+        return pendingFollowStates[appIdString];
       }
 
       if (Array.isArray(user?.followedGames)) {
@@ -90,27 +161,28 @@ export const useFollowedGamesActions = ({
 
       return typeof fallbackValue === 'boolean' ? fallbackValue : false;
     },
-    [optimisticFollowStates, user],
+    [pendingFollowStates, user],
   );
 
   const isFollowPending = useCallback(appId => {
-    if (!appId) {
+    const appIdString = normalizeFollowAppId(appId);
+    if (!appIdString) {
       return false;
     }
 
-    return followRequestsInFlightRef.current.has(String(appId));
+    return followRequestsInFlightRef.current.has(appIdString);
   }, []);
 
   const applyNotificationUnfollowCommit = useCallback(
     async ({appId, followedGames = null, gamesVersion = null} = {}) => {
-      if (!appId) {
+      const appIdString = normalizeFollowAppId(appId);
+      if (!appIdString) {
         return;
       }
 
-      const appIdString = String(appId);
       let nextGames = null;
 
-      clearOptimisticFollowState(appIdString);
+      clearPendingFollowState(appIdString);
 
       setGames(currentGames => {
         if (!Array.isArray(currentGames) || currentGames.length === 0) {
@@ -163,7 +235,7 @@ export const useFollowedGamesActions = ({
       }
     },
     [
-      clearOptimisticFollowState,
+      clearPendingFollowState,
       markSkipNextGamesRefresh,
       persistGamesCache,
       persistGamesVersion,
@@ -173,184 +245,143 @@ export const useFollowedGamesActions = ({
     ],
   );
 
-  const commitFollowApiResponse = useCallback(
-    async (updatedUser, appIdString, isUnfollow) => {
-      if (updatedUser?.gamesVersion) {
-        await persistGamesVersion(updatedUser.gamesVersion, steamId, {
-          reason: isUnfollow ? 'unfollowGame' : 'followGame',
-        });
-      }
-
-      if (updatedUser) {
-        setUser(updatedUser);
-        return;
-      }
-
-      setUser(prevUser => {
-        if (!prevUser) {
-          return prevUser;
-        }
-
-        const current = Array.isArray(prevUser.followedGames)
-          ? prevUser.followedGames.slice()
-          : [];
-
-        if (isUnfollow) {
-          return {
-            ...prevUser,
-            followedGames: current.filter(id => id !== appIdString),
-          };
-        }
-
-        if (current.includes(appIdString)) {
-          return {...prevUser, followedGames: current};
-        }
-
-        return {
-          ...prevUser,
-          followedGames: [...current, appIdString],
-        };
-      });
-    },
-    [persistGamesVersion, setUser, steamId],
-  );
-
   const handleFollowGame = useCallback(
     async (gameMeta = {}) => {
+      const appIdString = normalizeFollowAppId(gameMeta?.appId ?? gameMeta?.appid);
+
       try {
         if (!steamId) {
           debugError('SteamID non trouve');
           return false;
         }
 
-        const rawAppId = gameMeta?.appId ?? gameMeta?.appid;
-        if (!rawAppId) {
+        if (!appIdString) {
           debugError('AppID non trouve');
           return false;
         }
 
-        const appIdString = rawAppId.toString();
-
         if (followRequestsInFlightRef.current.has(appIdString)) {
-          debugLog('[FOLLOW] Action ignoree, requete deja en cours:', appIdString);
+          debugLog('[FOLLOW] Action ignoree, mutation locale deja en cours:', appIdString);
           return false;
         }
 
-        const isFollowed =
+        const isFollowed = getResolvedFollowState(
+          appIdString,
           typeof gameMeta.isFollowed === 'boolean'
             ? gameMeta.isFollowed
-            : isGameFollowed(appIdString);
-
-        followRequestsInFlightRef.current.add(appIdString);
-        setOptimisticFollowState(appIdString, !isFollowed);
-
+            : undefined,
+        );
+        const targetIsFollowed = !isFollowed;
         const game = games.find(g => getGameAppId(g) === appIdString);
-
         const gameName =
           gameMeta.name ||
           game?.name ||
           translate('common.gameWithId', {appId: appIdString});
-        const gameIcon =
+        const gameImage =
           gameMeta.imageUrl ||
           gameMeta.logoUrl ||
+          game?.header_image ||
+          game?.capsule ||
           (game ? getGameIconUrl(appIdString, game.img_icon_url) : '') ||
           '';
+        const gameRef = buildFollowGameRef({
+          ...(game || {}),
+          ...gameMeta,
+          appId: appIdString,
+          name: gameName,
+          imageUrl: gameImage,
+        });
 
-        const previousGames = games;
-        let localToggleApplied = false;
-        let optimisticGames = games;
+        followRequestsInFlightRef.current.add(appIdString);
+        setPendingFollowState(appIdString, targetIsFollowed);
 
-        if (game) {
-          const updatedGames = games.map(g => {
-            if (getGameAppId(g) === appIdString) {
-              localToggleApplied = true;
-              return {...g, isFollowed: !isFollowed};
-            }
-            return g;
+        const mutationUpdatedAt = Date.now();
+
+        const enqueued = await queueFollowSync({
+          steamId,
+          appId: appIdString,
+          targetIsFollowed,
+          gameRef,
+          updatedAt: mutationUpdatedAt,
+        });
+
+        if (!enqueued) {
+          throw new Error('Failed to enqueue follow sync task');
+        }
+
+        const mutation = await applyLocalFollowState({
+          steamId,
+          appId: appIdString,
+          targetIsFollowed,
+          gameRef,
+          setUser,
+          setGames,
+          updatedAt: mutationUpdatedAt,
+        });
+
+        if (!mutation) {
+          throw new Error('Local follow mutation was not created');
+        }
+
+        syncQueuedFollow({
+          steamId,
+          reason: 'follow-toggle',
+        })
+          .catch(error => {
+            debugError('[FOLLOW] Sync follow differee apres mutation locale:', error);
+          })
+          .finally(() => {
+            refreshPendingFollowStates().catch(error => {
+              debugError('[FOLLOW] Pending follow refresh failed:', error);
+            });
           });
 
-          if (localToggleApplied) {
-            setGames(updatedGames);
-            optimisticGames = updatedGames;
-          }
+        if (
+          typeof notifyNotificationSync === 'function' &&
+          !targetIsFollowed
+        ) {
+          notifyNotificationSync('wishlist', appIdString);
+          notifyNotificationSync('followed', appIdString);
+          notifyNotificationSync('news', appIdString);
         }
 
-        try {
-          const apiResponse = isFollowed
-            ? await userService.unfollowGame(steamId, appIdString)
-            : await userService.followGame(
-                steamId,
-                appIdString,
-                gameName,
-                gameIcon,
-              );
+        debugLog(
+          targetIsFollowed
+            ? '[FOLLOW] Jeu suivi localement:'
+            : '[FOLLOW] Jeu retire localement des suivis:',
+          gameName,
+        );
 
-          await commitFollowApiResponse(
-            apiResponse?.data,
-            appIdString,
-            isFollowed,
-          );
-
-          debugLog(
-            isFollowed
-              ? '[FOLLOW] Jeu retire des suivis:'
-              : '[FOLLOW] Jeu suivi:',
-            gameName,
-          );
-
-          clearOptimisticFollowState(appIdString);
-
-          if (typeof markSkipNextGamesRefresh === 'function') {
-            markSkipNextGamesRefresh();
-          }
-
-          if (localToggleApplied) {
-            await persistGamesCache(optimisticGames, steamId);
-          }
-          return true;
-        } catch (apiError) {
-          debugError('Erreur API lors de la modification du suivi:', apiError);
-
-          if (localToggleApplied) {
-            setGames(previousGames);
-            await persistGamesCache(previousGames, steamId);
-          }
-
-          clearOptimisticFollowState(appIdString);
-
-          showAlert(
-            translate('common.error'),
-            translate('games.followUpdateError'),
-          );
-          return false;
+        if (typeof markSkipNextGamesRefresh === 'function') {
+          markSkipNextGamesRefresh();
         }
+
+        return true;
       } catch (error) {
-        debugError('Erreur lors de la modification du suivi:', error);
-        const failedAppId = gameMeta?.appId ?? gameMeta?.appid;
-        if (failedAppId) {
-          clearOptimisticFollowState(failedAppId);
-        }
+        debugError('Erreur lors de la modification locale du suivi:', error);
+        await refreshPendingFollowStates().catch(refreshError => {
+          debugError('[FOLLOW] Pending follow refresh failed:', refreshError);
+        });
         showAlert(
           translate('common.error'),
           translate('games.followUpdateUnexpectedError'),
         );
         return false;
       } finally {
-        const rawAppId = gameMeta?.appId ?? gameMeta?.appid;
-        if (rawAppId) {
-          followRequestsInFlightRef.current.delete(rawAppId.toString());
+        if (appIdString) {
+          followRequestsInFlightRef.current.delete(appIdString);
         }
       }
     },
     [
       games,
-      clearOptimisticFollowState,
-      commitFollowApiResponse,
-      isGameFollowed,
+      getResolvedFollowState,
       markSkipNextGamesRefresh,
-      persistGamesCache,
-      setOptimisticFollowState,
+      notifyNotificationSync,
+      refreshPendingFollowStates,
       setGames,
+      setPendingFollowState,
+      setUser,
       steamId,
     ],
   );

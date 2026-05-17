@@ -3,6 +3,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppContext } from '../context/AppContext';
 import { steamService } from '../services/api';
+import {
+  applyPendingFollowOverlayToWishlist,
+  readPendingFollowMutations,
+} from '../services/followStateLocalStore';
 import { debugError, debugLog, maskSteamId, showAlert } from './hooksLogger';
 import {
     buildStorageKey,
@@ -134,9 +138,18 @@ export const useWishlist = steamId => {
         }
 
         if (Array.isArray(cachedWishlist)) {
+          const pendingFollowMutations =
+            await readPendingFollowMutations(currentSteamId);
+          const cachedWishlistWithOverlay =
+            applyPendingFollowOverlayToWishlist(
+              cachedWishlist,
+              pendingFollowMutations,
+            );
           wishlistHydratedFromCacheRef.current = true;
-          safeSetState(setWishlist, cachedWishlist);
-          debugLog('[WISHLIST] cache_hit', {count: cachedWishlist.length});
+          safeSetState(setWishlist, cachedWishlistWithOverlay);
+          debugLog('[WISHLIST] cache_hit', {
+            count: cachedWishlistWithOverlay.length,
+          });
         } else {
           debugLog('[WISHLIST] cache_miss');
         }
@@ -224,15 +237,21 @@ export const useWishlist = steamId => {
           wishlistItems = response.data.response.items;
         }
 
+        const pendingFollowMutations = await readPendingFollowMutations(steamId);
+        const wishlistItemsWithOverlay = applyPendingFollowOverlayToWishlist(
+          wishlistItems,
+          pendingFollowMutations,
+        );
+
         if (!shouldProcess()) {
-          return wishlistItems;
+          return wishlistItemsWithOverlay;
         }
 
         debugLog('[WISHLIST] Wishlist chargée', {
-          count: wishlistItems.length,
+          count: wishlistItemsWithOverlay.length,
           origin,
         });
-        safeSetState(setWishlist, wishlistItems);
+        safeSetState(setWishlist, wishlistItemsWithOverlay);
         wishlistHydratedFromCacheRef.current = true;
 
         let serverWishlistVersion = expectedWishlistVersion || null;
@@ -268,9 +287,9 @@ export const useWishlist = steamId => {
           });
         }
 
-        await persistWishlistCache(wishlistItems, steamId);
+        await persistWishlistCache(wishlistItemsWithOverlay, steamId);
 
-        return wishlistItems;
+        return wishlistItemsWithOverlay;
       } catch (err) {
         if (
           err?.name === 'CanceledError' ||

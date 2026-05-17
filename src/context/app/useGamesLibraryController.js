@@ -5,6 +5,11 @@ import {debugError, debugLog, showInfoMessage} from '../../hooks/hooksLogger';
 import {translate} from '../../i18n';
 import {steamService} from '../../services/api';
 import {
+  applyPendingFollowOverlayToGames,
+  applyPendingFollowOverlayToUser,
+  readPendingFollowMutations,
+} from '../../services/followStateLocalStore';
+import {
   STATUS_DEBOUNCE_DELAY,
   getGamesCacheKey,
   getGamesVersionKey,
@@ -21,7 +26,6 @@ export const useGamesLibraryController = ({
   updateVerificationDate,
   syncRecentActiveGames,
   onLogoutRef,
-  pendingFollowsRef,
 }) => {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -141,6 +145,8 @@ export const useGamesLibraryController = ({
 
       const gamesCacheKey = getGamesCacheKey(savedSteamId);
       const gamesVersionKey = getGamesVersionKey(savedSteamId);
+      const pendingFollowMutations =
+        await readPendingFollowMutations(savedSteamId);
 
       if (!gamesHydratedFromCacheRef.current) {
         const [cachedGames, cachedVersion] = await Promise.all([
@@ -152,8 +158,12 @@ export const useGamesLibraryController = ({
           debugLog('[CACHE] cache_hit games', {
             count: cachedGames.length,
           });
+          const cachedGamesWithOverlay = applyPendingFollowOverlayToGames(
+            cachedGames,
+            pendingFollowMutations,
+          );
           gamesHydratedFromCacheRef.current = true;
-          setGames(cachedGames);
+          setGames(cachedGamesWithOverlay);
           if (cachedVersion) {
             setGamesVersion(cachedVersion);
           }
@@ -204,28 +214,16 @@ export const useGamesLibraryController = ({
           debugLog('[LOADDATA] Resultat userData ignore (requete obsolete)');
           return;
         }
-        const pending = pendingFollowsRef?.current;
-        if (pending && pending.size > 0) {
-          const serverFollowed = new Set(
-            (userData.followedGames || []).map(String),
-          );
-          const extras = [...pending].filter(id => !serverFollowed.has(id));
-          if (extras.length > 0) {
-            userData = {
-              ...userData,
-              followedGames: [...(userData.followedGames || []), ...extras],
-            };
-          }
-          for (const id of pending) {
-            if (serverFollowed.has(id)) {
-              pending.delete(id);
-            }
-          }
-        }
+        const latestUserPendingFollowMutations =
+          await readPendingFollowMutations(savedSteamId);
+        userData = applyPendingFollowOverlayToUser(
+          userData,
+          latestUserPendingFollowMutations,
+        );
         setUser(userData);
         debugLog('[LOADDATA] Utilisateur recupere');
 
-        const normalizedGames = await loadGamesLibrary(
+        const serverGames = await loadGamesLibrary(
           savedSteamId,
           requestConfig,
         );
@@ -233,6 +231,12 @@ export const useGamesLibraryController = ({
           debugLog('[LOADDATA] Resultat games ignore (requete obsolete)');
           return;
         }
+        const latestGamesPendingFollowMutations =
+          await readPendingFollowMutations(savedSteamId);
+        const normalizedGames = applyPendingFollowOverlayToGames(
+          serverGames,
+          latestGamesPendingFollowMutations,
+        );
 
         setGames(normalizedGames);
         gamesHydratedFromCacheRef.current = true;
@@ -310,7 +314,6 @@ export const useGamesLibraryController = ({
       finalizeLoadingState,
       games.length,
       onLogoutRef,
-      pendingFollowsRef,
       persistGamesCache,
       persistGamesVersion,
       setSteamId,
@@ -353,6 +356,13 @@ export const useGamesLibraryController = ({
         );
 
         if (addedGames.length > 0) {
+          const pendingFollowMutations =
+            await readPendingFollowMutations(steamId);
+          const nextGames = applyPendingFollowOverlayToGames(
+            newGames,
+            pendingFollowMutations,
+          );
+
           showInfoMessage(
             translate('games.newGamesDetectedTitle'),
             translate('games.newGamesDetectedMessage', {
@@ -360,9 +370,9 @@ export const useGamesLibraryController = ({
             }),
           );
 
-          setGames(newGames);
-          await persistGamesCache(newGames, steamId);
-          syncRecentActiveGames(newGames, steamId);
+          setGames(nextGames);
+          await persistGamesCache(nextGames, steamId);
+          syncRecentActiveGames(nextGames, steamId);
         }
       }
     } catch (error) {

@@ -3,12 +3,14 @@ import notifee from '@notifee/react-native';
 import {Platform} from 'react-native';
 import {debugError, showAlert} from '../../hooks/hooksLogger';
 import {translate} from '../../i18n';
-import {userService} from '../api';
-import {pushPendingFollowConfirm} from '../pendingFollowConfirmStore';
 import {
-  queueNotificationAction,
-  reconcileNotificationUnfollowCaches,
-} from './actionJournal';
+  applyLocalFollowState,
+  buildFollowGameRef,
+  normalizeFollowAppId,
+} from '../followStateLocalStore';
+import {queueFollowSync, syncQueuedFollow} from '../followSync';
+import {pushPendingFollowConfirm} from '../pendingFollowConfirmStore';
+import {queueNotificationAction} from './actionJournal';
 import {
   ACTION_OPEN_NEWS,
   ACTION_UNFOLLOW_GAME,
@@ -67,7 +69,7 @@ async function showUnfollowFailureNotification(notification, data) {
     });
   } catch (error) {
     logCriticalNotificationError(
-      '[FCM] Impossible de presenter le feedback d echec unfollow',
+      '[FCM] Impossible de presenter le feedback echec unfollow',
       error,
       {
         appId: data?.appId || null,
@@ -77,13 +79,20 @@ async function showUnfollowFailureNotification(notification, data) {
   }
 }
 
+const buildNotificationGameRef = (appId, data = {}) =>
+  buildFollowGameRef({
+    appId,
+    name: data?.gameName || data?.name || '',
+    imageUrl: data?.imageUrl || data?.logoUrl || '',
+  });
+
 export async function executeNotificationUnfollow({
   data,
   notification,
   onCommitted = null,
 }) {
   const steamId = data?.steamId;
-  const appId = data?.appId;
+  const appId = normalizeFollowAppId(data?.appId);
   const notificationId = notification?.id;
 
   if (!steamId || !isValidAppId(appId)) {
@@ -99,28 +108,41 @@ export async function executeNotificationUnfollow({
   }
 
   try {
-    const response = await userService.unfollowGame(steamId, appId);
-    const updatedUser = response?.data || null;
-    const normalizedAppId = String(appId);
-    const followedGames = Array.isArray(updatedUser?.followedGames)
-      ? updatedUser.followedGames.map(id => String(id))
-      : null;
-    const gamesVersion = updatedUser?.gamesVersion || null;
-
-    await reconcileNotificationUnfollowCaches({
+    const gameRef = buildNotificationGameRef(appId, data);
+    const mutation = await applyLocalFollowState({
       steamId,
-      appId: normalizedAppId,
-      gamesVersion,
+      appId,
+      targetIsFollowed: false,
+      gameRef,
+    });
+
+    if (!mutation) {
+      throw new Error('Unable to create local notification unfollow mutation');
+    }
+
+    await queueFollowSync({
+      steamId,
+      appId,
+      targetIsFollowed: false,
+      gameRef: mutation.gameRef,
+      updatedAt: mutation.updatedAt,
+    });
+
+    syncQueuedFollow({
+      steamId,
+      reason: 'notification-unfollow',
+    }).catch(error => {
+      debugError('[FCM] Synchronisation unfollow notification differee:', error);
     });
 
     let committedInMemory = false;
     if (typeof onCommitted === 'function') {
       try {
         await onCommitted({
-          appId: normalizedAppId,
-          followedGames,
-          gamesVersion,
-          updatedUser,
+          appId,
+          followedGames: null,
+          gamesVersion: null,
+          updatedUser: null,
         });
         committedInMemory = true;
       } catch (error) {
@@ -129,7 +151,7 @@ export async function executeNotificationUnfollow({
           error,
           {
             steamId,
-            appId: normalizedAppId,
+            appId,
           },
         );
       }
@@ -139,9 +161,9 @@ export async function executeNotificationUnfollow({
       await queueNotificationAction({
         kind: 'unfollow',
         steamId,
-        appId: normalizedAppId,
-        followedGames,
-        gamesVersion,
+        appId,
+        followedGames: null,
+        gamesVersion: null,
       });
     }
 
@@ -178,17 +200,14 @@ export async function executeFollowPromptAction({
   data,
   onFollowPromptConfirm,
 }) {
-  const appId = data?.appId;
+  const appId = normalizeFollowAppId(data?.appId);
   let resolvedSteamId = steamId;
 
   if (!resolvedSteamId) {
     try {
       resolvedSteamId = await AsyncStorage.getItem('steamId');
-      console.log('[FCM] steamId recupere depuis AsyncStorage:', resolvedSteamId ? 'OK' : 'null');
     } catch (_) {}
   }
-
-  console.log('[FCM] executeFollowPromptAction CALLED', JSON.stringify({ steamId: resolvedSteamId, appId, gameName: data?.gameName, type: data?.type }));
 
   if (!isValidAppId(appId)) {
     debugError('[FCM] Aucun appId trouve pour follow_prompt, action ignoree');
@@ -196,66 +215,50 @@ export async function executeFollowPromptAction({
   }
 
   if (!resolvedSteamId) {
-    debugError('[FCM] steamId manquant (ni parametre ni AsyncStorage)');
+    debugError('[FCM] steamId manquant pour follow_prompt');
     return;
   }
 
-  let followCommitted = false;
-
   try {
-    console.log(`[FCM] Appel POST /follow steamId=${resolvedSteamId} appId=${appId}`);
-    await userService.followGame(
-      resolvedSteamId,
+    const gameRef = buildNotificationGameRef(appId, data);
+    const mutation = await applyLocalFollowState({
+      steamId: resolvedSteamId,
       appId,
-      data.gameName || '',
-      data.imageUrl || '',
-    );
-    console.log(`[FCM] POST /follow SUCCESS pour appId=${appId}`);
-    followCommitted = true;
-  } catch (error) {
-    // Idempotence : en cold-boot via tap notif, le headless background event peut
-    // exécuter le POST une première fois, puis consumePendingInitialNotification
-    // rejoue à l'app mount. Le 2e POST renvoie 400 "déjà suivi" — sémantiquement,
-    // le résultat est le même, donc on continue vers les side-effects (nav, toast)
-    // au lieu d'afficher une fausse alerte d'erreur.
-    const status = error?.status || error?.response?.status;
-    const message =
-      error?.data?.message || error?.response?.data?.message || '';
-    const alreadyFollowed =
-      status === 400 && /d[eé]j[aà]\s+suivi/i.test(message);
+      targetIsFollowed: true,
+      gameRef,
+    });
 
-    if (alreadyFollowed) {
-      console.log(`[FCM] follow_prompt: jeu déjà suivi (idempotent), continue side-effects pour appId=${appId}`);
-      followCommitted = true;
-    } else {
-      debugError('[FCM] Erreur follow_prompt:', error);
-      showAlert(
-        translate('notifications.followUnavailableTitle'),
-        translate('notifications.followUnavailableMessage'),
-      );
-      return;
+    if (!mutation) {
+      throw new Error('Unable to create local follow prompt mutation');
     }
+
+    await queueFollowSync({
+      steamId: resolvedSteamId,
+      appId,
+      targetIsFollowed: true,
+      gameRef: mutation.gameRef,
+      updatedAt: mutation.updatedAt,
+    });
+
+    syncQueuedFollow({
+      steamId: resolvedSteamId,
+      reason: 'notification-follow-prompt',
+    }).catch(error => {
+      debugError('[FCM] Synchronisation follow_prompt differee:', error);
+    });
+  } catch (error) {
+    debugError('[FCM] Erreur follow_prompt:', error);
+    showAlert(
+      translate('notifications.followUnavailableTitle'),
+      translate('notifications.followUnavailableMessage'),
+    );
+    return;
   }
 
-  if (followCommitted) {
-    if (typeof onFollowPromptConfirm === 'function') {
-      // Contexte React dispo : optimistic update + sync via le callback.
-      // La navigation et le toast sont gérés indépendamment par le système
-      // `linking` de RN (cf. AppNavigator.js > linking.subscribe).
-      onFollowPromptConfirm(appId, data?.gameName || '');
-      console.log(`[FCM] onFollowPromptConfirm appelé pour appId=${appId}`);
-    } else {
-      // Headless (cold-boot via tap notif) : pas de callback React. On
-      // enqueue pour que useAppNotificationsBridge applique l'optimistic
-      // update au mount du React tree. La navigation est gérée par
-      // linking.getInitialURL au 1er render du NavigationContainer.
-      pushPendingFollowConfirm(appId, data?.gameName || '');
-      console.log(
-        `[FCM] follow_prompt enqueued for replay (appId=${appId}, gameName="${
-          data?.gameName || ''
-        }")`,
-      );
-    }
+  if (typeof onFollowPromptConfirm === 'function') {
+    onFollowPromptConfirm(appId, data?.gameName || '');
+  } else {
+    pushPendingFollowConfirm(appId, data?.gameName || '');
   }
 
   try {
