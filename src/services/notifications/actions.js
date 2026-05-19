@@ -109,24 +109,31 @@ export async function executeNotificationUnfollow({
 
   try {
     const gameRef = buildNotificationGameRef(appId, data);
+    const mutationUpdatedAt = Date.now();
+
+    const enqueued = await queueFollowSync({
+      steamId,
+      appId,
+      targetIsFollowed: false,
+      gameRef,
+      updatedAt: mutationUpdatedAt,
+    });
+
+    if (!enqueued) {
+      throw new Error('Failed to enqueue notification unfollow sync task');
+    }
+
     const mutation = await applyLocalFollowState({
       steamId,
       appId,
       targetIsFollowed: false,
       gameRef,
+      updatedAt: mutationUpdatedAt,
     });
 
     if (!mutation) {
       throw new Error('Unable to create local notification unfollow mutation');
     }
-
-    await queueFollowSync({
-      steamId,
-      appId,
-      targetIsFollowed: false,
-      gameRef: mutation.gameRef,
-      updatedAt: mutation.updatedAt,
-    });
 
     syncQueuedFollow({
       steamId,
@@ -221,24 +228,31 @@ export async function executeFollowPromptAction({
 
   try {
     const gameRef = buildNotificationGameRef(appId, data);
+    const mutationUpdatedAt = Date.now();
+
+    const enqueued = await queueFollowSync({
+      steamId: resolvedSteamId,
+      appId,
+      targetIsFollowed: true,
+      gameRef,
+      updatedAt: mutationUpdatedAt,
+    });
+
+    if (!enqueued) {
+      throw new Error('Failed to enqueue follow prompt sync task');
+    }
+
     const mutation = await applyLocalFollowState({
       steamId: resolvedSteamId,
       appId,
       targetIsFollowed: true,
       gameRef,
+      updatedAt: mutationUpdatedAt,
     });
 
     if (!mutation) {
       throw new Error('Unable to create local follow prompt mutation');
     }
-
-    await queueFollowSync({
-      steamId: resolvedSteamId,
-      appId,
-      targetIsFollowed: true,
-      gameRef: mutation.gameRef,
-      updatedAt: mutation.updatedAt,
-    });
 
     syncQueuedFollow({
       steamId: resolvedSteamId,
