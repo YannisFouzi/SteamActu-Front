@@ -21,9 +21,24 @@ const STORE_MIN_LENGTH = 3;
 
 const UnifiedSearchView = ({filterWishlist, onWishlistFollowToggle}) => {
   const {t} = useTranslation();
-  const {searchQuery, filteredGames} = useAppContext();
+  const {searchQuery, games} = useAppContext();
   const {results: storeResults, loading: storeLoading} =
     useStoreSearch(searchQuery);
+
+  // La recherche possede sa propre vue de la bibliotheque : on filtre la liste
+  // `games` complete par la query. On NE reutilise PAS `filteredGames` (onglet
+  // Mes Jeux) car celui-ci herite du tri (`lastTwoWeeks` / `mostPlayed`) qui
+  // ecarte les jeux non joues recemment — un jeu possede serait alors absent
+  // des resultats de recherche selon le tri actif.
+  const myGamesMatches = useMemo(() => {
+    const query = (searchQuery || '').trim().toLowerCase();
+    if (query === '' || !Array.isArray(games)) {
+      return [];
+    }
+    return games
+      .filter(game => game?.name?.toLowerCase().includes(query))
+      .sort((a, b) => (a?.name || '').localeCompare(b?.name || ''));
+  }, [games, searchQuery]);
 
   const wishlistMatches = useMemo(() => {
     if (typeof filterWishlist !== 'function') {
@@ -39,7 +54,7 @@ const UnifiedSearchView = ({filterWishlist, onWishlistFollowToggle}) => {
   // Dedup par appId entre sections, priorite Mes jeux > Wishlist > Boutique.
   // Un meme jeu n'apparait qu'une seule fois, dans la section la plus haute ou il existe.
   const dedupedSections = useMemo(() => {
-    const myGamesData = filteredGames || [];
+    const myGamesData = myGamesMatches;
     const seen = new Set();
     myGamesData.forEach(item => {
       const appId = getGameAppId(item);
@@ -70,7 +85,7 @@ const UnifiedSearchView = ({filterWishlist, onWishlistFollowToggle}) => {
     });
 
     return {myGames: myGamesData, wishlist: dedupedWishlist, store: dedupedStore};
-  }, [filteredGames, storeResults, wishlistMatches]);
+  }, [myGamesMatches, storeResults, wishlistMatches]);
 
   const sections = useMemo(
     () => [

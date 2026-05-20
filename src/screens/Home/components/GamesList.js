@@ -12,7 +12,6 @@ import {
 import styles from '../styles';
 import EmptyStateMessage from './EmptyStateMessage';
 import GameItemAlt from './GameItemAlt';
-import NoResultsPlaceholder from './NoResultsPlaceholder';
 
 const GamesList = React.memo(({listRef}) => {
   const {t} = useTranslation();
@@ -22,12 +21,9 @@ const GamesList = React.memo(({listRef}) => {
     refreshing,
     handleRefresh,
     sortOption,
-    searchQuery,
   } = useAppContext();
 
   const hasLibraryGames = Array.isArray(games) && games.length > 0;
-  const hasSearchQuery =
-    typeof searchQuery === 'string' && searchQuery.trim().length > 0;
   const hasTotalPlaytime =
     hasLibraryGames && games.some(game => getPlaytimeForeverValue(game) > 0);
   const hasPlaytimeData =
@@ -51,10 +47,6 @@ const GamesList = React.memo(({listRef}) => {
   );
 
   const renderEmptyList = () => {
-    if (hasSearchQuery) {
-      return <NoResultsPlaceholder styles={styles} />;
-    }
-
     if (sortOption === 'lastTwoWeeks' || sortOption === 'recentsPlus') {
       if (!hasPlaytimeData) {
         return renderPlaytimePrivateEmpty();

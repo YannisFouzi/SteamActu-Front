@@ -6,10 +6,15 @@ import {
 } from '../../utils';
 
 /**
- * Filtre + trie la liste des jeux en fonction de la query de recherche
- * globale (passee en parametre) et de la sortOption locale.
+ * Trie la liste des jeux de l'onglet "Mes Jeux" selon la sortOption locale.
+ *
+ * NB : ce hook ne gere PAS la recherche. La recherche unifiee
+ * (`UnifiedSearchView`) filtre la liste `games` brute elle-meme — elle ne doit
+ * pas heriter des filtres temps de jeu appliques ici par `lastTwoWeeks` /
+ * `mostPlayed` / `recentsPlus`, sinon un jeu possede mais pas joue recemment
+ * disparaitrait des resultats de recherche.
  */
-export const useGamesFiltering = (games, searchQuery = '') => {
+export const useGamesFiltering = games => {
   const [filteredGames, setFilteredGames] = useState([]);
   const [sortOption, setSortOption] = useState('lastTwoWeeks');
 
@@ -20,13 +25,6 @@ export const useGamesFiltering = (games, searchQuery = '') => {
     }
 
     let filtered = [...games];
-
-    if (searchQuery && searchQuery.trim() !== '') {
-      const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(game =>
-        game.name?.toLowerCase().includes(query),
-      );
-    }
 
     switch (sortOption) {
       case 'alphabetical':
@@ -91,15 +89,15 @@ export const useGamesFiltering = (games, searchQuery = '') => {
     }
 
     setFilteredGames(filtered);
-  }, [games, searchQuery, sortOption]);
+  }, [games, sortOption]);
 
   useEffect(() => {
-    if (games && Array.isArray(games) && (games.length > 0 || searchQuery)) {
+    if (games && Array.isArray(games) && games.length > 0) {
       filterAndSortGames();
     } else {
       setFilteredGames([]);
     }
-  }, [filterAndSortGames, games, searchQuery, sortOption]);
+  }, [filterAndSortGames, games, sortOption]);
 
   return {
     filteredGames,

@@ -111,7 +111,7 @@ export const AppProvider = ({children, navigation = null}) => {
     sortOption,
     setSortOption,
     filterAndSortGames,
-  } = useGamesFiltering(games, searchQuery);
+  } = useGamesFiltering(games);
 
   const {
     applyNotificationUnfollowCommit,

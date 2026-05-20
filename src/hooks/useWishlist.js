@@ -35,6 +35,7 @@ export const useWishlist = steamId => {
   const wishlistFetchAbortControllerRef = useRef(null);
   const statusDebounceTimeoutRef = useRef(null);
   const wishlistHydratedFromCacheRef = useRef(false);
+  const initialWishlistLoadRef = useRef(null);
 
   const safeSetState = useCallback((setter, value) => {
     if (isMountedRef.current) {
@@ -484,6 +485,19 @@ export const useWishlist = steamId => {
     },
     [fetchWishlist, loading, refreshing, steamId, wishlistVersion],
   );
+
+  // Charge la wishlist des le montage du hook. useWishlist vit dans FollowTabs,
+  // au meme niveau que la barre de recherche : la recherche "Dans la wishlist"
+  // ne doit pas dependre d'une visite prealable de l'onglet Wishlist.
+  // maybeRefreshWishlist fait un status-check leger et ne re-fetch que si la
+  // version serveur a change. Ref-guard par steamId pour ne le declencher
+  // qu'une fois par compte (et a nouveau apres un changement de compte).
+  useEffect(() => {
+    if (steamId && initialWishlistLoadRef.current !== steamId) {
+      initialWishlistLoadRef.current = steamId;
+      maybeRefreshWishlist('useWishlistMount');
+    }
+  }, [steamId, maybeRefreshWishlist]);
 
   return {
     wishlist,
