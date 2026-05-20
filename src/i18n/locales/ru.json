@@ -118,6 +118,7 @@
     "followConfirmedMessage": "Вы подписались на {{gameName}}",
     "followUnavailableMessage": "Не удалось подписаться на игру. Попробуйте позже.",
     "followUnavailableTitle": "Не удалось подписаться",
+    "unfollowConfirmedMessage": "Вы больше не подписаны на {{gameName}}",
     "unfollowUnavailableMessage": "Не удалось отписаться от игры. Попробуйте позже.",
     "unfollowUnavailableTitle": "Не удалось отписаться",
     "unfollowAction": "Отписаться от игры"

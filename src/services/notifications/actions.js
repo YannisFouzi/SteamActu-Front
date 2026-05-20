@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import notifee from '@notifee/react-native';
-import {Platform} from 'react-native';
+import {Platform, ToastAndroid} from 'react-native';
 import {debugError, showAlert} from '../../hooks/hooksLogger';
 import {translate} from '../../i18n';
 import {
@@ -26,6 +26,39 @@ import {
   ensureAndroidNotificationChannel,
   ensureIosNotificationCategories,
 } from './presentation';
+
+// Delai de maintien en vie de la tache headless apres ToastAndroid.show().
+// ToastAndroid.show poste un runnable sur l'UI thread ; si la tache Notifee
+// background resout immediatement, le process est tue avant que ce runnable
+// n'execute reellement Toast.show(). On garde donc la tache vivante ce delai
+// pour laisser le systeme afficher le toast — apres quoi il est rendu par le
+// systeme et survit a la mort du process.
+const HEADLESS_TOAST_KEEPALIVE_MS = 1000;
+
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+// Toast natif systeme apres unfollow via notification : popup flottant en bas
+// d'ecran (style Messenger), pas une nouvelle notification. iOS : aucun
+// equivalent natif standard, no-op.
+function showUnfollowToast(data) {
+  const gameName = data?.gameName || data?.name || '';
+  if (!gameName || Platform.OS !== 'android') {
+    return false;
+  }
+
+  try {
+    const message = translate('notifications.unfollowConfirmedMessage', {
+      gameName,
+    });
+    ToastAndroid.show(message, ToastAndroid.LONG);
+    return true;
+  } catch (error) {
+    // Le toast est purement cosmetique : un echec ne doit jamais faire echouer
+    // l'unfollow lui-meme.
+    debugError('[FCM] Echec affichage toast unfollow:', error);
+    return false;
+  }
+}
 
 async function showUnfollowFailureNotification(notification, data) {
   try {
@@ -90,6 +123,7 @@ export async function executeNotificationUnfollow({
   data,
   notification,
   onCommitted = null,
+  keepAliveForToast = false,
 }) {
   const steamId = data?.steamId;
   const appId = normalizeFollowAppId(data?.appId);
@@ -179,6 +213,15 @@ export async function executeNotificationUnfollow({
       await notifee.cancelDisplayedNotification(notificationId);
     }
 
+    const toastShown = showUnfollowToast(data);
+
+    // En contexte headless (app tuee/arriere-plan) la tache Notifee doit rester
+    // vivante un instant, sinon le process meurt avant que l'UI thread n'affiche
+    // le toast. En foreground le toast s'affiche immediatement : pas de delai.
+    if (toastShown && keepAliveForToast) {
+      await wait(HEADLESS_TOAST_KEEPALIVE_MS);
+    }
+
     return true;
   } catch (error) {
     logCriticalNotificationError(
@@ -198,6 +241,7 @@ export async function performHeadlessNotificationUnfollow(data, notification) {
   return executeNotificationUnfollow({
     data,
     notification,
+    keepAliveForToast: true,
   });
 }
 

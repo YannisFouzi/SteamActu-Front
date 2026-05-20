@@ -118,6 +118,7 @@
     "followConfirmedMessage": "已关注 {{gameName}}",
     "followUnavailableMessage": "暂时无法关注该游戏，请稍后重试。",
     "followUnavailableTitle": "无法关注",
+    "unfollowConfirmedMessage": "已取消关注 {{gameName}}",
     "unfollowUnavailableMessage": "暂时无法取消关注，请稍后重试。",
     "unfollowUnavailableTitle": "无法取消关注",
     "unfollowAction": "取消关注此游戏"

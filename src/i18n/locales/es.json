@@ -118,6 +118,7 @@
     "followConfirmedMessage": "{{gameName}} se está siguiendo",
     "followUnavailableMessage": "No se puede añadir este juego a los seguidos ahora. Inténtalo más tarde.",
     "followUnavailableTitle": "No se puede seguir",
+    "unfollowConfirmedMessage": "Ya no sigues a {{gameName}}",
     "unfollowUnavailableMessage": "No se puede quitar este juego de los seguidos ahora. Inténtalo más tarde.",
     "unfollowUnavailableTitle": "No se puede dejar de seguir",
     "unfollowAction": "Dejar de seguir este juego"

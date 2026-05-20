@@ -1,9 +1,13 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
-import { useTranslation } from 'react-i18next';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {Image, Linking, Pressable, StyleSheet, Text, View} from 'react-native';
+import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { COLORS, CONTAINER_STYLES } from '../constants';
+import {COLORS, CONTAINER_STYLES} from '../constants';
+import {showErrorMessage} from '../feedback/feedbackService';
+import {debugError} from '../hooks/hooksLogger';
 import FollowToggle from './FollowToggle';
+
+const STEAM_STORE_URL_PREFIX = 'https://store.steampowered.com/app/';
 
 const GameCard = ({
   game,
@@ -13,7 +17,7 @@ const GameCard = ({
   showDate = false,
   dateText = '',
 }) => {
-  const { t } = useTranslation();
+  const {t} = useTranslation();
   const [currentUrl, setCurrentUrl] = useState(imageUrl);
   const [imageError, setImageError] = useState(false);
 
@@ -30,10 +34,39 @@ const GameCard = ({
     }
   }, [currentUrl, fallbackImageUrl]);
 
-  const isFamilyShared = Boolean(game?.isFamilyShared);
+  // Resolution centralisee de l'appId Steam : c'est followConfig.appId qui est
+  // l'unique source coherente passee par les 5 consommateurs (GameItemAlt,
+  // WishlistScreen, FollowedGamesTab, StoreSearchResults, UnifiedSearchView).
+  // Si aucun appId, la card reste un View statique non interactif.
+  const steamAppId = useMemo(() => {
+    const raw = followConfig?.appId;
+    if (raw === null || raw === undefined) {
+      return null;
+    }
+    const normalized = String(raw).trim();
+    return normalized.length > 0 ? normalized : null;
+  }, [followConfig]);
 
-  return (
-    <View style={styles.card}>
+  const openSteamStorePage = useCallback(() => {
+    if (!steamAppId) {
+      return;
+    }
+    const url = `${STEAM_STORE_URL_PREFIX}${steamAppId}`;
+    Linking.openURL(url).catch(error => {
+      debugError("Erreur lors de l'ouverture de la page Steam:", error);
+      showErrorMessage(t('common.error'), t('news.openLinkError'));
+    });
+  }, [steamAppId, t]);
+
+  const isFamilyShared = Boolean(game?.isFamilyShared);
+  const isPressable = steamAppId !== null;
+
+  // L'interieur (image + info) est isole pour pouvoir le wrapper dans un
+  // Pressable seulement quand on a un appId. Le FollowToggle est volontairement
+  // hors du Pressable : tap sur la cloche => toggle suivi, tap ailleurs =>
+  // ouverture Steam. Aucun risque de propagation puisqu'ils sont freres.
+  const cardBody = (
+    <>
       <View style={styles.imageContainer}>
         {imageError || !currentUrl ? (
           <View style={styles.imagePlaceholder}>
@@ -44,14 +77,12 @@ const GameCard = ({
             />
           </View>
         ) : (
-          <>
-            <Image
-              source={{uri: currentUrl}}
-              style={styles.image}
-              resizeMode="cover"
-              onError={handleImageError}
-            />
-          </>
+          <Image
+            source={{uri: currentUrl}}
+            style={styles.image}
+            resizeMode="cover"
+            onError={handleImageError}
+          />
         )}
         {isFamilyShared ? (
           <View style={styles.familyBadge}>
@@ -70,6 +101,26 @@ const GameCard = ({
           <Text style={styles.date}>{dateText}</Text>
         ) : null}
       </View>
+    </>
+  );
+
+  return (
+    <View style={styles.card}>
+      {isPressable ? (
+        <Pressable
+          style={({pressed}) => [
+            styles.pressableBody,
+            pressed ? styles.pressableBodyPressed : null,
+          ]}
+          onPress={openSteamStorePage}
+          accessibilityRole="link"
+          accessibilityLabel={game?.name}
+          testID="game-card-steam-link">
+          {cardBody}
+        </Pressable>
+      ) : (
+        <View style={styles.pressableBody}>{cardBody}</View>
+      )}
       {followConfig ? (
         <FollowToggle
           appId={followConfig.appId}
@@ -94,6 +145,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 8,
     overflow: 'hidden',
+  },
+  pressableBody: {
+    flex: 1,
+    flexDirection: 'row',
+  },
+  pressableBodyPressed: {
+    opacity: 0.65,
   },
   imageContainer: {
     width: 160,

@@ -118,6 +118,7 @@
     "followConfirmedMessage": "{{gameName}} is now followed",
     "followUnavailableMessage": "Unable to add this game to followed games right now. Try again later.",
     "followUnavailableTitle": "Unable to follow",
+    "unfollowConfirmedMessage": "You no longer follow {{gameName}}",
     "unfollowUnavailableMessage": "Unable to remove this game from followed games right now. Try again later.",
     "unfollowUnavailableTitle": "Unable to unfollow",
     "unfollowAction": "Unfollow this game"

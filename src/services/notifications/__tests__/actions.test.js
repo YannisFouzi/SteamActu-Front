@@ -36,6 +36,12 @@ const presentationMock = {
   ensureIosNotificationCategories: jest.fn().mockResolvedValue(),
 };
 
+const toastAndroidMock = {
+  show: jest.fn(),
+  LONG: 1,
+  SHORT: 0,
+};
+
 jest.doMock('@notifee/react-native', () => ({
   __esModule: true,
   default: notifeeMock,
@@ -43,6 +49,7 @@ jest.doMock('@notifee/react-native', () => ({
 jest.doMock('react-native', () => ({
   Platform: { OS: 'android' },
   Linking: { openURL: jest.fn() },
+  ToastAndroid: toastAndroidMock,
 }));
 jest.doMock('../../followStateLocalStore', () => followStateMock);
 jest.doMock('../../followSync', () => followSyncMock);
@@ -54,6 +61,7 @@ const {
   executeNotificationUnfollow,
   executeFollowPromptAction,
   notifyUnfollowSyncCallbacks,
+  performHeadlessNotificationUnfollow,
 } = require('../actions');
 
 describe('services/notifications/actions', () => {
@@ -63,6 +71,7 @@ describe('services/notifications/actions', () => {
     Object.values(followSyncMock).forEach((fn) => fn.mockClear?.());
     Object.values(journalMock).forEach((fn) => fn.mockClear?.());
     Object.values(pendingFollowMock).forEach((fn) => fn.mockClear?.());
+    toastAndroidMock.show.mockClear();
 
     followSyncMock.queueFollowSync.mockResolvedValue(true);
     followStateMock.applyLocalFollowState.mockResolvedValue({ appId: '730' });
@@ -102,6 +111,86 @@ describe('services/notifications/actions', () => {
         expect.objectContaining({ appId: '730' }),
       );
       expect(notifeeMock.cancelNotification).toHaveBeenCalledWith('notif-1');
+    });
+
+    it('affiche un Toast natif Android apres succes', async () => {
+      followStateMock.normalizeFollowAppId.mockReturnValueOnce('730');
+
+      const ok = await executeNotificationUnfollow({
+        data: { steamId: 's', appId: '730', gameName: 'CSGO' },
+        notification: { id: 'notif-1' },
+        onCommitted: jest.fn().mockResolvedValue(),
+      });
+
+      expect(ok).toBe(true);
+      expect(toastAndroidMock.show).toHaveBeenCalledTimes(1);
+      const [message, duration] = toastAndroidMock.show.mock.calls[0];
+      expect(typeof message).toBe('string');
+      expect(message.length).toBeGreaterThan(0);
+      expect(duration).toBe(toastAndroidMock.LONG);
+      // Surtout PAS d'affichage de notification — c'est un Toast natif systeme.
+      expect(notifeeMock.displayNotification).not.toHaveBeenCalled();
+    });
+
+    it('skip le toast si gameName absent', async () => {
+      followStateMock.normalizeFollowAppId.mockReturnValueOnce('730');
+
+      const ok = await executeNotificationUnfollow({
+        data: { steamId: 's', appId: '730' },
+        notification: { id: 'notif-1' },
+        onCommitted: jest.fn().mockResolvedValue(),
+      });
+
+      expect(ok).toBe(true);
+      expect(toastAndroidMock.show).not.toHaveBeenCalled();
+      expect(notifeeMock.displayNotification).not.toHaveBeenCalled();
+    });
+
+    it('foreground (keepAliveForToast=false) : pas de delai de maintien', async () => {
+      followStateMock.normalizeFollowAppId.mockReturnValueOnce('730');
+
+      const start = Date.now();
+      const ok = await executeNotificationUnfollow({
+        data: { steamId: 's', appId: '730', gameName: 'CSGO' },
+        notification: { id: 'notif-1' },
+        onCommitted: jest.fn().mockResolvedValue(),
+      });
+
+      expect(ok).toBe(true);
+      expect(toastAndroidMock.show).toHaveBeenCalledTimes(1);
+      // Aucun delai keep-alive en foreground.
+      expect(Date.now() - start).toBeLessThan(500);
+    });
+  });
+
+  describe('performHeadlessNotificationUnfollow()', () => {
+    it('affiche le toast et garde la tache vivante (keep-alive headless)', async () => {
+      followStateMock.normalizeFollowAppId.mockReturnValueOnce('730');
+
+      const start = Date.now();
+      const ok = await performHeadlessNotificationUnfollow(
+        { steamId: 's', appId: '730', gameName: 'CSGO' },
+        { id: 'notif-1' },
+      );
+
+      expect(ok).toBe(true);
+      expect(toastAndroidMock.show).toHaveBeenCalledTimes(1);
+      // La tache reste vivante ~1s pour laisser le systeme afficher le toast.
+      expect(Date.now() - start).toBeGreaterThanOrEqual(900);
+    });
+
+    it('pas de delai de maintien si gameName absent (toast non affiche)', async () => {
+      followStateMock.normalizeFollowAppId.mockReturnValueOnce('730');
+
+      const start = Date.now();
+      const ok = await performHeadlessNotificationUnfollow(
+        { steamId: 's', appId: '730' },
+        { id: 'notif-1' },
+      );
+
+      expect(ok).toBe(true);
+      expect(toastAndroidMock.show).not.toHaveBeenCalled();
+      expect(Date.now() - start).toBeLessThan(500);
     });
 
     it('queueNotificationAction si onCommitted absent', async () => {

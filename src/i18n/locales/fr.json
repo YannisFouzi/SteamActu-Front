@@ -118,6 +118,7 @@
     "followConfirmedMessage": "{{gameName}} a bien été suivi",
     "followUnavailableMessage": "Impossible d'ajouter ce jeu aux suivis pour le moment. Réessayez plus tard.",
     "followUnavailableTitle": "Suivi impossible",
+    "unfollowConfirmedMessage": "Vous ne suivez plus {{gameName}}",
     "unfollowUnavailableMessage": "Impossible de retirer ce jeu des suivis pour le moment. Réessayez plus tard.",
     "unfollowUnavailableTitle": "Désuivi impossible",
     "unfollowAction": "Ne plus suivre ce jeu"
