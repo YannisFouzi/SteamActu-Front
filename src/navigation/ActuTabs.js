@@ -1,15 +1,26 @@
 import React, {useEffect} from 'react';
-import {createMaterialTopTabNavigator} from '@react-navigation/material-top-tabs';
+import {
+  createMaterialTopTabNavigator,
+  MaterialTopTabBar,
+} from '@react-navigation/material-top-tabs';
 import {useTranslation} from 'react-i18next';
 import {StyleSheet} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {COLORS} from '../constants';
+import TutorialTarget from '../tutorial/TutorialTarget';
 import {useAppContext} from '../context/AppContext';
 import {useNewsManager} from '../hooks/useNewsManager';
 import FollowedGamesScreen from '../screens/FollowedGamesScreen';
 import NewsFeedScreen from '../screens/NewsFeedScreen';
 
 const Tab = createMaterialTopTabNavigator();
+
+// Barre d'onglets encadrable par le tutoriel (cible `topbar-actu`).
+const ActuTopTabBar = props => (
+  <TutorialTarget id="topbar-actu">
+    <MaterialTopTabBar {...props} />
+  </TutorialTarget>
+);
 
 const ActuTabs = ({startupIntent = undefined}) => {
   const {t} = useTranslation();
@@ -50,6 +61,7 @@ const ActuTabs = ({startupIntent = undefined}) => {
     <SafeAreaView style={localStyles.safeArea} edges={['top']}>
       <Tab.Navigator
         initialRouteName={initialRouteName}
+        tabBar={ActuTopTabBar}
         screenOptions={{
           lazy: true,
           tabBarIndicatorStyle: {backgroundColor: COLORS.STEAM_BLUE},

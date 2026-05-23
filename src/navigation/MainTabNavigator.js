@@ -1,9 +1,10 @@
 import React from 'react';
-import {Pressable} from 'react-native';
+import {Pressable, StyleSheet} from 'react-native';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {useTranslation} from 'react-i18next';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {COLORS} from '../constants';
+import TutorialTarget from '../tutorial/TutorialTarget';
 import AccountStack from './AccountStack';
 import ActuTabs from './ActuTabs';
 import FollowTabs from './FollowTabs';
@@ -40,7 +41,12 @@ const createScreenOptions = ({route}) => ({
     fontSize: 12,
     fontWeight: '600',
   },
-  tabBarButton: TabBarButton,
+  // Encadrable par le tutoriel (cible `tab-<RouteName>`).
+  tabBarButton: props => (
+    <TutorialTarget id={`tab-${route.name}`} style={styles.tabButton}>
+      <TabBarButton {...props} />
+    </TutorialTarget>
+  ),
 });
 
 const MainTabNavigator = ({startupIntent = undefined}) => {
@@ -68,5 +74,11 @@ const MainTabNavigator = ({startupIntent = undefined}) => {
     </Tab.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  tabButton: {
+    flex: 1,
+  },
+});
 
 export default MainTabNavigator;

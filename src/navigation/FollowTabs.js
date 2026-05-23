@@ -1,10 +1,14 @@
 import React, {useEffect} from 'react';
-import {createMaterialTopTabNavigator} from '@react-navigation/material-top-tabs';
+import {
+  createMaterialTopTabNavigator,
+  MaterialTopTabBar,
+} from '@react-navigation/material-top-tabs';
 import {useTranslation} from 'react-i18next';
 import {StyleSheet, View} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import GlobalSearchBar from '../components/GlobalSearchBar';
 import {COLORS} from '../constants';
+import TutorialTarget from '../tutorial/TutorialTarget';
 import {useAppContext} from '../context/AppContext';
 import {useWishlist} from '../hooks/useWishlist';
 import MyGamesScreen from '../screens/MyGamesScreen';
@@ -12,6 +16,13 @@ import UnifiedSearchView from '../screens/UnifiedSearchView';
 import WishlistScreen from '../screens/WishlistScreen';
 
 const Tab = createMaterialTopTabNavigator();
+
+// Barre d'onglets encadrable par le tutoriel (cible `topbar-follow`).
+const FollowTopTabBar = props => (
+  <TutorialTarget id="topbar-follow">
+    <MaterialTopTabBar {...props} />
+  </TutorialTarget>
+);
 
 const FollowTabs = () => {
   const {t} = useTranslation();
@@ -61,7 +72,9 @@ const FollowTabs = () => {
 
   return (
     <SafeAreaView style={localStyles.safeArea} edges={['top']}>
-      <GlobalSearchBar />
+      <TutorialTarget id="search-bar">
+        <GlobalSearchBar />
+      </TutorialTarget>
       {isSearching ? (
         <View style={localStyles.unifiedContainer}>
           <UnifiedSearchView
@@ -72,6 +85,7 @@ const FollowTabs = () => {
         </View>
       ) : (
         <Tab.Navigator
+          tabBar={FollowTopTabBar}
           screenOptions={{
             lazy: true,
             tabBarIndicatorStyle: {backgroundColor: COLORS.STEAM_BLUE},

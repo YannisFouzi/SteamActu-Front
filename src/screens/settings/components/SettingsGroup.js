@@ -2,12 +2,12 @@ import React, {Children} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {COLORS, RADIUS, SPACING} from '../../../constants';
 
-const SettingsGroup = ({title, description, children}) => {
+const SettingsGroup = ({title, description, children, onLayout}) => {
   const childArray = Children.toArray(children);
   const hasHeader = title || description;
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container} onLayout={onLayout}>
       <View style={styles.card}>
         {hasHeader ? (
           <View style={styles.header}>

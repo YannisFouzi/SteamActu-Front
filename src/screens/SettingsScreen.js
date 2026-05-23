@@ -1,4 +1,11 @@
-import React, {useCallback, useEffect, useLayoutEffect, useMemo, useState} from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {Pressable, ScrollView, Text, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {useTranslation} from 'react-i18next';
@@ -14,6 +21,7 @@ import {useAppLanguage} from '../hooks/useAppLanguage';
 import {debugError, showAlert, showDialog} from '../hooks/hooksLogger';
 import {useUserSettings} from '../hooks/useUserSettings';
 import {adminService, userService} from '../services/api';
+import {TUTORIAL_STEPS} from '../tutorial/steps';
 import {useTutorial} from '../tutorial/useTutorial';
 import ProfileHeader from './settings/components/ProfileHeader';
 import SettingsFeedbackForm from './settings/components/SettingsFeedbackForm';
@@ -72,14 +80,53 @@ const SettingsScreen = () => {
 
   const {
     restartTutorial,
-    completeTutorial,
+    initTutorial,
+    requestMeasure,
     state: tutorialState,
   } = useTutorial();
 
   const {appLanguage, savingLanguage, handleLanguageChange} =
     useAppLanguage(steamId);
 
-  const isTutorialActive = tutorialState.status === 'running';
+  const scrollViewRef = useRef(null);
+  const notifGroupYRef = useRef(null);
+  const autoFollowGroupYRef = useRef(null);
+
+  // Quand le tutoriel atteint une étape "Settings", on défile jusqu'au groupe
+  // ciblé : sinon l'encadré viserait l'ancienne position de scroll.
+  const scrollToActiveTutorialStep = useCallback(() => {
+    if (tutorialState.status !== 'running') {
+      return;
+    }
+    const step = TUTORIAL_STEPS[tutorialState.stepIndex];
+    if (!step || step.screen !== 'Settings' || step.isSummary) {
+      return;
+    }
+    const targetId = step.targets?.[0]?.id;
+    let targetY = null;
+    if (targetId === 'settings-notifications') {
+      targetY = notifGroupYRef.current;
+    } else if (
+      targetId === 'settings-library' ||
+      targetId === 'settings-wishlist'
+    ) {
+      targetY = autoFollowGroupYRef.current;
+    }
+    if (targetY == null || !scrollViewRef.current) {
+      return;
+    }
+    scrollViewRef.current.scrollTo({
+      y: Math.max(targetY - 12, 0),
+      animated: true,
+    });
+    // Le scroll déplace la cible sans déclencher onLayout : on force la
+    // re-mesure une fois l'animation terminée pour recaler l'encadré.
+    setTimeout(requestMeasure, 360);
+  }, [requestMeasure, tutorialState.status, tutorialState.stepIndex]);
+
+  useEffect(() => {
+    scrollToActiveTutorialStep();
+  }, [scrollToActiveTutorialStep]);
 
   useEffect(() => {
     let cancelled = false;
@@ -208,12 +255,17 @@ const SettingsScreen = () => {
 
   return (
     <ScrollView
+      ref={scrollViewRef}
       style={styles.container}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={styles.scrollContent}>
       <ProfileHeader />
 
-      <SettingsGroup>
+      <SettingsGroup
+        onLayout={event => {
+          notifGroupYRef.current = event.nativeEvent.layout.y;
+          scrollToActiveTutorialStep();
+        }}>
         <SettingSection
           label={t('settings.newsNotificationsLabel')}
           value={newsNotifications}
@@ -231,7 +283,11 @@ const SettingsScreen = () => {
 
       <SettingsGroup
         title={t('common.autoFollow')}
-        description={t('settings.autoFollowDescription')}>
+        description={t('settings.autoFollowDescription')}
+        onLayout={event => {
+          autoFollowGroupYRef.current = event.nativeEvent.layout.y;
+          scrollToActiveTutorialStep();
+        }}>
         <FollowModeSetting
           label={t('settings.libraryLabel')}
           value={libraryFollowMode}
@@ -264,12 +320,13 @@ const SettingsScreen = () => {
       <SettingsGroup>
         <SettingsRow
           icon="school-outline"
-          label={
-            isTutorialActive
-              ? t('settings.tutorialFinish')
-              : t('settings.reviewTutorial')
-          }
-          onPress={isTutorialActive ? completeTutorial : restartTutorial}
+          label={t('settings.reviewTutorial')}
+          onPress={restartTutorial}
+        />
+        <SettingsRow
+          icon="refresh-outline"
+          label="Init tuto"
+          onPress={initTutorial}
         />
       </SettingsGroup>
 

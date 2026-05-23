@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import Svg, {Defs, Mask, Rect} from 'react-native-svg';
 import {useTranslation} from 'react-i18next';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {COLORS} from '../constants';
@@ -13,48 +14,27 @@ import {SUMMARY_STEP_INDEX, TUTORIAL_STEPS} from './steps';
 
 const {width: WINDOW_WIDTH, height: WINDOW_HEIGHT} = Dimensions.get('window');
 const HIGHLIGHT_PADDING = 12;
+const HIGHLIGHT_RADIUS = 12;
+const BACKDROP_COLOR = '#03080F';
+const BACKDROP_OPACITY = 0.56;
+const MASK_ID = 'tutorialCutoutMask';
 
-const TutorialOverlay = ({
-  visible,
-  stepIndex,
-  layout,
-  onNext,
-  onPrev,
-  onSkip,
-}) => {
+const TutorialOverlay = ({visible, stepIndex, targets, onNext, onPrev, onSkip}) => {
   const {t} = useTranslation();
   const step = TUTORIAL_STEPS[stepIndex];
   const insets = useSafeAreaInsets();
 
-  const highlight = useMemo(() => {
-    if (!layout || step?.isSummary) {
-      return null;
+  // Un step peut viser plusieurs éléments (ex. l'onglet de page + l'onglet
+  // de catégorie). On résout chaque cible en un rectangle écran qui sera
+  // découpé dans le voile sombre via un masque SVG.
+  const highlights = useMemo(() => {
+    if (!Array.isArray(targets)) {
+      return [];
     }
-
-    const padding = HIGHLIGHT_PADDING;
-    const adjusted = {
-      x: layout.x - padding,
-      y: layout.y + insets.top - padding,
-      width: layout.width + padding * 2,
-      height: layout.height + padding * 2,
-    };
-
-    const clamped = {
-      x: Math.max(adjusted.x, 0),
-      y: Math.max(adjusted.y, 0),
-      width: adjusted.width,
-      height: adjusted.height,
-    };
-
-    clamped.width = Math.min(clamped.width, WINDOW_WIDTH - clamped.x);
-    clamped.height = Math.min(clamped.height, WINDOW_HEIGHT - clamped.y);
-
-    if (clamped.width <= 0 || clamped.height <= 0) {
-      return null;
-    }
-
-    return clamped;
-  }, [layout, step, insets.top]);
+    return targets
+      .map(target => resolveHighlight(target, insets.top))
+      .filter(Boolean);
+  }, [targets, insets.top]);
 
   if (!visible || !step) {
     return null;
@@ -63,29 +43,55 @@ const TutorialOverlay = ({
   const isFirst = stepIndex === 0;
   const isLast = stepIndex === SUMMARY_STEP_INDEX;
 
-  const overlays = highlight
-    ? buildOverlayStyles(highlight)
-    : buildFullOverlayStyles();
-
-  const tooltipPosition = computeTooltipPosition(step, highlight);
-
-  const handleSkip = () => {
-    if (isLast) {
-      onNext();
-      return;
-    }
-    onSkip();
-  };
+  const tooltipPosition = computeTooltipPosition(step, highlights);
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       <View style={styles.container} pointerEvents="auto">
-        {overlays.map((overlay, index) => (
-          <View key={index} style={[styles.backdrop, overlay]} />
-        ))}
+        {/* Voile sombre plein écran percé d'un trou arrondi par cible
+            (zéro highlight = masque blanc partout = voile plein). */}
+        <Svg
+          width={WINDOW_WIDTH}
+          height={WINDOW_HEIGHT}
+          pointerEvents="none"
+          style={StyleSheet.absoluteFill}>
+          <Defs>
+            <Mask id={MASK_ID}>
+              <Rect
+                x={0}
+                y={0}
+                width={WINDOW_WIDTH}
+                height={WINDOW_HEIGHT}
+                fill="white"
+              />
+              {highlights.map((highlight, index) => (
+                <Rect
+                  key={`hole-${index}`}
+                  x={highlight.x}
+                  y={highlight.y}
+                  width={highlight.width}
+                  height={highlight.height}
+                  rx={HIGHLIGHT_RADIUS}
+                  ry={HIGHLIGHT_RADIUS}
+                  fill="black"
+                />
+              ))}
+            </Mask>
+          </Defs>
+          <Rect
+            x={0}
+            y={0}
+            width={WINDOW_WIDTH}
+            height={WINDOW_HEIGHT}
+            fill={BACKDROP_COLOR}
+            fillOpacity={BACKDROP_OPACITY}
+            mask={`url(#${MASK_ID})`}
+          />
+        </Svg>
 
-        {highlight ? (
+        {highlights.map((highlight, index) => (
           <View
+            key={`highlight-${index}`}
             pointerEvents="none"
             style={[
               styles.highlight,
@@ -97,7 +103,7 @@ const TutorialOverlay = ({
               },
             ]}
           />
-        ) : null}
+        ))}
 
         <View style={[styles.tooltipContainer, tooltipPosition]}>
           <Text style={styles.stepLabel}>
@@ -109,10 +115,18 @@ const TutorialOverlay = ({
           <Text style={styles.title}>{t(step.titleKey)}</Text>
           <Text style={styles.description}>{t(step.descriptionKey)}</Text>
 
-          <View style={styles.buttonsRow}>
-            <TouchableOpacity onPress={handleSkip} style={styles.textButton}>
-              <Text style={styles.textButtonLabel}>{t('tutorial.skipButton')}</Text>
-            </TouchableOpacity>
+          <View
+            style={[
+              styles.buttonsRow,
+              isLast && styles.buttonsRowRightOnly,
+            ]}>
+            {!isLast ? (
+              <TouchableOpacity onPress={onSkip} style={styles.textButton}>
+                <Text style={styles.textButtonLabel}>
+                  {t('tutorial.skipButton')}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
 
             <View style={styles.actions}>
               {!isFirst ? (
@@ -139,90 +153,78 @@ const TutorialOverlay = ({
   );
 };
 
-function buildOverlayStyles(highlight) {
-  const bottom = highlight.y + highlight.height;
-  const right = highlight.x + highlight.width;
+// Convertit une cible {layout, segment} en rectangle écran encadrable.
+// `segment` découpe la largeur de l'élément mesuré (barre d'onglets) en
+// `count` parts égales et n'en garde que celle d'index `index`.
+function resolveHighlight(target, insetTop) {
+  if (!target || !target.layout) {
+    return null;
+  }
 
-  return [
-    {
-      left: 0,
-      top: 0,
-      height: highlight.y,
-      width: WINDOW_WIDTH,
-    },
-    {
-      left: 0,
-      top: highlight.y,
-      width: highlight.x,
-      height: highlight.height,
-    },
-    {
-      left: right,
-      top: highlight.y,
-      width: WINDOW_WIDTH - right,
-      height: highlight.height,
-    },
-    {
-      left: 0,
-      top: bottom,
-      height: WINDOW_HEIGHT - bottom,
-      width: WINDOW_WIDTH,
-    },
-  ];
+  let base = target.layout;
+  const segment = target.segment;
+  if (segment && segment.count > 0) {
+    const segmentWidth = base.width / segment.count;
+    base = {
+      x: base.x + segmentWidth * segment.index,
+      y: base.y,
+      width: segmentWidth,
+      height: base.height,
+    };
+  }
+
+  const padding = HIGHLIGHT_PADDING;
+  const adjusted = {
+    x: base.x - padding,
+    y: base.y + insetTop - padding,
+    width: base.width + padding * 2,
+    height: base.height + padding * 2,
+  };
+
+  const clamped = {
+    x: Math.max(adjusted.x, 0),
+    y: Math.max(adjusted.y, 0),
+    width: adjusted.width,
+    height: adjusted.height,
+  };
+
+  clamped.width = Math.min(clamped.width, WINDOW_WIDTH - clamped.x);
+  clamped.height = Math.min(clamped.height, WINDOW_HEIGHT - clamped.y);
+
+  if (clamped.width <= 0 || clamped.height <= 0) {
+    return null;
+  }
+
+  return clamped;
 }
 
-function buildFullOverlayStyles() {
-  return [
-    {
-      left: 0,
-      top: 0,
-      width: WINDOW_WIDTH,
-      height: WINDOW_HEIGHT,
-    },
-  ];
-}
+// Règle de placement :
+//  - Steps "Settings" hors résumé (notifications / library / wishlist) :
+//    la cible est dans une ScrollView, on positionne l'infobulle juste
+//    au-dessus ou en dessous pour suivre la cible.
+//  - Tous les autres steps (home-* et résumé) : centre vertical fixe,
+//    indépendant des highlights → position stable d'une étape à l'autre.
+function computeTooltipPosition(step, highlights) {
+  const position = [styles.tooltipAbsolute];
+  const useTargetRelative =
+    step.screen === 'Settings' && !step.isSummary && highlights.length === 1;
 
-function computeTooltipPosition(step, highlight) {
-  const position = [];
-
-  if (!highlight) {
-    position.push(styles.tooltipAbsolute);
-    position.push({
-      left: 16,
-      right: 16,
-      top: Math.max(WINDOW_HEIGHT / 2 - 120, 32),
-    });
-  } else {
-    const tooltipWidth = WINDOW_WIDTH - 32;
+  if (useTargetRelative) {
+    const highlight = highlights[0];
     const spaceBelow = WINDOW_HEIGHT - (highlight.y + highlight.height);
     const placeBelow = spaceBelow > 200 || highlight.y < 120;
-    const topPosition = placeBelow
+    const top = placeBelow
       ? highlight.y + highlight.height + 16
       : Math.max(highlight.y - 180, 24);
-
-    position.push(styles.tooltipAbsolute);
-    position.push({
-      width: tooltipWidth,
-      left: 16,
-      top: topPosition,
-    });
+    position.push({width: WINDOW_WIDTH - 32, left: 16, top});
+    return position;
   }
 
-  const offset = step?.tooltipOffset;
-  if (offset && position[1]) {
-    if (typeof offset.x === 'number') {
-      if (position[1].left !== undefined) {
-        position[1].left += offset.x;
-      }
-      if (position[1].right !== undefined) {
-        position[1].right -= offset.x;
-      }
-    }
-    if (typeof offset.y === 'number') {
-      position[1].top = Math.max((position[1].top ?? 0) + offset.y, 16);
-    }
-  }
-
+  position.push({
+    left: 16,
+    right: 16,
+    top: Math.max(WINDOW_HEIGHT / 2 - 120, 32),
+  });
   return position;
 }
 
@@ -235,13 +237,9 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  backdrop: {
-    position: 'absolute',
-    backgroundColor: 'rgba(3, 8, 15, 0.56)',
-  },
   highlight: {
     position: 'absolute',
-    borderRadius: 12,
+    borderRadius: HIGHLIGHT_RADIUS,
     borderWidth: 2,
     borderColor: COLORS.STEAM_BLUE,
   },
@@ -282,6 +280,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  buttonsRowRightOnly: {
+    justifyContent: 'flex-end',
   },
   textButton: {
     paddingVertical: 6,

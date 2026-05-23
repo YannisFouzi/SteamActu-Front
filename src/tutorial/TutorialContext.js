@@ -9,12 +9,19 @@ import React, {
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState } from 'react-native';
+import FollowModePromptModal from './FollowModePromptModal';
 import TutorialOverlay from './TutorialOverlay';
 import TutorialResumeModal from './TutorialResumeModal';
 import { SUMMARY_STEP_INDEX, TUTORIAL_STEPS } from './steps';
 import { TUTORIAL_CONFIG } from '../config/tutorial';
 
 const STORAGE_KEY = '@steam-actu/tutorial-status';
+
+// Au-delà de cet index, l'utilisateur est arrivé sur la zone Settings du
+// tuto (étape 6 et suivantes) : "Passer" ferme alors le tuto sans relancer
+// de modale puisqu'il a déjà vu — ou est sur le point de voir — les
+// options de suivi.
+const SKIP_PROMPT_MAX_INDEX = 4;
 
 const TutorialContext = createContext(null);
 
@@ -39,6 +46,8 @@ const TutorialProvider = ({ children }) => {
   const [, setLayoutVersion] = useState(0);
 
   const [resumeVisible, setResumeVisible] = useState(false);
+  const [followPromptVisible, setFollowPromptVisible] = useState(false);
+  const [measureNonce, setMeasureNonce] = useState(0);
 
   useEffect(() => {
     stateRef.current = state;
@@ -159,6 +168,12 @@ const TutorialProvider = ({ children }) => {
     setLayoutVersion(version => version + 1);
   }, []);
 
+  // Force les TutorialTarget montés à se re-mesurer (ex. après un scroll
+  // programmatique qui déplace une cible sans déclencher onLayout).
+  const requestMeasure = useCallback(() => {
+    setMeasureNonce(nonce => nonce + 1);
+  }, []);
+
   const startTutorial = useCallback(
     (fromIndex = 0, { force = false } = {}) => {
       if (!TUTORIAL_CONFIG.ENABLED) {
@@ -224,8 +239,6 @@ const TutorialProvider = ({ children }) => {
         };
       }
       const nextIndex = Math.min(prev.stepIndex + 1, SUMMARY_STEP_INDEX);
-      const step = TUTORIAL_STEPS[nextIndex];
-      ensureNavigationForStep(step);
       return {
         ...prev,
         status: 'running',
@@ -233,13 +246,11 @@ const TutorialProvider = ({ children }) => {
         lastPausedAt: null,
       };
     });
-  }, [applyState, ensureNavigationForStep]);
+  }, [applyState]);
 
   const goToPrevious = useCallback(() => {
     applyState(prev => {
       const previousIndex = Math.max(prev.stepIndex - 1, 0);
-      const step = TUTORIAL_STEPS[previousIndex];
-      ensureNavigationForStep(step);
       return {
         ...prev,
         status: 'running',
@@ -247,20 +258,33 @@ const TutorialProvider = ({ children }) => {
         lastPausedAt: null,
       };
     });
-  }, [applyState, ensureNavigationForStep]);
+  }, [applyState]);
 
+  // "Passer" = vraie sortie : on ferme le tuto là où l'utilisateur est,
+  // pas de saut vers le résumé. Marqué completed pour que le tuto ne se
+  // relance pas tout seul au prochain démarrage — l'utilisateur peut le
+  // rejouer via "revoir le tutoriel".
+  // Cas particulier : si c'est le tuto initial (jamais complété auparavant)
+  // ET que l'utilisateur passe avant d'avoir atteint la zone Settings, on
+  // affiche d'abord la modale de choix des modes de suivi pour qu'il ne
+  // reste pas avec les notifs muettes sans le savoir.
   const skipTutorial = useCallback(() => {
     setResumeVisible(false);
-    const summaryStep = TUTORIAL_STEPS[SUMMARY_STEP_INDEX];
-    ensureNavigationForStep(summaryStep);
+    const current = stateRef.current;
+    const shouldPromptFollowMode =
+      !current.completed && current.stepIndex <= SKIP_PROMPT_MAX_INDEX;
     applyState(prev => ({
       ...prev,
-      status: 'running',
-      stepIndex: SUMMARY_STEP_INDEX,
+      status: 'completed',
+      completed: true,
+      completedAt: Date.now(),
       skipped: true,
       lastPausedAt: null,
     }));
-  }, [applyState, ensureNavigationForStep]);
+    if (shouldPromptFollowMode) {
+      setFollowPromptVisible(true);
+    }
+  }, [applyState]);
 
   const completeTutorial = useCallback(() => {
     setResumeVisible(false);
@@ -275,8 +299,24 @@ const TutorialProvider = ({ children }) => {
 
   const restartTutorial = useCallback(() => {
     setResumeVisible(false);
+    setFollowPromptVisible(false);
     startTutorial(0, { force: true });
   }, [startTutorial]);
+
+  // Test / dev : remet l'état complet de tutoriel à zéro (comme une
+  // première installation) puis lance le step 0. Permet de re-tester la
+  // modale "premier passage" du skip.
+  const initTutorial = useCallback(() => {
+    setResumeVisible(false);
+    setFollowPromptVisible(false);
+    applyState(() => ({
+      ...INITIAL_STATE,
+      status: 'running',
+      stepIndex: 0,
+      startedAt: Date.now(),
+    }));
+    ensureNavigationForStep(TUTORIAL_STEPS[0]);
+  }, [applyState, ensureNavigationForStep]);
 
   const resumeTutorial = useCallback(() => {
     setResumeVisible(false);
@@ -340,21 +380,29 @@ const TutorialProvider = ({ children }) => {
     ? TUTORIAL_STEPS[state.stepIndex]
     : null;
 
-  const currentLayout =
-    currentStep && currentStep.targetId
-      ? layoutsRef.current[currentStep.targetId] || null
-      : null;
+  const currentTargets =
+    currentStep && Array.isArray(currentStep.targets)
+      ? currentStep.targets
+          .map(target => ({
+            segment: target.segment || null,
+            layout: layoutsRef.current[target.id] || null,
+          }))
+          .filter(target => target.layout)
+      : [];
 
   const contextValue = useMemo(
     () => ({
       state,
       hydrated,
+      measureNonce,
       registerTarget,
       unregisterTarget,
+      requestMeasure,
       registerNavigationRef,
       startTutorialIfNeeded,
       startTutorial,
       restartTutorial,
+      initTutorial,
       skipTutorial,
       completeTutorial,
       goToNext,
@@ -365,8 +413,11 @@ const TutorialProvider = ({ children }) => {
       goToNext,
       goToPrevious,
       hydrated,
+      initTutorial,
+      measureNonce,
       registerNavigationRef,
       registerTarget,
+      requestMeasure,
       restartTutorial,
       skipTutorial,
       startTutorial,
@@ -382,7 +433,7 @@ const TutorialProvider = ({ children }) => {
       <TutorialOverlay
         visible={state.status === 'running'}
         stepIndex={state.stepIndex}
-        layout={currentLayout}
+        targets={currentTargets}
         onNext={state.stepIndex >= SUMMARY_STEP_INDEX ? completeTutorial : goToNext}
         onPrev={goToPrevious}
         onSkip={skipTutorial}
@@ -392,6 +443,10 @@ const TutorialProvider = ({ children }) => {
         onRestart={restartTutorial}
         onResume={resumeTutorial}
         onSkip={skipTutorial}
+      />
+      <FollowModePromptModal
+        visible={followPromptVisible}
+        onConfirm={() => setFollowPromptVisible(false)}
       />
     </TutorialContext.Provider>
   );

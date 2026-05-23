@@ -51,17 +51,22 @@ const OptionSetting = ({
     </View>
   );
 
-  return (
-    <View style={styles.section}>
+  const sectionBody = (
+    <>
       <Text style={styles.settingLabel}>{label}</Text>
       {description ? (
         <Text style={styles.settingDescription}>{description}</Text>
       ) : null}
+      {optionsContent}
+    </>
+  );
 
+  return (
+    <View style={styles.section}>
       {tutorialTargetId ? (
-        <TutorialTarget id={tutorialTargetId}>{optionsContent}</TutorialTarget>
+        <TutorialTarget id={tutorialTargetId}>{sectionBody}</TutorialTarget>
       ) : (
-        optionsContent
+        sectionBody
       )}
     </View>
   );

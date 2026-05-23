@@ -30,11 +30,21 @@ describe('tutorial/steps', () => {
     });
   });
 
-  it('steps "Settings" ont des targetId (sauf summary)', () => {
+  it('chaque step a un tableau targets', () => {
+    TUTORIAL_STEPS.forEach((step) => {
+      expect(Array.isArray(step.targets)).toBe(true);
+    });
+  });
+
+  it('steps "Settings" ont au moins une cible (sauf summary)', () => {
     TUTORIAL_STEPS.filter((s) => s.screen === 'Settings' && !s.isSummary).forEach(
       (step) => {
-        expect(step.targetId).toBeTruthy();
+        expect(step.targets.length).toBeGreaterThan(0);
       },
     );
+  });
+
+  it('le step summary n\'a aucune cible', () => {
+    expect(TUTORIAL_STEPS[SUMMARY_STEP_INDEX].targets).toEqual([]);
   });
 });

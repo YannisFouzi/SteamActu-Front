@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { useTutorial } from './useTutorial';
 
 const TutorialTarget = ({ id, style, children, pointerEvents }) => {
-  const { registerTarget, unregisterTarget } = useTutorial();
+  const { registerTarget, unregisterTarget, measureNonce } = useTutorial();
   const viewRef = useRef(null);
   const measureAttemptsRef = useRef(0);
 
@@ -51,7 +51,7 @@ const TutorialTarget = ({ id, style, children, pointerEvents }) => {
         cancelAnimationFrame(rafId);
       }
     };
-  }, [measure, children]);
+  }, [measure, children, measureNonce]);
 
   useEffect(() => {
     return () => {
