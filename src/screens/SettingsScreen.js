@@ -80,7 +80,6 @@ const SettingsScreen = () => {
 
   const {
     restartTutorial,
-    initTutorial,
     requestMeasure,
     state: tutorialState,
   } = useTutorial();
@@ -322,11 +321,6 @@ const SettingsScreen = () => {
           icon="school-outline"
           label={t('settings.reviewTutorial')}
           onPress={restartTutorial}
-        />
-        <SettingsRow
-          icon="refresh-outline"
-          label="Init tuto"
-          onPress={initTutorial}
         />
       </SettingsGroup>
 
