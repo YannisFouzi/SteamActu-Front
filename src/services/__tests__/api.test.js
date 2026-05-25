@@ -24,6 +24,7 @@ jest.mock('axios', () => ({
 
 jest.mock('../mobileSessionStore', () => ({
   getMobileSession: jest.fn(),
+  clearMobileSession: jest.fn(),
 }));
 
 const {
@@ -34,12 +35,14 @@ const {
   adminService,
   supportFeedbackService,
 } = require('../api');
-const { getMobileSession } = require('../mobileSessionStore');
+const { getMobileSession, clearMobileSession } = require('../mobileSessionStore');
 
 const apiInstance = createdInstances[0]; // axios.create #1 = main API
 const authInstance = createdInstances[1]; // axios.create #2 = auth API
 
 // Capturé AVANT clearMocks: snapshot du module-load
+const apiRequestInterceptor =
+  apiInstance.interceptors.request.use.mock.calls[0][0];
 const apiErrorInterceptor =
   apiInstance.interceptors.response.use.mock.calls[0][1];
 const authErrorInterceptor =
@@ -54,6 +57,35 @@ describe('services/api', () => {
     authInstance.get.mockReset();
     authInstance.post.mockReset();
     getMobileSession.mockReset();
+    clearMobileSession.mockReset();
+  });
+
+  describe('interceptors request (Bearer injection)', () => {
+    it('injecte Authorization: Bearer <token> si session presente', async () => {
+      getMobileSession.mockResolvedValue({ token: 'sess-tok' });
+      const config = await apiRequestInterceptor({ headers: {} });
+      expect(config.headers.Authorization).toBe('Bearer sess-tok');
+    });
+
+    it('n\'injecte rien si pas de session', async () => {
+      getMobileSession.mockResolvedValue(null);
+      const config = await apiRequestInterceptor({ headers: {} });
+      expect(config.headers.Authorization).toBeUndefined();
+    });
+
+    it('n\'ecrase pas un Authorization existant', async () => {
+      getMobileSession.mockResolvedValue({ token: 'sess-tok' });
+      const config = await apiRequestInterceptor({
+        headers: { Authorization: 'Bearer custom' },
+      });
+      expect(config.headers.Authorization).toBe('Bearer custom');
+    });
+
+    it('ne throw pas si getMobileSession echoue', async () => {
+      getMobileSession.mockRejectedValue(new Error('storage error'));
+      const config = await apiRequestInterceptor({ headers: {} });
+      expect(config.headers.Authorization).toBeUndefined();
+    });
   });
 
   describe('interceptors response (normalizeError)', () => {
@@ -79,6 +111,27 @@ describe('services/api', () => {
         expect(normalized.status).toBe(500);
         expect(normalized.message).toBe('mongo down');
       }));
+
+    it('401 -> clearMobileSession appele puis erreur propagee', async () => {
+      clearMobileSession.mockResolvedValue();
+      await expect(
+        apiErrorInterceptor({
+          response: { status: 401, data: { message: 'unauth' } },
+          config: { url: '/users/x', method: 'get' },
+        }),
+      ).rejects.toMatchObject({ status: 401 });
+      expect(clearMobileSession).toHaveBeenCalled();
+    });
+
+    it('non-401 -> clearMobileSession PAS appele', async () => {
+      await expect(
+        apiErrorInterceptor({
+          response: { status: 500 },
+          config: { url: '/x', method: 'get' },
+        }),
+      ).rejects.toBeDefined();
+      expect(clearMobileSession).not.toHaveBeenCalled();
+    });
   });
 
   describe('userService', () => {

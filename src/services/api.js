@@ -2,7 +2,7 @@ import axios from 'axios';
 import {APP_CONFIG} from '../config/env';
 import {debugError} from '../hooks/hooksLogger';
 import {getCurrentAppLanguage, translate} from '../i18n';
-import {getMobileSession} from './mobileSessionStore';
+import {clearMobileSession, getMobileSession} from './mobileSessionStore';
 
 const API_CONFIG = {
   API_URL: APP_CONFIG.API_BASE_URL,
@@ -37,15 +37,47 @@ const normalizeError = error => {
   };
 };
 
+// Injecte automatiquement Authorization: Bearer <token> sur toutes les
+// requetes de l'API principale si une session mobile valide est presente.
+// Les endpoints publics (e.g. /users/register avant login) marcheront sans
+// session, le backend repondra 401 et le response interceptor nettoiera.
+api.interceptors.request.use(async config => {
+  try {
+    const session = await getMobileSession();
+    if (session?.token) {
+      config.headers = config.headers || {};
+      // N'ecrase pas un header Authorization explicitement defini par l'appelant
+      if (!config.headers.Authorization) {
+        config.headers.Authorization = `Bearer ${session.token}`;
+      }
+    }
+  } catch (err) {
+    debugError('API request interceptor: getMobileSession failed', err);
+  }
+  return config;
+});
+
 api.interceptors.response.use(
   response => response,
-  error => {
+  async error => {
     debugError('API Error', {
       url: error.config?.url,
       method: error.config?.method,
       status: error.response?.status,
       data: error.response?.data,
     });
+
+    // 401 = session expiree ou invalide -> on nettoie le stockage local.
+    // Le bootstrap au prochain demarrage / le hook d'auth detectera l'absence
+    // de session et redirigera vers le login. On evite de coupler api.js a
+    // la couche navigation pour rester testable.
+    if (error.response?.status === 401) {
+      try {
+        await clearMobileSession();
+      } catch (clearErr) {
+        debugError('API 401: clearMobileSession failed', clearErr);
+      }
+    }
 
     return Promise.reject(normalizeError(error));
   },

@@ -174,6 +174,14 @@ export const useSteamAuth = () => {
           setAuthFlowState(AUTH_FLOW_STATES.IDLE);
         }
 
+        // Persister la session AVANT tout appel API : depuis l'ajout de
+        // mobileSessionAuth + requireSelf sur /api/users/*, /register exige
+        // un Bearer valide dans le header (injecte par l'interceptor axios
+        // qui lit le Keychain). Sans cet ordre, /register repond 401.
+        if (mobileSession?.token) {
+          await persistMobileSession(mobileSession);
+        }
+
         let response;
         try {
           debugLog('[LOGIN] POST /users/register');
@@ -244,7 +252,7 @@ export const useSteamAuth = () => {
 
         debugLog('[LOGIN] Saving steamId to AsyncStorage');
         await AsyncStorage.setItem('steamId', steamId);
-        await persistMobileSession(mobileSession);
+        // mobileSession deja persistee plus haut, avant /register
 
         let steamProfile = null;
         try {

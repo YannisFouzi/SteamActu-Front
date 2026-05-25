@@ -7,6 +7,48 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );
 
+// --- react-native-keychain : store en memoire avec namespacing par service ---
+// Reproduit l'API getGenericPassword/setGenericPassword/resetGenericPassword
+// sans dependance native. Le state est partage entre tests, reset() expose
+// pour les beforeEach.
+jest.mock('react-native-keychain', () => {
+  const store = new Map(); // service -> { username, password }
+  return {
+    __esModule: true,
+    ACCESSIBLE: {
+      WHEN_UNLOCKED: 'WHEN_UNLOCKED',
+      AFTER_FIRST_UNLOCK: 'AFTER_FIRST_UNLOCK',
+      ALWAYS: 'ALWAYS',
+    },
+    setGenericPassword: jest.fn(async (username, password, options = {}) => {
+      const service = options.service || 'default';
+      store.set(service, {username, password});
+      return {service, storage: 'keychain'};
+    }),
+    getGenericPassword: jest.fn(async (options = {}) => {
+      const service = options.service || 'default';
+      const entry = store.get(service);
+      if (!entry) return false;
+      return {
+        service,
+        username: entry.username,
+        password: entry.password,
+        storage: 'keychain',
+      };
+    }),
+    resetGenericPassword: jest.fn(async (options = {}) => {
+      const service = options.service || 'default';
+      return store.delete(service);
+    }),
+    hasGenericPassword: jest.fn(async (options = {}) => {
+      const service = options.service || 'default';
+      return store.has(service);
+    }),
+    // Helper test-only pour reset complet du store
+    __resetMock: () => store.clear(),
+  };
+});
+
 // --- react-native-localize : par défaut langue "fr" ---
 jest.mock('react-native-localize', () => ({
   findBestLanguageTag: () => ({ languageTag: 'fr-FR', isRTL: false }),

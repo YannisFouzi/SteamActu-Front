@@ -19,7 +19,7 @@ Une application React Native moderne pour suivre les actualités de vos jeux Ste
 - **Framework** : React Native 0.78.0
 - **Navigation** : React Navigation v7 (Stack Navigator)
 - **État Global** : Context API avec hooks personnalisés
-- **Stockage Local** : AsyncStorage
+- **Stockage Local** : AsyncStorage (donnees non sensibles) + react-native-keychain (token de session, chiffre via Keychain iOS / Keystore Android)
 - **Requêtes HTTP** : Axios
 - **Authentification** : Steam OpenID via navigateur intégré
 - **Icônes** : React Native Vector Icons (Ionicons)
