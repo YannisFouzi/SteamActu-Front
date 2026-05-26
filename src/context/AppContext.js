@@ -11,6 +11,7 @@ import React, {
 import {
     debugError,
     debugLog,
+    reportError,
     showAlert,
     showSuccessMessage,
 } from '../hooks/hooksLogger';
@@ -217,7 +218,7 @@ export const AppProvider = ({children, navigation = null}) => {
 
       debugLog('[LOGOUT] Sign-out completed\n');
     } catch (error) {
-      debugError('[LOGOUT] Sign-out failed:', error);
+      reportError(error, {scope: 'logout'});
       showAlert(
         translate('auth.logoutErrorTitle'),
         translate('auth.logoutErrorMessage'),

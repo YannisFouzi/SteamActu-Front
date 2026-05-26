@@ -10,7 +10,12 @@ import {
   syncQueuedUserSettings,
 } from '../../services/userSettingsSync';
 import {ensureNotificationPermission} from '../../services/notifications/presentation';
-import {debugError, debugLog, showAlert} from '../../hooks/hooksLogger';
+import {
+  debugError,
+  debugLog,
+  reportError,
+  showAlert,
+} from '../../hooks/hooksLogger';
 import {
   DEFAULT_USER_SETTINGS,
   FOLLOW_MODES,
@@ -236,7 +241,7 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
 
       return false;
     } catch (error) {
-      debugError('[FCM] Failed to enable notifications:', error);
+      reportError(error, {scope: 'settings.enable_notifications'});
       showAlert(
         translate('common.error'),
         translate('notifications.disabledMessage'),
@@ -273,7 +278,7 @@ export const useUserSettingsController = ({steamId, user, isAuthenticated}) => {
 
         return true;
       } catch (error) {
-        debugError('[SETTINGS] Failed to persist settings:', error);
+        reportError(error, {scope: 'settings.persist'});
         showAlert(
           translate('common.error'),
           translate('errors.saveSettingsMessage'),

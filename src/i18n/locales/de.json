@@ -39,6 +39,7 @@
   },
   "auth": {
     "connectivityErrorMessage": "Anmeldung nicht möglich. Prüfen Sie, ob der Server erreichbar ist.",
+    "outdatedAppMessage": "Diese App-Version ist veraltet. Aktualisieren Sie sie, um sich anzumelden.",
     "launchErrorMessage": "Steam-Anmeldung konnte nicht gestartet werden. Bitte erneut versuchen.",
     "loggingIn": "Bei Steam anmelden...",
     "loggingOut": "Abmeldung",
@@ -412,5 +413,11 @@
         "description": "Diese Optionen können Sie jederzeit in den Einstellungen ändern."
       }
     }
+  },
+  "update": {
+    "title": "Update erforderlich",
+    "message": "Diese Version von Game News wird nicht mehr unterstützt. Aktualisieren Sie die App, um fortzufahren.",
+    "button": "Update herunterladen",
+    "hint": "Wenden Sie sich an den Entwickler, um die neueste Version zu erhalten."
   }
 }

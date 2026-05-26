@@ -39,6 +39,7 @@
   },
   "auth": {
     "connectivityErrorMessage": "Impossible de se connecter. Vérifiez que le serveur est accessible.",
+    "outdatedAppMessage": "Cette version de l'application est trop ancienne. Mettez-la à jour pour vous connecter.",
     "launchErrorMessage": "Impossible de lancer la connexion Steam. Veuillez réessayer.",
     "loggingIn": "Connexion à Steam...",
     "loggingOut": "Déconnexion",
@@ -290,11 +291,11 @@
         ]
       },
       "privacy": {
-        "updatedAt": "2026-04-18T12:00:00.000Z",
+        "updatedAt": "2026-05-26T12:00:00.000Z",
         "sections": [
           {
             "title": "1. Responsable du traitement",
-            "content": "Le responsable du traitement des données personnelles traitées via Game News est l'éditeur de l'application, joignable à : contact@fouzi-dev.fr."
+            "content": "Le responsable du traitement des données personnelles traitées via Game News est l'éditeur de l'application, Yannis Fouzi, entrepreneur individuel (SIRET 93759473700010), joignable à : contact@fouzi-dev.fr."
           },
           {
             "title": "2. Données traitées",
@@ -306,7 +307,7 @@
           },
           {
             "title": "4. Destinataires, sous-traitants et transferts",
-            "content": "Les données sont hébergées et traitées sur l'infrastructure de l'éditeur et de ses prestataires techniques. L'envoi des notifications push passe par Google Firebase Cloud Messaging (Google LLC / sociétés du groupe Google), qui peut traiter des données techniques aux États-Unis ou dans d'autres pays ; le cas échéant, ces transferts reposent sur les garanties prévues par le RGPD (notamment les clauses contractuelles types de la Commission européenne) et la politique de confidentialité de Google. Le fonctionnement du service s'appuie aussi sur les API officielles Steam / Valve, sous leur politique applicable. D'autres sous-traitants (hébergement, messagerie) peuvent intervenir sur instruction du responsable du traitement."
+            "content": "Les données sont hébergées et traitées sur l'infrastructure de l'éditeur et de ses prestataires techniques : Railway (Railway Corp.) pour l'hébergement de l'API backend (serveurs principalement aux États-Unis, transferts encadrés par les garanties RGPD) ; MongoDB Atlas (MongoDB, Inc.) pour la base de données managée (serveurs en Europe) ; Google Firebase Cloud Messaging (Google LLC) pour l'envoi des notifications push (transferts encadrés par les clauses contractuelles types de la Commission européenne) ; Sentry (Functional Software, Inc.) pour le monitoring d'erreurs et de performance, qui reçoit le SteamID concerné par un événement et des informations techniques de contexte (version, plateforme, type d'erreur), serveurs en Allemagne (eu.sentry.io) ; les API officielles Steam / Valve Corporation pour la récupération des informations Steam publiques ; SteamGridDB pour la récupération d'illustrations de jeux (aucune donnée utilisateur transmise). Aucune autre catégorie de destinataire n'est prévue ; le cas échéant, d'autres sous-traitants pourraient intervenir uniquement sur instruction du responsable du traitement. Aucune vente de données et aucun profilage publicitaire n'est réalisé."
           },
           {
             "title": "5. Durées de conservation",
@@ -412,5 +413,11 @@
         "description": "Vous pouvez modifier ces options à tout moment depuis les paramètres."
       }
     }
+  },
+  "update": {
+    "title": "Mise à jour requise",
+    "message": "Cette version de Game News n'est plus prise en charge. Mettez à jour l'application pour continuer.",
+    "button": "Télécharger la mise à jour",
+    "hint": "Contactez le développeur pour obtenir la dernière version."
   }
 }

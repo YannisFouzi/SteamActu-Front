@@ -21,9 +21,10 @@ import {
 import {steamAuthService, userService} from '../services/api';
 import {persistMobileSession} from '../services/mobileSessionStore';
 import {
-  debugError,
   debugLog,
   maskSteamId,
+  reportError,
+  setSentryUser,
   showAlert,
   showInfoMessage,
 } from './hooksLogger';
@@ -259,8 +260,14 @@ export const useSteamAuth = () => {
           steamProfile = await fetchSteamProfile(steamId);
           await persistSteamProfile(steamId, steamProfile);
         } catch (profileError) {
-          debugError('[LOGIN] Failed to load Steam profile:', profileError);
+          reportError(profileError, {
+            scope: 'login.profile_fetch',
+            level: 'warning',
+            extra: {steamId: maskSteamId(steamId)},
+          });
         }
+
+        setSentryUser(steamId);
 
         applySignedInSession({
           steamId,
@@ -269,11 +276,26 @@ export const useSteamAuth = () => {
         });
         debugLog('[LOGIN] Auth flow finished, session applied');
       } catch (error) {
-        debugError('[LOGIN] Authentication error:', error);
-        showAlert(
-          translate('common.error'),
-          translate('auth.connectivityErrorMessage'),
-        );
+        // 401 = backend a rejete la session mobile (token absent / expire /
+        // signature invalide). Sur un APK trop ancien (anterieur au commit qui
+        // ajoute l'interceptor Bearer + persistMobileSession), aucun token
+        // n'est envoye -> backend repond 401 systematique. Pour eviter le
+        // message generique "Impossible de se connecter" qui suggere a tort
+        // un probleme reseau, on cible explicitement ce cas.
+        const status = error?.status ?? error?.response?.status;
+        const messageKey =
+          status === 401
+            ? 'auth.outdatedAppMessage'
+            : 'auth.connectivityErrorMessage';
+        reportError(error, {
+          scope: 'login.flow',
+          // 401 = APK trop vieux, c'est attendu cote backend mais cote app on
+          // veut le savoir pour mesurer combien d'users sont bloques sur une
+          // version obsolete. 'warning' au lieu de 'error' pour pas spammer.
+          level: status === 401 ? 'warning' : 'error',
+          extra: {status, messageKey},
+        });
+        showAlert(translate('common.error'), translate(messageKey));
       } finally {
         authAttemptActiveRef.current = false;
         authWentBackgroundRef.current = false;
@@ -354,7 +376,7 @@ export const useSteamAuth = () => {
 
       return false;
     } catch (error) {
-      debugError('[STEAM AUTH] Failed to resume pending authentication:', error);
+      reportError(error, {scope: 'auth.resume_pending'});
       return false;
     }
   }, [pollAuthStatus]);
@@ -405,7 +427,7 @@ export const useSteamAuth = () => {
             );
           }
         } catch (error) {
-          debugError('Failed to process Steam auth URL:', error);
+          reportError(error, {scope: 'auth.url_callback'});
         } finally {
           processingAuthRef.current = false;
         }
@@ -510,7 +532,7 @@ export const useSteamAuth = () => {
         );
       }
     } catch (error) {
-      debugError('Failed to launch Steam authentication:', error);
+      reportError(error, {scope: 'auth.launch'});
       showAlert(
         translate('common.error'),
         translate('auth.launchErrorMessage'),
@@ -529,14 +551,14 @@ export const useSteamAuth = () => {
         url: maskAuthUrl(event?.url),
       });
       handleUrl(event).catch(error => {
-        debugError('[STEAM AUTH] Erreur traitement url listener:', error);
+        reportError(error, {scope: 'auth.url_listener'});
       });
     });
 
     Linking.getInitialURL().then(url => {
       if (url) {
         handleUrl({url}).catch(error => {
-          debugError('[STEAM AUTH] Erreur traitement url initiale:', error);
+          reportError(error, {scope: 'auth.initial_url'});
         });
       }
     });

@@ -1,6 +1,6 @@
 import {deleteToken, getToken} from '@react-native-firebase/messaging';
 import {Platform} from 'react-native';
-import {debugError, debugLog} from '../../hooks/hooksLogger';
+import {debugError, debugLog, reportError} from '../../hooks/hooksLogger';
 import {userService} from '../api';
 import {ensureNotificationPermission} from './presentation';
 import {messagingInstance} from './runtime';
@@ -27,7 +27,7 @@ export async function registerFCMToken(steamId) {
 
     return {success: true, status: 'authorized'};
   } catch (error) {
-    debugError('[FCM] Erreur enregistrement token:', error);
+    reportError(error, {scope: 'fcm.register'});
     return {success: false, status: 'error'};
   }
 }
@@ -49,7 +49,7 @@ export async function unregisterFCMToken(steamId) {
     debugLog('[FCM] Token supprime du backend');
     return true;
   } catch (error) {
-    debugError('[FCM] Erreur suppression token:', error);
+    reportError(error, {scope: 'fcm.unregister', level: 'warning'});
     return false;
   }
 }

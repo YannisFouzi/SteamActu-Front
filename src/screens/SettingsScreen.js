@@ -18,7 +18,12 @@ import {COLORS} from '../constants';
 import {useAppContext} from '../context/AppContext';
 import {LANGUAGE_NATIVE_LABELS, SUPPORTED_LANGUAGES} from '../i18n';
 import {useAppLanguage} from '../hooks/useAppLanguage';
-import {debugError, showAlert, showDialog} from '../hooks/hooksLogger';
+import {
+  debugError,
+  reportError,
+  showAlert,
+  showDialog,
+} from '../hooks/hooksLogger';
 import {useUserSettings} from '../hooks/useUserSettings';
 import {adminService, userService} from '../services/api';
 import {TUTORIAL_STEPS} from '../tutorial/steps';
@@ -230,7 +235,7 @@ const SettingsScreen = () => {
               await userService.deleteAccount(steamId);
               await handleLogout();
             } catch (error) {
-              debugError('[SETTINGS] Account deletion failed:', error);
+              reportError(error, {scope: 'account.delete'});
               showAlert(t('common.error'), t('settings.deleteAccountError'));
             } finally {
               setDeleting(false);

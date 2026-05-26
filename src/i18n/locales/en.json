@@ -39,6 +39,7 @@
   },
   "auth": {
     "connectivityErrorMessage": "Unable to sign in. Check that the server is reachable.",
+    "outdatedAppMessage": "This version of the app is too old. Update it to sign in.",
     "launchErrorMessage": "Unable to start Steam sign-in. Please try again.",
     "loggingIn": "Signing in to Steam...",
     "loggingOut": "Signing out",
@@ -412,5 +413,11 @@
         "description": "You can change these options at any time from settings."
       }
     }
+  },
+  "update": {
+    "title": "Update required",
+    "message": "This version of Game News is no longer supported. Update the app to continue.",
+    "button": "Download update",
+    "hint": "Contact the developer for the latest version."
   }
 }

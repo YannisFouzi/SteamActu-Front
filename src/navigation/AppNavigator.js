@@ -11,6 +11,8 @@ import {useAppContext} from '../context/AppContext';
 import {debugError} from '../hooks/hooksLogger';
 import LoginScreen from '../screens/LoginScreen';
 import StartupScreen from '../screens/StartupScreen';
+import UpdateRequiredScreen from '../screens/UpdateRequiredScreen';
+import {checkAppVersion} from '../services/versionService';
 import {
   consumeNavigationInitialNotification,
   isInitialNotificationBootstrapResolved,
@@ -119,6 +121,13 @@ const AppNavigator = () => {
   const [initialNotificationResolved, setInitialNotificationResolved] =
     React.useState(isInitialNotificationBootstrapResolved());
   const [startupIntent, setStartupIntent] = React.useState(null);
+  // Version gate : 'checking' au boot, 'ok' une fois validee (ou fail-open en cas
+  // d'erreur reseau), 'outdated' si backend repond minSupportedVersion > APP_VERSION.
+  // Skip en dev pour ne pas embeter le workflow local. Fail-open dans versionService.
+  const [versionStatus, setVersionStatus] = React.useState(
+    __DEV__ ? 'ok' : 'checking',
+  );
+  const [versionUpdateUrl, setVersionUpdateUrl] = React.useState(null);
   const {registerNavigationRef, startTutorialIfNeeded, state: tutorialState} =
     useTutorial();
   const navigatorKey = isAuthenticated ? 'auth-stack' : 'guest-stack';
@@ -159,6 +168,23 @@ const AppNavigator = () => {
   }, []);
 
   React.useEffect(() => {
+    if (__DEV__) {
+      return undefined;
+    }
+    let mounted = true;
+    checkAppVersion().then(result => {
+      if (!mounted) {
+        return;
+      }
+      setVersionStatus(result.status);
+      setVersionUpdateUrl(result.updateUrl);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  React.useEffect(() => {
     if (!initialNotificationResolved) {
       return;
     }
@@ -169,7 +195,12 @@ const AppNavigator = () => {
     );
   }, [initialNotificationResolved]);
 
+  if (versionStatus === 'outdated') {
+    return <UpdateRequiredScreen updateUrl={versionUpdateUrl} />;
+  }
+
   if (
+    versionStatus === 'checking' ||
     isBootstrapping ||
     !initialNotificationResolved ||
     startupIntent === null

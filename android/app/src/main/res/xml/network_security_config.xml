@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Politique reseau release : TOUT le trafic doit etre en HTTPS.
+  Le manifest debug (android/app/src/debug/AndroidManifest.xml) override
+  android:usesCleartextTraffic="true" pour permettre le dev local (Metro,
+  backend localhost) sans toucher a cette config release-stricte.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

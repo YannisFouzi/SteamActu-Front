@@ -39,6 +39,7 @@
   },
   "auth": {
     "connectivityErrorMessage": "No se puede iniciar sesión. Comprueba que el servidor sea accesible.",
+    "outdatedAppMessage": "Esta versión de la aplicación está desactualizada. Actualízala para iniciar sesión.",
     "launchErrorMessage": "No se pudo iniciar el inicio de sesión de Steam. Inténtalo de nuevo.",
     "loggingIn": "Iniciando sesión en Steam...",
     "loggingOut": "Cerrando sesión",
@@ -412,5 +413,11 @@
         "description": "Puedes cambiar estas opciones en cualquier momento desde ajustes."
       }
     }
+  },
+  "update": {
+    "title": "Actualización requerida",
+    "message": "Esta versión de Game News ya no es compatible. Actualiza la aplicación para continuar.",
+    "button": "Descargar actualización",
+    "hint": "Contacta con el desarrollador para obtener la última versión."
   }
 }

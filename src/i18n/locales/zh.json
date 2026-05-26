@@ -39,6 +39,7 @@
   },
   "auth": {
     "connectivityErrorMessage": "无法登录，请检查服务器是否可达。",
+    "outdatedAppMessage": "此应用版本过旧，请更新后再登录。",
     "launchErrorMessage": "无法启动 Steam 登录，请重试。",
     "loggingIn": "正在登录 Steam...",
     "loggingOut": "正在退出",
@@ -412,5 +413,11 @@
         "description": "这些选项可随时在设置中更改。"
       }
     }
+  },
+  "update": {
+    "title": "需要更新",
+    "message": "此 Game News 版本不再受支持，请更新应用以继续。",
+    "button": "下载更新",
+    "hint": "请联系开发者获取最新版本。"
   }
 }

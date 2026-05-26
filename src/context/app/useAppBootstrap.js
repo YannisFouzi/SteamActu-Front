@@ -1,6 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {useCallback, useEffect, useRef, useState} from 'react';
-import {debugError, debugLog} from '../../hooks/hooksLogger';
+import {
+  debugLog,
+  reportError,
+  setSentryUser,
+} from '../../hooks/hooksLogger';
 import {
   fetchSteamProfile,
   persistSteamProfile,
@@ -34,6 +38,7 @@ export const useAppBootstrap = ({setSteamId, setUser, setSteamProfile}) => {
     setUser(null);
     setSteamProfile(null);
     setAuthStatus(AUTH_STATUS.SIGNED_OUT);
+    setSentryUser(null);
   }, [setSteamId, setSteamProfile, setUser]);
 
   const applySignedInSession = useCallback(
@@ -46,6 +51,7 @@ export const useAppBootstrap = ({setSteamId, setUser, setSteamProfile}) => {
       setUser(user);
       setSteamProfile(steamProfile);
       setAuthStatus(AUTH_STATUS.SIGNED_IN);
+      setSentryUser(steamId);
     },
     [setSteamId, setSteamProfile, setUser],
   );
@@ -72,7 +78,10 @@ export const useAppBootstrap = ({setSteamId, setUser, setSteamProfile}) => {
         setSteamProfile(nextProfile);
         return nextProfile;
       } catch (error) {
-        debugError('[BOOTSTRAP] Failed to refresh Steam profile:', error);
+        reportError(error, {
+          scope: 'bootstrap.profile_refresh',
+          level: 'warning',
+        });
         return null;
       }
     },
@@ -110,7 +119,10 @@ export const useAppBootstrap = ({setSteamId, setUser, setSteamProfile}) => {
         freshSteamProfile = await fetchSteamProfile(savedSteamId);
         await persistSteamProfile(savedSteamId, freshSteamProfile);
       } catch (profileError) {
-        debugError('[BOOTSTRAP] Failed to load Steam profile:', profileError);
+        reportError(profileError, {
+          scope: 'bootstrap.profile_fetch',
+          level: 'warning',
+        });
       }
 
       applySignedInSession({
@@ -119,7 +131,7 @@ export const useAppBootstrap = ({setSteamId, setUser, setSteamProfile}) => {
       });
       return true;
     } catch (error) {
-      debugError('[BOOTSTRAP] Erreur lors de la restauration de session:', error);
+      reportError(error, {scope: 'bootstrap.session_restore'});
       applySignedOutSession();
       return false;
     }

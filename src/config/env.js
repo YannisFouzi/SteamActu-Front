@@ -51,6 +51,12 @@ const deriveAuthBaseUrl = baseUrl => {
 
 const APP_SCHEME = getEnvVar('APP_SCHEME', 'steamnotif://');
 
+// IMPORTANT : doit etre bumpee SIMULTANEMENT avec versionName dans
+// android/app/build.gradle (et CFBundleShortVersionString sur iOS). C'est cette
+// valeur que le backend GET /api/version compare a `minSupportedVersion` pour
+// decider de bloquer l'app via UpdateRequiredScreen. Mismatch = check inutile.
+const APP_VERSION = '1.1';
+
 const SENTRY_DSN = getEnvVar(
   'SENTRY_DSN_MOBILE',
   'https://61fe39fa1a13a5d3ec716f83597731c7@o4511158959931392.ingest.de.sentry.io/4511265897185360',
@@ -64,6 +70,7 @@ export const APP_CONFIG = {
     deriveAuthBaseUrl(API_BASE_URL),
   ),
   APP_SCHEME,
+  APP_VERSION,
   STEAM_MEDIA_CDN,
   SENTRY_DSN,
 };
