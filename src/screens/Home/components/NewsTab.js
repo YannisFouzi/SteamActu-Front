@@ -22,7 +22,7 @@ import {
   showInfoMessage,
 } from '../../../hooks/hooksLogger';
 import {useAppContext} from '../../../context/AppContext';
-import {formatRelativeDate} from '../../../utils';
+import {formatRelativeDate, formatTimeOnly} from '../../../utils';
 import styles from '../styles';
 import EmptyStateMessage from './EmptyStateMessage';
 
@@ -121,13 +121,23 @@ const NewsTab = ({
     }, []),
   );
 
-  const formatDate = useCallback(
-    timestamp =>
-      formatRelativeDate(timestamp, {
+  const formatDateLine = useCallback(
+    timestamp => {
+      if (!timestamp) {
+        return '';
+      }
+      const language = i18n.resolvedLanguage || i18n.language;
+      const datePart = formatRelativeDate(timestamp, {
         includeMinutes: true,
         fallback: '',
-        language: i18n.resolvedLanguage || i18n.language,
-      }),
+        language,
+      });
+      const timePart = formatTimeOnly(timestamp, {language});
+      if (datePart && timePart) {
+        return `${datePart} • ${timePart}`;
+      }
+      return datePart || timePart;
+    },
     [i18n.language, i18n.resolvedLanguage],
   );
 
@@ -226,7 +236,7 @@ const NewsTab = ({
               <View style={styles.newsMetadata}>
                 <Text style={styles.newsGameName}>{item.gameName}</Text>
                 <Text style={styles.newsMetaText}>
-                  {formatDate(item.news?.date)}
+                  {formatDateLine(item.news?.date)}
                 </Text>
               </View>
             </View>
@@ -271,7 +281,7 @@ const NewsTab = ({
       );
     },
     [
-      formatDate,
+      formatDateLine,
       lastSeenAt,
       onToggleFavorite,
       openNews,

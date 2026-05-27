@@ -121,3 +121,23 @@ export const formatAbsoluteDate = (timestamp, options = {}) => {
     formatOptions,
   ).format(date);
 };
+
+/**
+ * Formate uniquement l'heure d'un timestamp (HH:MM selon locale).
+ * @param {number} timestamp
+ * @param {{ language?: string }} [options]
+ * @returns {string}
+ */
+export const formatTimeOnly = (timestamp, options = {}) => {
+  if (!timestamp) {
+    return '';
+  }
+
+  const {language} = options;
+  const normalizedTimestamp = normalizeTimestamp(timestamp);
+
+  return new Intl.DateTimeFormat(getCurrentLocale(language), {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(normalizedTimestamp));
+};

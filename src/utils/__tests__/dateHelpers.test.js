@@ -3,6 +3,7 @@ import {
   normalizeTimestamp,
   formatRelativeDate,
   formatAbsoluteDate,
+  formatTimeOnly,
 } from '../dateHelpers';
 
 describe('utils/dateHelpers', () => {
@@ -103,6 +104,28 @@ describe('utils/dateHelpers', () => {
     it('accepte des options custom (year=2-digit)', () => {
       const ts = new Date('2026-05-19T12:00:00Z').getTime();
       const result = formatAbsoluteDate(ts, { year: '2-digit' });
+      expect(typeof result).toBe('string');
+      expect(result.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('formatTimeOnly()', () => {
+    it('renvoie "" si timestamp falsy', () => {
+      expect(formatTimeOnly(0)).toBe('');
+      expect(formatTimeOnly(null)).toBe('');
+      expect(formatTimeOnly(undefined)).toBe('');
+    });
+
+    it('formate un timestamp en ms (HH:MM selon locale/TZ)', () => {
+      const ts = new Date('2026-05-22T15:00:13Z').getTime();
+      const result = formatTimeOnly(ts, {language: 'fr'});
+      expect(typeof result).toBe('string');
+      expect(result).toMatch(/\d{1,2}[:.h]\d{2}/);
+    });
+
+    it('accepte un timestamp en secondes (auto-normalize)', () => {
+      const sec = Math.floor(new Date('2026-05-22T15:00:13Z').getTime() / 1000);
+      const result = formatTimeOnly(sec, {language: 'fr'});
       expect(typeof result).toBe('string');
       expect(result.length).toBeGreaterThan(0);
     });
