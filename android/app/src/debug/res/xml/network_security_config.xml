@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Overlay debug : surcharge automatiquement la NSC release-stricte du main/.
+  Garde le default `cleartextTrafficPermitted=false` (HTTPS partout) et n'ouvre
+  le cleartext QUE pour localhost et 10.0.2.2 (host emulator) — necessaire pour
+  parler au backend dev via `adb reverse tcp:5000`. Ne touche pas le bundle
+  release : ce fichier est dans src/debug/, jamais embarque en prod.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>
