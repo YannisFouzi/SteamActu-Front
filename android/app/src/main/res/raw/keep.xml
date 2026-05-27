@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Liste de resources que R8/shrinkResources NE DOIT PAS supprimer en release build,
+  parce qu'elles sont referencees via string depuis du JS (Notifee) et donc invisibles
+  pour l'analyse statique R8.
+
+  Ajouter ici TOUTE resource (drawable/color/string/raw/...) referencee uniquement
+  par nom depuis le JS, sinon R8 la supprime et la production crash silencieusement.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_notification" />
