@@ -190,6 +190,24 @@ const adminService = {
       timeout: 15000,
     });
   },
+  refreshAccount: async () => {
+    const session = await getMobileSession();
+
+    if (!session?.token) {
+      const error = new Error(translate('errors.sessionExpiredMessage'));
+      error.status = 401;
+      throw error;
+    }
+
+    // Manual library + Steam Family + wishlist re-sync (same as the cron). The
+    // sync makes several live Steam calls, so allow a generous timeout.
+    return api.post('/admin/refresh-account', null, {
+      headers: {
+        Authorization: `Bearer ${session.token}`,
+      },
+      timeout: 60000,
+    });
+  },
 };
 
 const authApi = axios.create({

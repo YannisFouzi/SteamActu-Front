@@ -24,8 +24,9 @@ import {
   showAlert,
   showDialog,
 } from '../hooks/hooksLogger';
+import {useAdminAccess} from '../hooks/useAdminAccess';
 import {useUserSettings} from '../hooks/useUserSettings';
-import {adminService, userService} from '../services/api';
+import {userService} from '../services/api';
 import {TUTORIAL_STEPS} from '../tutorial/steps';
 import {useTutorial} from '../tutorial/useTutorial';
 import ProfileHeader from './settings/components/ProfileHeader';
@@ -68,7 +69,7 @@ const SettingsScreen = () => {
   const {handleLogout, steamId} = useAppContext();
   const [loggingOut, setLoggingOut] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [hasAdminAccess, setHasAdminAccess] = useState(false);
+  const hasAdminAccess = useAdminAccess();
 
   const {
     loading: settingsLoading,
@@ -131,35 +132,6 @@ const SettingsScreen = () => {
   useEffect(() => {
     scrollToActiveTutorialStep();
   }, [scrollToActiveTutorialStep]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    setHasAdminAccess(false);
-
-    if (!steamId) {
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    adminService
-      .getAccess()
-      .then(response => {
-        if (!cancelled) {
-          setHasAdminAccess(Boolean(response.data?.isAdmin));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setHasAdminAccess(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [steamId]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
