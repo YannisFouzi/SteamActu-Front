@@ -201,7 +201,10 @@ const adminService = {
 
     // Manual library + Steam Family + wishlist re-sync (same as the cron). The
     // sync makes several live Steam calls, so allow a generous timeout.
-    return api.post('/admin/refresh-account', null, {
+    // Body `{}` (not null) : avec Content-Type application/json, `null` part en
+    // chaîne "null" que body-parser strict rejette (400 avant le handler). Le
+    // handler n'utilise pas req.body — `{}` est juste un corps JSON valide.
+    return api.post('/admin/refresh-account', {}, {
       headers: {
         Authorization: `Bearer ${session.token}`,
       },
