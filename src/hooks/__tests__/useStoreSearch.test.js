@@ -26,7 +26,7 @@ describe('hooks/useStoreSearch', () => {
       data: [{ appid: 730, name: 'CSGO' }],
     });
 
-    const { result, rerender } = renderHook(
+    const { result } = renderHook(
       ({ q }) => useStoreSearch(q, { debounceMs: 100, minLength: 2 }),
       { initialProps: { q: 'cs' } },
     );

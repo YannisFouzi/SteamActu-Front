@@ -1,5 +1,3 @@
-/* eslint-disable global-require */
-
 require('@testing-library/jest-native/extend-expect');
 
 // --- AsyncStorage : mock officiel fourni par le package ---
@@ -28,7 +26,9 @@ jest.mock('react-native-keychain', () => {
     getGenericPassword: jest.fn(async (options = {}) => {
       const service = options.service || 'default';
       const entry = store.get(service);
-      if (!entry) return false;
+      if (!entry) {
+        return false;
+      }
       return {
         service,
         username: entry.username,
@@ -231,8 +231,11 @@ jest.spyOn(console, 'warn').mockImplementation(() => {});
 jest.spyOn(console, 'error').mockImplementation((...args) => {
   // Laisser passer les vrais erreurs React (ex. PropTypes), masquer le bruit RN
   const msg = String(args[0] ?? '');
-  if (msg.includes('useNativeDriver') || msg.includes('Animated')) return;
+  if (msg.includes('useNativeDriver') || msg.includes('Animated')) {
+    return;
+  }
   // Imprimer quand même pour aider au debug
-  // eslint-disable-next-line no-console
-  if (process.env.JEST_VERBOSE) console.info('[stderr]', ...args);
+  if (process.env.JEST_VERBOSE) {
+    console.info('[stderr]', ...args);
+  }
 });
