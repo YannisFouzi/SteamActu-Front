@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {showAlert, debugError, debugLog} from '../../hooks/hooksLogger';
 import {translate} from '../../i18n';
+import {userService} from '../../services/api';
 import {
   applyLocalFollowState,
   buildFollowGameRef,
@@ -173,6 +174,90 @@ export const useFollowedGamesActions = ({
     return followRequestsInFlightRef.current.has(appIdString);
   }, []);
 
+  // Maintien optimiste de user.mutedGames (jeux suivis avec notifications
+  // coupées — bouton +). Source serveur : User.toJSON expose mutedGames ;
+  // localement on le fait évoluer au même rythme que les actions.
+  const updateUserMutedGames = useCallback(
+    (appId, muted) => {
+      const appIdString = normalizeFollowAppId(appId);
+      if (!appIdString) {
+        return;
+      }
+      setUser(prevUser => {
+        if (!prevUser) {
+          return prevUser;
+        }
+        const mutedSet = new Set(
+          Array.isArray(prevUser.mutedGames)
+            ? prevUser.mutedGames.map(String)
+            : [],
+        );
+        if (muted) {
+          mutedSet.add(appIdString);
+        } else {
+          mutedSet.delete(appIdString);
+        }
+        return {...prevUser, mutedGames: Array.from(mutedSet)};
+      });
+    },
+    [setUser],
+  );
+
+  // true = suivi ET notifications actives (cloche pleine). Un jeu non suivi ou
+  // en suivi silencieux renvoie false.
+  const isGameNotified = useCallback(
+    appId => {
+      const appIdString = normalizeFollowAppId(appId);
+      if (!appIdString || !isGameFollowed(appIdString)) {
+        return false;
+      }
+      return !(
+        Array.isArray(user?.mutedGames) &&
+        user.mutedGames.map(String).includes(appIdString)
+      );
+    },
+    [isGameFollowed, user],
+  );
+
+  // Bascule cloche d'un jeu déjà suivi : optimiste + revert si échec. Appel
+  // direct (pas la queue offline) — préférence serveur légère, même pattern
+  // que le SPA web ; le pire cas d'un échec réseau est un revert visuel.
+  const handleToggleGameNotifications = useCallback(
+    async appId => {
+      const appIdString = normalizeFollowAppId(appId);
+      if (!steamId || !appIdString) {
+        return false;
+      }
+
+      const nextEnabled = !isGameNotified(appIdString);
+      updateUserMutedGames(appIdString, !nextEnabled);
+
+      try {
+        await userService.setFollowNotifications(
+          steamId,
+          appIdString,
+          nextEnabled,
+        );
+        debugLog(
+          nextEnabled
+            ? '[FOLLOW] Notifications réactivées:'
+            : '[FOLLOW] Notifications coupées (suivi silencieux):',
+          appIdString,
+        );
+        return true;
+      } catch (error) {
+        debugError('Erreur bascule notifications du jeu:', error);
+        updateUserMutedGames(appIdString, nextEnabled); // revert
+        showAlert(
+          translate('common.error'),
+          translate('games.followUpdateError'),
+        );
+        return false;
+      }
+    },
+    [isGameNotified, steamId, updateUserMutedGames],
+  );
+
   const applyNotificationUnfollowCommit = useCallback(
     async ({appId, followedGames = null, gamesVersion = null} = {}) => {
       const appIdString = normalizeFollowAppId(appId);
@@ -227,6 +312,10 @@ export const useFollowedGamesActions = ({
         return {
           ...prevUser,
           followedGames: nextFollowedGames,
+          // Plus suivi = plus muté non plus
+          mutedGames: Array.isArray(prevUser.mutedGames)
+            ? prevUser.mutedGames.filter(id => String(id) !== appIdString)
+            : prevUser.mutedGames,
         };
       });
 
@@ -272,6 +361,9 @@ export const useFollowedGamesActions = ({
             : undefined,
         );
         const targetIsFollowed = !isFollowed;
+        // notifications:false = suivi silencieux (bouton +). N'a de sens que
+        // pour un follow ; ignoré sur un unfollow.
+        const wantsNotifications = gameMeta.notifications !== false;
         const game = games.find(g => getGameAppId(g) === appIdString);
         const gameName =
           gameMeta.name ||
@@ -303,6 +395,7 @@ export const useFollowedGamesActions = ({
           targetIsFollowed,
           gameRef,
           updatedAt: mutationUpdatedAt,
+          notifications: wantsNotifications,
         });
 
         if (!enqueued) {
@@ -317,11 +410,19 @@ export const useFollowedGamesActions = ({
           setUser,
           setGames,
           updatedAt: mutationUpdatedAt,
+          notifications: wantsNotifications,
         });
 
         if (!mutation) {
           throw new Error('Local follow mutation was not created');
         }
+
+        // mutedGames optimiste : follow silencieux = muté ; follow notifié ou
+        // unfollow = retiré (une nouvelle entrée serveur repart notifiée).
+        updateUserMutedGames(
+          appIdString,
+          targetIsFollowed && !wantsNotifications,
+        );
 
         syncQueuedFollow({
           steamId,
@@ -383,14 +484,17 @@ export const useFollowedGamesActions = ({
       setPendingFollowState,
       setUser,
       steamId,
+      updateUserMutedGames,
     ],
   );
 
   return {
     applyNotificationUnfollowCommit,
     handleFollowGame,
+    handleToggleGameNotifications,
     getResolvedFollowState,
     isGameFollowed,
+    isGameNotified,
     isFollowPending,
   };
 };

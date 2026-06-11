@@ -64,7 +64,14 @@ const buildFollowDedupeKey = appId =>
 
 registerOfflineSyncTaskType(
   FOLLOW_SYNC_TASK_TYPE,
-  async ({steamId, appId, targetIsFollowed, gameRef, mutationUpdatedAt}) => {
+  async ({
+    steamId,
+    appId,
+    targetIsFollowed,
+    gameRef,
+    mutationUpdatedAt,
+    notifications,
+  }) => {
     const normalizedSteamId = normalizeFollowSteamId(steamId);
     const normalizedAppId = normalizeFollowAppId(appId);
 
@@ -85,11 +92,14 @@ registerOfflineSyncTaskType(
 
     try {
       if (targetIsFollowed) {
+        // notifications:false = suivi silencieux (bouton +). Les mutations
+        // legacy en file (sans le champ) suivent en notifié, comme avant.
         await userService.followGame(
           normalizedSteamId,
           normalizedAppId,
           normalizedGameRef.name,
           normalizedGameRef.imageUrl,
+          notifications !== false,
         );
       } else {
         await userService.unfollowGame(normalizedSteamId, normalizedAppId);
@@ -130,6 +140,7 @@ export const queueFollowSync = async ({
   targetIsFollowed,
   gameRef = {},
   updatedAt = null,
+  notifications = true,
 }) => {
   const normalizedSteamId = normalizeFollowSteamId(steamId);
   const normalizedAppId = normalizeFollowAppId(appId);
@@ -153,6 +164,7 @@ export const queueFollowSync = async ({
       targetIsFollowed: Boolean(targetIsFollowed),
       gameRef: normalizedGameRef,
       mutationUpdatedAt: updatedAt,
+      notifications: notifications !== false,
     },
   });
 
@@ -231,6 +243,7 @@ export const reconcilePendingFollowMutations = async ({steamId} = {}) => {
       targetIsFollowed: mutation.targetIsFollowed,
       gameRef: mutation.gameRef,
       updatedAt: mutation.updatedAt,
+      notifications: mutation.notifications,
     });
 
     if (enqueued) {

@@ -87,10 +87,20 @@ const userService = {
   register: (steamId, language) =>
     api.post('/users/register', {steamId, language}),
   getUser: steamId => api.get(`/users/${steamId}`),
-  followGame: (steamId, appId, name, logoUrl) =>
-    api.post(`/users/${steamId}/follow`, {appId, name, logoUrl}),
+  // notifications:false = suivi silencieux (bouton +) : news dans le fil, pas
+  // de push. Défaut true = suivi notifié (cloche, comportement historique).
+  followGame: (steamId, appId, name, logoUrl, notifications = true) =>
+    api.post(`/users/${steamId}/follow`, {
+      appId,
+      name,
+      logoUrl,
+      notifications: notifications !== false,
+    }),
   unfollowGame: (steamId, appId) =>
     api.delete(`/users/${steamId}/follow/${appId}`),
+  // Bascule cloche d'un jeu déjà suivi, sans désabonner (404 si non suivi).
+  setFollowNotifications: (steamId, appId, enabled) =>
+    api.put(`/users/${steamId}/follow/${appId}/notifications`, {enabled}),
   updateNotificationSettings: (steamId, settings) =>
     api.put(`/users/${steamId}/notifications`, settings),
   updateRecentActiveGames: (steamId, games) =>

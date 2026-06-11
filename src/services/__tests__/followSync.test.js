@@ -98,8 +98,28 @@ describe('services/followSync', () => {
         '730',
         'CSGO',
         expect.any(String),
+        true, // défaut = suivi notifié
       );
       expect(await queue.getOfflineSyncQueueSnapshot()).toEqual([]);
+    });
+
+    it('follow silencieux → POST avec notifications:false', async () => {
+      await followSync.queueFollowSync({
+        steamId: '76561197960287930',
+        appId: '730',
+        targetIsFollowed: true,
+        gameRef: { name: 'CSGO' },
+        notifications: false,
+      });
+      await followSync.syncQueuedFollow();
+
+      expect(userServiceMock.followGame).toHaveBeenCalledWith(
+        '76561197960287930',
+        '730',
+        'CSGO',
+        expect.any(String),
+        false,
+      );
     });
 
     it('unfollow → DELETE', async () => {

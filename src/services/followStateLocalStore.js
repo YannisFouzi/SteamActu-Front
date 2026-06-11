@@ -100,6 +100,9 @@ const normalizeMutation = (steamId, mutation) => {
     steamId: normalizedSteamId,
     appId,
     targetIsFollowed: mutation.targetIsFollowed,
+    // false = suivi silencieux (bouton +). Mutations legacy sans le champ =
+    // notifié, comme avant. Ne porte de sens que pour targetIsFollowed=true.
+    notifications: mutation.notifications !== false,
     gameRef: buildFollowGameRef({
       appId,
       ...(isObject(mutation.gameRef) ? mutation.gameRef : {}),
@@ -153,6 +156,7 @@ export const queueLocalFollowMutation = async ({
   targetIsFollowed,
   gameRef = {},
   updatedAt = null,
+  notifications = true,
 }) => {
   const normalizedSteamId = normalizeFollowSteamId(steamId);
   const normalizedAppId = normalizeFollowAppId(appId);
@@ -167,6 +171,7 @@ export const queueLocalFollowMutation = async ({
       steamId: normalizedSteamId,
       appId: normalizedAppId,
       targetIsFollowed: Boolean(targetIsFollowed),
+      notifications: notifications !== false,
       gameRef: buildFollowGameRef({
         appId: normalizedAppId,
         ...gameRef,
@@ -463,6 +468,7 @@ export const applyLocalFollowState = async ({
   setUser,
   setGames,
   updatedAt = null,
+  notifications = true,
 }) => {
   const mutation = await queueLocalFollowMutation({
     steamId,
@@ -470,6 +476,7 @@ export const applyLocalFollowState = async ({
     targetIsFollowed,
     gameRef,
     updatedAt,
+    notifications,
   });
 
   if (!mutation) {

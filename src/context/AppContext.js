@@ -117,8 +117,10 @@ export const AppProvider = ({children, navigation = null}) => {
   const {
     applyNotificationUnfollowCommit,
     handleFollowGame,
+    handleToggleGameNotifications,
     getResolvedFollowState,
     isGameFollowed,
+    isGameNotified,
     isFollowPending,
   } =
     useFollowedGamesActions({
@@ -301,9 +303,11 @@ export const AppProvider = ({children, navigation = null}) => {
       handleConfirmUnfollowGamesChange,
       applySignedInSession,
       handleFollowGame,
+      handleToggleGameNotifications,
       getResolvedFollowState,
       filterAndSortGames,
       isGameFollowed,
+      isGameNotified,
       isFollowPending,
       maybeRefreshGames,
       registerNotificationSyncHandler,
@@ -318,6 +322,7 @@ export const AppProvider = ({children, navigation = null}) => {
       authStatus,
       applySignedInSession,
       handleFollowGame,
+      handleToggleGameNotifications,
       handleLibraryModeChange,
       handleLogout,
       handleRefresh,
@@ -327,6 +332,7 @@ export const AppProvider = ({children, navigation = null}) => {
       hydrateUserSettings,
       isAuthenticated,
       isGameFollowed,
+      isGameNotified,
       isAuthBootstrapping,
       isFollowPending,
       isUserSettingsReady,

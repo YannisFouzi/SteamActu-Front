@@ -148,13 +148,32 @@ describe('services/api', () => {
       expect(apiInstance.get).toHaveBeenCalledWith('/users/id');
     });
 
-    it('followGame POST /users/:id/follow', () => {
+    it('followGame POST /users/:id/follow (notifié par défaut)', () => {
       userService.followGame('id', '730', 'CSGO', 'logo');
       expect(apiInstance.post).toHaveBeenCalledWith('/users/id/follow', {
         appId: '730',
         name: 'CSGO',
         logoUrl: 'logo',
+        notifications: true,
       });
+    });
+
+    it('followGame avec notifications:false (suivi silencieux)', () => {
+      userService.followGame('id', '730', 'CSGO', 'logo', false);
+      expect(apiInstance.post).toHaveBeenCalledWith('/users/id/follow', {
+        appId: '730',
+        name: 'CSGO',
+        logoUrl: 'logo',
+        notifications: false,
+      });
+    });
+
+    it('setFollowNotifications PUT /users/:id/follow/:appId/notifications', () => {
+      userService.setFollowNotifications('id', '730', false);
+      expect(apiInstance.put).toHaveBeenCalledWith(
+        '/users/id/follow/730/notifications',
+        {enabled: false},
+      );
     });
 
     it('unfollowGame DELETE /users/:id/follow/:appId', () => {
