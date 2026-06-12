@@ -55,7 +55,7 @@ const APP_SCHEME = getEnvVar('APP_SCHEME', 'steamnotif://');
 // android/app/build.gradle (et CFBundleShortVersionString sur iOS). C'est cette
 // valeur que le backend GET /api/version compare a `minSupportedVersion` pour
 // decider de bloquer l'app via UpdateRequiredScreen. Mismatch = check inutile.
-const APP_VERSION = '1.3';
+const APP_VERSION = '1.3.1';
 
 const SENTRY_DSN = getEnvVar(
   'SENTRY_DSN_MOBILE',
