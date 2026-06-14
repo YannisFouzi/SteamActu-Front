@@ -223,4 +223,38 @@ describe('context/app/useFollowedGamesActions — fixes suivi à deux niveaux', 
     expect(success).toBe(false);
     expect(mockQueueFollowSync).not.toHaveBeenCalled();
   });
+
+  it('toggle cloche optimiste : une re-synchro serveur STALE ne fait PAS revert (intention prioritaire)', async () => {
+    // La sync ne converge jamais → la mutation reste "en attente" : c'est la
+    // fenêtre exacte du bug (ton toggle pas encore arrivé au serveur).
+    mockQueueFollowSync.mockReturnValue(new Promise(() => {}));
+    const {params, result, rerender} = renderActions({
+      user: {followedGames: ['730'], mutedGames: []}, // 730 suivi + notifié
+    });
+
+    // Laisse l'hydratation au montage (readPendingFollowMutations → {}) se terminer
+    // AVANT le toggle, sinon elle écraserait le pending qu'on vient de poser.
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
+    expect(result.current.isGameNotified('730')).toBe(true);
+
+    // Couper la cloche (optimiste : notifications off)
+    await act(async () => {
+      await result.current.handleToggleGameNotifications('730');
+    });
+    expect(result.current.isGameNotified('730')).toBe(false); // muté optimiste
+
+    // Une re-synchro serveur STALE réécrit le user SANS le toggle (mutedGames vide)
+    // — exactement ce que faisaient reconcile / poll / refetch profil.
+    await act(async () => {
+      params.user = {followedGames: ['730'], mutedGames: []};
+      rerender();
+    });
+
+    // L'intention en attente protège la lecture → PAS de revert (avant le fix,
+    // isGameNotified relisait user.mutedGames vide et renvoyait true).
+    expect(result.current.isGameNotified('730')).toBe(false);
+  });
 });

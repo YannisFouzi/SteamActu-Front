@@ -26,8 +26,13 @@ const VALID_SORTS = new Set([SORT_ALPHABETICAL, SORT_RECENT]);
 
 const FollowedGamesTab = React.memo(({styles}) => {
   const {t} = useTranslation();
-  const {steamId, user, registerNotificationSyncHandler, maybeRefreshGames} =
-    useAppContext();
+  const {
+    steamId,
+    user,
+    registerNotificationSyncHandler,
+    maybeRefreshGames,
+    reconcileFollowStateFromDetails,
+  } = useAppContext();
   const route = useRoute();
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,6 +67,21 @@ const FollowedGamesTab = React.memo(({styles}) => {
       }
     }, [maybeRefreshGames]),
   );
+
+  // RÉCONCILIATION DÉTERMINISTE : la liste (followed-games-details) est la source
+  // serveur faisant autorité (tous les jeux suivis + leur flag notifications).
+  // Dès qu'elle change (y compris quand un follow distant la fait grossir SANS
+  // qu'aucun poll de version ne se déclenche — ex. on reste sur l'onglet pendant
+  // qu'on suit depuis l'extension), on aligne user.followedGames/mutedGames pour
+  // que les boutons [+]/cloche reflètent la réalité. No-op si identique.
+  useEffect(() => {
+    if (
+      hasFetchedFromNetwork &&
+      typeof reconcileFollowStateFromDetails === 'function'
+    ) {
+      reconcileFollowStateFromDetails(followedGames);
+    }
+  }, [followedGames, hasFetchedFromNetwork, reconcileFollowStateFromDetails]);
 
   // Pattern stale-while-revalidate : on n'affiche EmptyState que sur un état
   // confirmé. Trois cas où on garde le spinner :

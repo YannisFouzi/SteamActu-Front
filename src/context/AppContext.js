@@ -122,6 +122,7 @@ export const AppProvider = ({children, navigation = null}) => {
     isGameFollowed,
     isGameNotified,
     isFollowPending,
+    reconcileFollowStateFromDetails,
   } =
     useFollowedGamesActions({
       steamId,
@@ -310,6 +311,7 @@ export const AppProvider = ({children, navigation = null}) => {
       isGameFollowed,
       isGameNotified,
       isFollowPending,
+      reconcileFollowStateFromDetails,
       maybeRefreshGames,
       registerNotificationSyncHandler,
       visibilityHint,
@@ -336,6 +338,7 @@ export const AppProvider = ({children, navigation = null}) => {
       isGameNotified,
       isAuthBootstrapping,
       isFollowPending,
+      reconcileFollowStateFromDetails,
       isUserSettingsReady,
       libraryFollowMode,
       confirmUnfollowGames,

@@ -14,10 +14,16 @@ import {
 } from '../../services/followSync';
 import {getGameAppId, getGameIconUrl} from '../../utils';
 
+// Overlay optimiste en mémoire : chaque mutation en attente porte l'intention
+// COMPLÈTE (suivi ET notifications). C'est ce qui protège la cloche (comme le +)
+// d'un écrasement par une re-synchro serveur tant que la mutation n'a pas convergé.
 const buildPendingFollowStates = pendingMutations =>
   Object.values(pendingMutations || {}).reduce((acc, mutation) => {
     if (mutation?.appId) {
-      acc[String(mutation.appId)] = Boolean(mutation.targetIsFollowed);
+      acc[String(mutation.appId)] = {
+        followed: Boolean(mutation.targetIsFollowed),
+        notified: mutation.notifications !== false,
+      };
     }
     return acc;
   }, {});
@@ -88,17 +94,23 @@ export const useFollowedGamesActions = ({
     };
   }, [steamId]);
 
-  const setPendingFollowState = useCallback((appId, isFollowed) => {
-    const normalizedAppId = normalizeFollowAppId(appId);
-    if (!normalizedAppId) {
-      return;
-    }
+  const setPendingFollowState = useCallback(
+    (appId, isFollowed, notified = true) => {
+      const normalizedAppId = normalizeFollowAppId(appId);
+      if (!normalizedAppId) {
+        return;
+      }
 
-    setPendingFollowStates(previousState => ({
-      ...previousState,
-      [normalizedAppId]: Boolean(isFollowed),
-    }));
-  }, []);
+      setPendingFollowStates(previousState => ({
+        ...previousState,
+        [normalizedAppId]: {
+          followed: Boolean(isFollowed),
+          notified: notified !== false,
+        },
+      }));
+    },
+    [],
+  );
 
   const clearPendingFollowState = useCallback(appId => {
     const normalizedAppId = normalizeFollowAppId(appId);
@@ -130,7 +142,7 @@ export const useFollowedGamesActions = ({
           appIdString,
         )
       ) {
-        return pendingFollowStates[appIdString];
+        return pendingFollowStates[appIdString].followed;
       }
 
       return !!user?.followedGames && user.followedGames.includes(appIdString);
@@ -151,7 +163,7 @@ export const useFollowedGamesActions = ({
           appIdString,
         )
       ) {
-        return pendingFollowStates[appIdString];
+        return pendingFollowStates[appIdString].followed;
       }
 
       if (Array.isArray(user?.followedGames)) {
@@ -207,12 +219,21 @@ export const useFollowedGamesActions = ({
       if (!appIdString || !isGameFollowed(appIdString)) {
         return false;
       }
+      // Intention en attente PRIORITAIRE (même protection que isGameFollowed) :
+      // tant qu'un toggle cloche n'a pas convergé côté serveur, on lit l'intention
+      // optimiste — sinon une re-synchro serveur (reconcile/poll/profil) qui réécrit
+      // user.mutedGames avec l'ancienne valeur ferait revert la cloche.
+      if (
+        Object.prototype.hasOwnProperty.call(pendingFollowStates, appIdString)
+      ) {
+        return pendingFollowStates[appIdString].notified;
+      }
       return !(
         Array.isArray(user?.mutedGames) &&
         user.mutedGames.map(String).includes(appIdString)
       );
     },
-    [isGameFollowed, user],
+    [isGameFollowed, pendingFollowStates, user],
   );
 
   // Cœur unique : applique l'état désiré {followed, notifications} d'un jeu.
@@ -229,7 +250,7 @@ export const useFollowedGamesActions = ({
       const wantsNotifications = notifications !== false;
 
       // ── Optimiste synchrone (un seul batch React) ──
-      setPendingFollowState(appIdString, targetIsFollowed);
+      setPendingFollowState(appIdString, targetIsFollowed, wantsNotifications);
       updateUserMutedGames(
         appIdString,
         targetIsFollowed && !wantsNotifications,
@@ -447,6 +468,51 @@ export const useFollowedGamesActions = ({
     [commitFollowMutation, getResolvedFollowState],
   );
 
+  // Réconcilie la source de vérité (user.followedGames + mutedGames) depuis la
+  // liste serveur faisant autorité (followed-games-details : TOUS les jeux suivis
+  // + leur flag notifications). Appelée après chaque fetch de la liste → un follow
+  // fait sur une AUTRE surface (extension/web/plugin) se reflète immédiatement sur
+  // l'état des boutons, sans dépendre du timing du poll de version. No-op si rien
+  // n'a changé (pas de re-render parasite).
+  const reconcileFollowStateFromDetails = useCallback(
+    items => {
+      if (!Array.isArray(items)) {
+        return;
+      }
+      const followedIds = items
+        .map(it => normalizeFollowAppId(it?.appId))
+        .filter(Boolean);
+      const mutedIds = items
+        .filter(it => it && it.notifications === false)
+        .map(it => normalizeFollowAppId(it?.appId))
+        .filter(Boolean);
+      setUser(prevUser => {
+        if (!prevUser) {
+          return prevUser;
+        }
+        const prevFollowed = Array.isArray(prevUser.followedGames)
+          ? prevUser.followedGames.map(String)
+          : [];
+        const prevMuted = Array.isArray(prevUser.mutedGames)
+          ? prevUser.mutedGames.map(String)
+          : [];
+        const followedSet = new Set(followedIds);
+        const mutedSet = new Set(mutedIds);
+        const sameFollowed =
+          prevFollowed.length === followedSet.size &&
+          prevFollowed.every(id => followedSet.has(id));
+        const sameMuted =
+          prevMuted.length === mutedSet.size &&
+          prevMuted.every(id => mutedSet.has(id));
+        if (sameFollowed && sameMuted) {
+          return prevUser;
+        }
+        return {...prevUser, followedGames: followedIds, mutedGames: mutedIds};
+      });
+    },
+    [setUser],
+  );
+
   return {
     applyNotificationUnfollowCommit,
     handleFollowGame,
@@ -455,5 +521,6 @@ export const useFollowedGamesActions = ({
     isGameFollowed,
     isGameNotified,
     isFollowPending,
+    reconcileFollowStateFromDetails,
   };
 };

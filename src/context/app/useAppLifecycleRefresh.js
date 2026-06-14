@@ -4,6 +4,11 @@ import {useCallback, useEffect, useRef} from 'react';
 import {debugError, debugLog} from '../../hooks/hooksLogger';
 
 const INITIAL_LIBRARY_LOAD_DELAY_MS = 350;
+// Poll périodique de followVersion pendant que l'app est au 1er plan. Couvre le
+// cas où un follow est fait sur une AUTRE surface (extension/web/plugin) sans
+// qu'aucun focus/foreground ne se déclenche côté mobile (utilisateur immobile sur
+// un écran). Un GET /steam/status toutes les 30 s = coût négligeable.
+const FOLLOW_POLL_INTERVAL_MS = 30000;
 
 export const useAppLifecycleRefresh = ({
   enabled,
@@ -76,6 +81,26 @@ export const useAppLifecycleRefresh = ({
       }
     };
   }, []);
+
+  // Poll périodique léger (foreground only) → propage les follows distants même
+  // quand l'utilisateur reste immobile sur un écran. maybeRefreshGames est
+  // débouncé + skip-si-loading, et ne recharge la bibliothèque que si gamesVersion
+  // a bougé (un follow ne bumpe que followVersion → re-fetch profil seul).
+  useEffect(() => {
+    if (!enabled) {
+      return undefined;
+    }
+    const intervalId = setInterval(() => {
+      if (AppState.currentState !== 'active') {
+        return;
+      }
+      const refresh = maybeRefreshGamesRef.current;
+      if (typeof refresh === 'function') {
+        refresh('periodicPoll');
+      }
+    }, FOLLOW_POLL_INTERVAL_MS);
+    return () => clearInterval(intervalId);
+  }, [enabled]);
 
   useEffect(() => {
     if (!enabled) {
