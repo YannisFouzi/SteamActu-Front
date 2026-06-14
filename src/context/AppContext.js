@@ -263,6 +263,7 @@ export const AppProvider = ({children, navigation = null}) => {
     loading,
     refreshing,
     checkForNewGames,
+    maybeRefreshGames,
     lastRefreshTime,
     isOlderThanOneDay,
   });

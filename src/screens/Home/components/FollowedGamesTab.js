@@ -1,4 +1,8 @@
-import {useNavigation, useRoute} from '@react-navigation/native';
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from '@react-navigation/native';
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {ActivityIndicator, FlatList, RefreshControl, View} from 'react-native';
 import {useTranslation} from 'react-i18next';
@@ -22,7 +26,8 @@ const VALID_SORTS = new Set([SORT_ALPHABETICAL, SORT_RECENT]);
 
 const FollowedGamesTab = React.memo(({styles}) => {
   const {t} = useTranslation();
-  const {steamId, user, registerNotificationSyncHandler} = useAppContext();
+  const {steamId, user, registerNotificationSyncHandler, maybeRefreshGames} =
+    useAppContext();
   const route = useRoute();
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,6 +50,18 @@ const FollowedGamesTab = React.memo(({styles}) => {
     followedAppIds,
     registerSyncHandler: registerNotificationSyncHandler,
   });
+
+  // À chaque focus de l'onglet, sonder followVersion (débouncé, référence-stable)
+  // → si un suivi a changé ailleurs (web/plugin/extension), re-fetch du profil
+  // seul pour que l'état des boutons [+]/cloche reflète la réalité sans refresh
+  // manuel. C'est le déclencheur clé du scénario "j'ouvre/je vais dans Jeux suivis".
+  useFocusEffect(
+    useCallback(() => {
+      if (typeof maybeRefreshGames === 'function') {
+        maybeRefreshGames('followedGamesTab');
+      }
+    }, [maybeRefreshGames]),
+  );
 
   // Pattern stale-while-revalidate : on n'affiche EmptyState que sur un état
   // confirmé. Trois cas où on garde le spinner :

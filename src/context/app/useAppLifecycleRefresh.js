@@ -13,11 +13,13 @@ export const useAppLifecycleRefresh = ({
   loading,
   refreshing,
   checkForNewGames,
+  maybeRefreshGames,
   lastRefreshTime,
   isOlderThanOneDay,
 }) => {
   const appStateRef = useRef(AppState.currentState);
   const loadDataRef = useRef(loadData);
+  const maybeRefreshGamesRef = useRef(maybeRefreshGames);
   const checkLastVerificationDateRef = useRef(null);
   const initialLoadTimeoutRef = useRef(null);
   const initialLoadFrameRef = useRef(null);
@@ -25,6 +27,10 @@ export const useAppLifecycleRefresh = ({
   useEffect(() => {
     loadDataRef.current = loadData;
   }, [loadData]);
+
+  useEffect(() => {
+    maybeRefreshGamesRef.current = maybeRefreshGames;
+  }, [maybeRefreshGames]);
 
   const checkLastVerificationDate = useCallback(async () => {
     try {
@@ -106,6 +112,14 @@ export const useAppLifecycleRefresh = ({
         const checkVerification = checkLastVerificationDateRef.current;
         if (typeof checkVerification === 'function') {
           checkVerification();
+        }
+        // Sonde aussi followVersion au retour au 1er plan → propage un follow
+        // fait sur une autre surface (web/plugin/extension) à TOUTES les vues
+        // (boutons des « Jeux suivis », du Fil, de la recherche) sans attendre
+        // un passage par « Mes jeux ». Débouncé + référence-stable → pas de boucle.
+        const refreshFollows = maybeRefreshGamesRef.current;
+        if (typeof refreshFollows === 'function') {
+          refreshFollows('appForeground');
         }
       }
 
