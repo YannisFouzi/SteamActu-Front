@@ -112,7 +112,9 @@ describe('context/app/useFollowedGamesActions — fixes suivi à deux niveaux', 
     });
   });
 
-  it('échec : l\'état muted est restauré (revert) et la garde est nettoyée', async () => {
+  it('échec de la synchro arrière-plan : l\'optimiste TIENT (pas de revert, pas d\'alerte)', async () => {
+    // L'UI est optimiste : une synchro/persistance lente ou échouée n'est PAS
+    // une erreur utilisateur. La file gère ses propres retries.
     mockQueueFollowSync.mockRejectedValue(new Error('boom'));
     const {params, result} = renderActions();
 
@@ -125,63 +127,73 @@ describe('context/app/useFollowedGamesActions — fixes suivi à deux niveaux', 
       });
     });
 
-    expect(success).toBe(false);
-    expect(mockShowAlert).toHaveBeenCalled();
-    // Le dernier setUser doit avoir retiré 730 de mutedGames (revert vers
-    // l'état initial non muté).
+    expect(success).toBe(true); // commit optimiste = succès immédiat
+    expect(mockShowAlert).not.toHaveBeenCalled(); // plus de popup d'erreur
     const finalUser = applySetUserCalls(params.setUser, {
       followedGames: [],
       mutedGames: [],
     });
-    expect(finalUser.mutedGames).not.toContain('730');
-    // Garde nettoyée → re-tap possible immédiatement
-    expect(result.current.isFollowPending('730')).toBe(false);
+    expect(finalUser.mutedGames).toContain('730'); // l'optimiste muté reste
   });
 
-  it('opération locale pendue : le timeout fait toujours terminer handleFollowGame (garde nettoyée)', async () => {
-    jest.useFakeTimers();
-    mockQueueFollowSync.mockReturnValue(new Promise(() => {})); // pend pour toujours
-    const {result} = renderActions();
-
-    let followPromise;
-    act(() => {
-      followPromise = result.current.handleFollowGame({
-        appId: '730',
-        name: 'CSGO',
-      });
-    });
-
-    expect(result.current.isFollowPending('730')).toBe(true);
-
-    let success;
-    await act(async () => {
-      jest.advanceTimersByTime(10_001); // déclenche withLocalOpTimeout
-      success = await followPromise;
-    });
-
-    expect(success).toBe(false);
-    expect(result.current.isFollowPending('730')).toBe(false); // finally a nettoyé
-    expect(mockShowAlert).toHaveBeenCalled();
-  });
-
-  it('garde TTL : une entrée in-flight expirée se purge toute seule (plus besoin de restart)', () => {
-    jest.useFakeTimers({now: new Date('2026-06-12T10:00:00Z')});
+  it('plus de garde bloquante : isFollowPending renvoie toujours false (re-tap immédiat)', async () => {
     mockQueueFollowSync.mockReturnValue(new Promise(() => {})); // pend
     const {result} = renderActions();
 
     act(() => {
       result.current.handleFollowGame({appId: '730', name: 'CSGO'});
     });
-    expect(result.current.isFollowPending('730')).toBe(true);
 
-    // Au-delà du TTL (15s) : la garde se considère morte et se purge —
-    // c'est le fix du "boutons morts jusqu'au restart de l'app".
-    jest.setSystemTime(new Date('2026-06-12T10:00:16Z'));
+    // Même avec une mutation "en cours", les boutons ne sont jamais désactivés.
     expect(result.current.isFollowPending('730')).toBe(false);
   });
 
-  it('handleToggleGameNotifications : optimiste puis revert si le PUT échoue', async () => {
-    mockSetFollowNotifications.mockRejectedValue(new Error('500'));
+  it('persistance/synchro lente : le commit renvoie IMMÉDIATEMENT (aucune attente AsyncStorage)', async () => {
+    mockQueueFollowSync.mockReturnValue(new Promise(() => {})); // ne résout jamais
+    const {result} = renderActions();
+
+    // handleFollowGame ne doit PAS attendre queueFollowSync → résout tout de suite.
+    let success;
+    await act(async () => {
+      success = await result.current.handleFollowGame({
+        appId: '730',
+        name: 'CSGO',
+      });
+    });
+
+    expect(success).toBe(true);
+    expect(mockShowAlert).not.toHaveBeenCalled();
+  });
+
+  it('toggle cloche : passe par la FILE (pas de PUT direct) et mute optimistiquement', async () => {
+    const {params, result} = renderActions({
+      user: {followedGames: ['730'], mutedGames: []},
+    });
+
+    await act(async () => {
+      await result.current.handleToggleGameNotifications('730');
+    });
+
+    // Couper la cloche = enqueue une mutation follow notifications:false
+    expect(mockQueueFollowSync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        appId: '730',
+        targetIsFollowed: true, // reste suivi
+        notifications: false,
+      }),
+    );
+    // PLUS de PUT direct dans le hook (la convergence est dans la file)
+    expect(mockSetFollowNotifications).not.toHaveBeenCalled();
+    // Optimiste : 730 muté
+    const finalUser = applySetUserCalls(params.setUser, {
+      followedGames: ['730'],
+      mutedGames: [],
+    });
+    expect(finalUser.mutedGames).toContain('730');
+  });
+
+  it('toggle cloche : optimiste même si la synchro arrière-plan échoue (pas de revert)', async () => {
+    mockQueueFollowSync.mockRejectedValue(new Error('queue down'));
     const {params, result} = renderActions({
       user: {followedGames: ['730'], mutedGames: []},
     });
@@ -191,18 +203,24 @@ describe('context/app/useFollowedGamesActions — fixes suivi à deux niveaux', 
       success = await result.current.handleToggleGameNotifications('730');
     });
 
-    expect(success).toBe(false);
-    expect(mockSetFollowNotifications).toHaveBeenCalledWith(
-      STEAM_ID,
-      '730',
-      false, // notifié → on coupait
-    );
-    // Optimiste (muté) puis revert (dé-muté) : l'état final ne contient pas 730
+    expect(success).toBe(true); // optimiste
     const finalUser = applySetUserCalls(params.setUser, {
       followedGames: ['730'],
       mutedGames: [],
     });
-    expect(finalUser.mutedGames).not.toContain('730');
-    expect(mockShowAlert).toHaveBeenCalled();
+    expect(finalUser.mutedGames).toContain('730'); // muté optimiste tient
+    expect(mockShowAlert).not.toHaveBeenCalled();
+  });
+
+  it('toggle cloche refusé si le jeu n\'est pas suivi', async () => {
+    const {result} = renderActions({user: {followedGames: [], mutedGames: []}});
+
+    let success;
+    await act(async () => {
+      success = await result.current.handleToggleGameNotifications('730');
+    });
+
+    expect(success).toBe(false);
+    expect(mockQueueFollowSync).not.toHaveBeenCalled();
   });
 });

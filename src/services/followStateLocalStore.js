@@ -278,18 +278,34 @@ export const applyPendingFollowOverlayToUser = (
       ? user.followedGames.map(normalizeFollowAppId).filter(Boolean)
       : [],
   );
+  // mutedGames suit le MÊME overlay que followedGames : sans ça, un refresh
+  // (loadData) écrasait l'état muté optimiste par la donnée serveur (pas encore
+  // synchro) → la cloche flashait. On reconstruit muted depuis les mutations.
+  const muted = new Set(
+    Array.isArray(user.mutedGames)
+      ? user.mutedGames.map(normalizeFollowAppId).filter(Boolean)
+      : [],
+  );
 
   getPendingMutationList(pendingMutations).forEach(mutation => {
     if (mutation.targetIsFollowed) {
       followed.add(mutation.appId);
+      // notifications:false = suivi silencieux → muté ; true = notifié.
+      if (mutation.notifications === false) {
+        muted.add(mutation.appId);
+      } else {
+        muted.delete(mutation.appId);
+      }
       return;
     }
 
     followed.delete(mutation.appId);
+    muted.delete(mutation.appId); // plus suivi = plus muté
   });
 
   return {
     ...user,
+    mutedGames: Array.from(muted),
     followedGames: Array.from(followed),
   };
 };
@@ -342,9 +358,14 @@ const toFollowedGameItem = (appId, existingItem, gameRef = {}) => {
     header_image:
       normalizedRef.header_image || existingItem?.header_image || '',
     imageUrl: normalizedRef.imageUrl || existingItem?.imageUrl || '',
+    // followedAt = date du PREMIER suivi, IMMUABLE ensuite. Un déjà-suivi garde
+    // sa date (sinon un toggle cloche le ferait remonter en tête du tri
+    // "Récents"). buildFollowGameRef génère toujours un `now`, donc on ne
+    // l'utilise QUE pour un jeu pas encore dans la liste (existingItem absent).
     followedAt:
-      normalizedRef.followedAt ||
       existingItem?.followedAt ||
+      (isObject(gameRef) ? gameRef.followedAt : null) ||
+      normalizedRef.followedAt ||
       new Date().toISOString(),
   };
 };
@@ -460,7 +481,13 @@ const reconcileNewsFeedCaches = async (steamId, mutation) => {
   );
 };
 
-export const applyLocalFollowState = async ({
+// SYNCHRONE : applique l'état de suivi en MÉMOIRE immédiatement (setUser/
+// setGames), puis persiste tout (mutation en file + gros caches) en
+// ARRIÈRE-PLAN. L'UI ne dépend JAMAIS d'AsyncStorage → instantané même sur un
+// stockage lent/chargé, et aucun timeout/erreur sur une écriture lente. La
+// mutation persistée + l'overlay garantissent la cohérence même si l'app est
+// tuée avant la fin de l'écriture.
+export const applyLocalFollowState = ({
   steamId,
   appId,
   targetIsFollowed,
@@ -470,63 +497,80 @@ export const applyLocalFollowState = async ({
   updatedAt = null,
   notifications = true,
 }) => {
-  const mutation = await queueLocalFollowMutation({
-    steamId,
-    appId,
-    targetIsFollowed,
-    gameRef,
-    updatedAt,
-    notifications,
-  });
+  const normalizedSteamId = normalizeFollowSteamId(steamId);
+  const normalizedAppId = normalizeFollowAppId(appId);
+  if (!normalizedSteamId || !normalizedAppId) {
+    return null;
+  }
 
+  // Mutation construite SYNCHRONEMENT (pure, pas d'AsyncStorage).
+  const mutation = normalizeMutation(normalizedSteamId, {
+    steamId: normalizedSteamId,
+    appId: normalizedAppId,
+    targetIsFollowed: Boolean(targetIsFollowed),
+    notifications: notifications !== false,
+    gameRef: buildFollowGameRef({
+      appId: normalizedAppId,
+      ...(isObject(gameRef) ? gameRef : {}),
+    }),
+    updatedAt:
+      typeof updatedAt === 'number' && updatedAt > 0 ? updatedAt : Date.now(),
+  });
   if (!mutation) {
     return null;
   }
 
-  try {
-    if (typeof setUser === 'function') {
-      setUser(currentUser =>
-        currentUser ? applyFollowMutationToUser(currentUser, mutation) : currentUser,
-      );
-    }
+  // ── État mémoire (React) : INSTANTANÉ, c'est ce que voit l'UI ──
+  if (typeof setUser === 'function') {
+    setUser(currentUser =>
+      currentUser ? applyFollowMutationToUser(currentUser, mutation) : currentUser,
+    );
+  }
+  if (typeof setGames === 'function') {
+    setGames(currentGames =>
+      Array.isArray(currentGames)
+        ? applyFollowMutationToGames(currentGames, mutation)
+        : currentGames,
+    );
+  }
 
-    if (typeof setGames === 'function') {
-      setGames(currentGames =>
+  // ── Persistance EN ARRIÈRE-PLAN (best-effort, jamais bloquante) ──
+  (async () => {
+    await queueLocalFollowMutation({
+      steamId: normalizedSteamId,
+      appId: normalizedAppId,
+      targetIsFollowed,
+      gameRef,
+      updatedAt: mutation.updatedAt,
+      notifications,
+    });
+    await Promise.all([
+      mutateJsonCache(getGamesCacheKey(normalizedSteamId), null, currentGames =>
         Array.isArray(currentGames)
           ? applyFollowMutationToGames(currentGames, mutation)
           : currentGames,
-      );
-    }
-
-    await Promise.all([
-      mutateJsonCache(getGamesCacheKey(steamId), null, currentGames => {
-        if (!Array.isArray(currentGames)) {
-          return currentGames;
-        }
-
-        return applyFollowMutationToGames(currentGames, mutation);
-      }),
-      mutateJsonCache(getWishlistCacheKey(steamId), null, currentWishlist => {
-        if (!Array.isArray(currentWishlist)) {
-          return currentWishlist;
-        }
-
-        return applyPendingFollowOverlayToWishlist(currentWishlist, {
-          [mutation.appId]: mutation,
-        });
-      }),
+      ),
       mutateJsonCache(
-        buildStorageKey('followedGames', steamId),
+        getWishlistCacheKey(normalizedSteamId),
+        null,
+        currentWishlist =>
+          Array.isArray(currentWishlist)
+            ? applyPendingFollowOverlayToWishlist(currentWishlist, {
+                [mutation.appId]: mutation,
+              })
+            : currentWishlist,
+      ),
+      mutateJsonCache(
+        buildStorageKey('followedGames', normalizedSteamId),
         [],
         currentFollowedGames =>
           applyFollowMutationToFollowedGames(currentFollowedGames, mutation),
       ),
-      reconcileNewsFeedCaches(steamId, mutation),
+      reconcileNewsFeedCaches(normalizedSteamId, mutation),
     ]);
-  } catch (error) {
-    debugError('[FOLLOW_LOCAL] Failed to apply local follow state:', error);
-    throw error;
-  }
+  })().catch(error => {
+    debugError('[FOLLOW_LOCAL] Persistance arrière-plan échouée:', error);
+  });
 
   return mutation;
 };

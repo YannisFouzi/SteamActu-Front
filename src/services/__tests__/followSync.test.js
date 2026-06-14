@@ -1,9 +1,17 @@
 const userServiceMock = {
   followGame: jest.fn(),
   unfollowGame: jest.fn(),
+  setFollowNotifications: jest.fn(),
 };
 
 jest.doMock('../api', () => ({ userService: userServiceMock }));
+
+const makeError = (status, message) => {
+  const err = new Error(message);
+  err.status = status;
+  err.data = { message };
+  return err;
+};
 
 function loadFresh() {
   let mods = {};
@@ -22,6 +30,7 @@ describe('services/followSync', () => {
   beforeEach(async () => {
     userServiceMock.followGame.mockReset().mockResolvedValue();
     userServiceMock.unfollowGame.mockReset().mockResolvedValue();
+    userServiceMock.setFollowNotifications.mockReset().mockResolvedValue();
     AsyncStorage = require('@react-native-async-storage/async-storage');
     await AsyncStorage.clear();
     const mods = loadFresh();
@@ -136,20 +145,38 @@ describe('services/followSync', () => {
       );
     });
 
-    it('idempotent : 400 "deja suivi" sur follow → success', async () => {
-      userServiceMock.followGame.mockRejectedValueOnce({
-        status: 400,
-        message: 'Ce jeu est déjà suivi',
-      });
+    it('idempotent : 400 "deja suivi" → enforce le niveau notifications via PUT', async () => {
+      userServiceMock.followGame.mockRejectedValueOnce(
+        makeError(400, 'Ce jeu est déjà suivi'),
+      );
       await followSync.queueFollowSync({
         steamId: '76561197960287930',
         appId: '730',
         targetIsFollowed: true,
+        notifications: false,
       });
       await followSync.syncQueuedFollow();
 
-      // task retirée malgré l'erreur
+      // Déjà suivi → on enforce le niveau (convergence du toggle cloche)
+      expect(userServiceMock.setFollowNotifications).toHaveBeenCalledWith(
+        '76561197960287930',
+        '730',
+        false,
+      );
       expect(await queue.getOfflineSyncQueueSnapshot()).toEqual([]);
+    });
+
+    it('nouveau follow (POST réussit) → PAS de PUT (niveau posé à l\'insert)', async () => {
+      await followSync.queueFollowSync({
+        steamId: '76561197960287930',
+        appId: '730',
+        targetIsFollowed: true,
+        notifications: false,
+      });
+      await followSync.syncQueuedFollow();
+
+      expect(userServiceMock.followGame).toHaveBeenCalled();
+      expect(userServiceMock.setFollowNotifications).not.toHaveBeenCalled();
     });
 
     it('idempotent : 400 "pas suivi" sur unfollow → success', async () => {

@@ -94,13 +94,34 @@ registerOfflineSyncTaskType(
       if (targetIsFollowed) {
         // notifications:false = suivi silencieux (bouton +). Les mutations
         // legacy en file (sans le champ) suivent en notifié, comme avant.
-        await userService.followGame(
-          normalizedSteamId,
-          normalizedAppId,
-          normalizedGameRef.name,
-          normalizedGameRef.imageUrl,
-          notifications !== false,
-        );
+        const wantsNotifications = notifications !== false;
+        try {
+          // POST /follow pose le niveau de notifications à l'INSERT (nouveau
+          // follow). Si le jeu était déjà suivi (idempotent), l'insert n'a pas
+          // lieu → on enforce le niveau via PUT juste après (chemin du toggle
+          // cloche sur un jeu déjà synchronisé).
+          await userService.followGame(
+            normalizedSteamId,
+            normalizedAppId,
+            normalizedGameRef.name,
+            normalizedGameRef.imageUrl,
+            wantsNotifications,
+          );
+        } catch (followError) {
+          if (isIdempotentFollowError(followError, true)) {
+            debugLog(
+              '[FOLLOW_SYNC] Déjà suivi → enforce le niveau notifications',
+              {steamId: maskSteamId(normalizedSteamId), appId: normalizedAppId},
+            );
+            await userService.setFollowNotifications(
+              normalizedSteamId,
+              normalizedAppId,
+              wantsNotifications,
+            );
+          } else {
+            throw followError;
+          }
+        }
       } else {
         await userService.unfollowGame(normalizedSteamId, normalizedAppId);
       }

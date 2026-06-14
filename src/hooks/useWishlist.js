@@ -424,7 +424,8 @@ export const useWishlist = steamId => {
     [persistWishlistCache, safeSetState, steamId],
   );
 
-  const maybeRefreshWishlist = useCallback(
+  // Implémentation (identité instable : capture wishlistVersion/loading/etc.).
+  const runMaybeRefreshWishlist = useCallback(
     async (origin = 'maybeRefreshWishlist') => {
       if (!steamId) {
         return;
@@ -484,6 +485,20 @@ export const useWishlist = steamId => {
       );
     },
     [fetchWishlist, loading, refreshing, steamId, wishlistVersion],
+  );
+
+  // API publique RÉFÉRENCE-STABLE : sans ça, le useFocusEffect de WishlistScreen
+  // (qui dépend de son identité) se ré-exécutait en boucle à chaque changement
+  // d'état → checks de version en rafale. Même fix que maybeRefreshGames.
+  const runMaybeRefreshWishlistRef = useRef(runMaybeRefreshWishlist);
+  useEffect(() => {
+    runMaybeRefreshWishlistRef.current = runMaybeRefreshWishlist;
+  }, [runMaybeRefreshWishlist]);
+
+  const maybeRefreshWishlist = useCallback(
+    (origin = 'maybeRefreshWishlist') =>
+      runMaybeRefreshWishlistRef.current(origin),
+    [],
   );
 
   // Charge la wishlist des le montage du hook. useWishlist vit dans FollowTabs,

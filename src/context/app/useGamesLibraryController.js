@@ -380,7 +380,8 @@ export const useGamesLibraryController = ({
     }
   }, [games, persistGamesCache, setGames, steamId, syncRecentActiveGames]);
 
-  const maybeRefreshGames = useCallback(
+  // Implémentation (identité instable : capture gamesVersion/loading/etc.).
+  const runMaybeRefreshGames = useCallback(
     async (origin = 'maybeRefreshGames') => {
       if (!steamId) {
         return;
@@ -444,6 +445,20 @@ export const useGamesLibraryController = ({
       );
     },
     [gamesVersion, loadData, loading, refreshing, steamId],
+  );
+
+  // API publique RÉFÉRENCE-STABLE (même pattern que loadDataRef dans
+  // useAppLifecycleRefresh). Sans ça, l'identité de maybeRefreshGames changeait
+  // à chaque render, et le useFocusEffect de MyGamesScreen (qui en dépend) se
+  // ré-exécutait en boucle → checks de version en rafale + rechargements.
+  const runMaybeRefreshGamesRef = useRef(runMaybeRefreshGames);
+  useEffect(() => {
+    runMaybeRefreshGamesRef.current = runMaybeRefreshGames;
+  }, [runMaybeRefreshGames]);
+
+  const maybeRefreshGames = useCallback(
+    (origin = 'maybeRefreshGames') => runMaybeRefreshGamesRef.current(origin),
+    [],
   );
 
   const markSkipNextGamesRefresh = useCallback(() => {

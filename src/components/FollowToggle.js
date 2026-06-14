@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Pressable, StyleSheet, View} from 'react-native';
 import {useTranslation} from 'react-i18next';
 import Animated, {
@@ -15,18 +15,25 @@ import {COLORS} from '../constants';
 import {useAppContext} from '../context/AppContext';
 import {debugLog, showDialog} from '../hooks/hooksLogger';
 
+// Sécurité : l'intention d'un tap est relâchée après ce délai si le contexte ne
+// l'a pas confirmée (échec permanent rare), pour que la couleur suive la réalité.
+const INTENT_SETTLE_TIMEOUT_MS = 6000;
+
 /**
  * Suivi à deux niveaux d'un jeu : [+] puis [cloche].
  *
- * - [+] (gauche) : suivre/désabonner. Actif = le jeu est suivi (news dans le
- *   fil). Tap quand non suivi = suivi SILENCIEUX (pas de notifications) ;
- *   tap quand suivi = désabonnement (avec la confirmation existante).
- * - [cloche] (droite) : notifications. Tap quand non suivi = suit ET notifie
- *   d'un coup (comportement historique) ; tap quand suivi = bascule juste les
- *   notifications sans désabonner.
+ * - [+] (gauche) : suivre / désabonner. Tap non suivi → suivi SILENCIEUX ;
+ *   tap suivi → désabonnement (avec la confirmation existante).
+ * - [cloche] (droite) : notifications. Tap non suivi → suit ET notifie d'un
+ *   coup ; tap suivi → bascule juste les notifications sans désabonner.
  *
- * La partie visuelle réagit immédiatement au tap, puis la source de vérité
- * reste synchronisée avec l'état résolu du contexte.
+ * FEEDBACK INSTANTANÉ : la couleur est pilotée par un état LOCAL
+ * (followedVisual/notifiedVisual) mis à jour SYNCHRONEMENT au tap, puis le
+ * travail lourd du contexte est DIFFÉRÉ (setTimeout 0) pour ne pas être batché
+ * avec le changement de couleur — sinon la couleur attendait le gros re-render
+ * de l'app (~1 s sur device chargé). L'état local se re-synchronise ensuite sur
+ * l'état résolu du contexte (qui est fiable : overlay + pas de reload parasite),
+ * donc aucun flash : le contexte rattrape toujours la même valeur.
  */
 const FollowToggle = ({
   appId,
@@ -47,37 +54,31 @@ const FollowToggle = ({
     getResolvedFollowState,
     isGameFollowed,
     isGameNotified,
-    isFollowPending,
     confirmUnfollowGames,
     handleConfirmUnfollowGamesChange,
   } = useAppContext();
 
   const plusScale = useSharedValue(1);
   const bellScale = useSharedValue(1);
-  const iconScale = useSharedValue(1);
-  const iconRotate = useSharedValue(0);
+  const bellIconScale = useSharedValue(1);
+  const bellIconRotate = useSharedValue(0);
 
   const appIdString = useMemo(() => (appId ? appId.toString() : ''), [appId]);
 
+  // ── État résolu du contexte (source de vérité éventuelle) ──
   const derivedIsFollowed = useMemo(() => {
     if (!appIdString) {
       return false;
     }
-
     if (typeof getResolvedFollowState === 'function') {
       return getResolvedFollowState(appIdString, isFollowedProp);
     }
-
     if (typeof isFollowedProp === 'boolean') {
       return isFollowedProp;
     }
-
     return isGameFollowed(appIdString);
   }, [appIdString, getResolvedFollowState, isFollowedProp, isGameFollowed]);
 
-  // notified = suivi ET notifications actives. Garde défensive : si le
-  // contexte ne fournit pas (encore) isGameNotified, un jeu suivi est notifié
-  // (équivalent au comportement historique).
   const derivedIsNotified = useMemo(() => {
     if (!appIdString || !derivedIsFollowed) {
       return false;
@@ -88,196 +89,203 @@ const FollowToggle = ({
     return true;
   }, [appIdString, derivedIsFollowed, isGameNotified]);
 
-  const [visualIsFollowed, setVisualIsFollowed] = useState(derivedIsFollowed);
-  const [visualIsNotified, setVisualIsNotified] = useState(derivedIsNotified);
+  // ── État visuel LOCAL : pilote la couleur, instantané au tap ──
+  const [followedVisual, setFollowedVisual] = useState(derivedIsFollowed);
+  const [notifiedVisual, setNotifiedVisual] = useState(derivedIsNotified);
 
-  useEffect(() => {
-    setVisualIsFollowed(derivedIsFollowed);
-  }, [derivedIsFollowed]);
+  // Intention du dernier tap : {followed, notified} ou null. Tant qu'elle est
+  // posée, on IGNORE les valeurs transitoires du contexte (échos de notre propre
+  // action qui se propage lentement sur un device chargé : c'est ce qui faisait
+  // clignoter la couleur). On la lève dès que le contexte CONFIRME l'intention,
+  // ou si l'action échoue (revert). Un changement externe (pas d'intention en
+  // cours) est appliqué immédiatement.
+  const intentRef = useRef(null);
+  const intentTimeoutRef = useRef(null);
 
+  useEffect(
+    () => () => {
+      if (intentTimeoutRef.current) {
+        clearTimeout(intentTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
+  // Reconciliation contexte → visuel, filtrée par l'intention.
   useEffect(() => {
-    setVisualIsNotified(derivedIsNotified);
-  }, [derivedIsNotified]);
+    const intent = intentRef.current;
+    if (intent) {
+      if (
+        intent.followed === derivedIsFollowed &&
+        intent.notified === derivedIsNotified
+      ) {
+        // Le contexte a rattrapé l'intention → on relâche le verrou.
+        intentRef.current = null;
+        if (intentTimeoutRef.current) {
+          clearTimeout(intentTimeoutRef.current);
+          intentTimeoutRef.current = null;
+        }
+      }
+      // Échos transitoires (≠ intention) ignorés : la couleur reste sur l'intention.
+      return;
+    }
+    // Pas d'intention en cours → changement externe → on adopte.
+    setFollowedVisual(derivedIsFollowed);
+    setNotifiedVisual(derivedIsNotified);
+  }, [derivedIsFollowed, derivedIsNotified]);
 
   const safeName = useMemo(() => name || 'Jeu inconnu', [name]);
   const safeImageUrl = useMemo(() => imageUrl || null, [imageUrl]);
-  const followPending = useMemo(
-    () => (appIdString ? isFollowPending?.(appIdString) : false),
-    [appIdString, isFollowPending],
-  );
 
   const plusAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{scale: plusScale.value}],
   }));
-
   const bellAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{scale: bellScale.value}],
   }));
-
-  const iconAnimatedStyle = useAnimatedStyle(() => ({
+  const bellIconAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
-      {scale: iconScale.value},
-      {rotate: `${iconRotate.value}deg`},
+      {scale: bellIconScale.value},
+      {rotate: `${bellIconRotate.value}deg`},
     ],
   }));
 
-  const resetIconAnimation = useCallback(() => {
-    cancelAnimation(iconScale);
-    cancelAnimation(iconRotate);
-
-    iconScale.value = withTiming(1, {
-      duration: 90,
-      easing: Easing.out(Easing.quad),
-    });
-    iconRotate.value = withTiming(0, {
-      duration: 90,
-      easing: Easing.out(Easing.quad),
-    });
-  }, [iconRotate, iconScale]);
-
-  const animatePressFeedback = useCallback(
-    scaleValue => {
-      if (followPending) {
-        return;
-      }
-
-      cancelAnimation(scaleValue);
-      scaleValue.value = withSequence(
-        withTiming(0.95, {
-          duration: 45,
-          easing: Easing.out(Easing.cubic),
-        }),
-        withTiming(1, {
-          duration: 70,
-          easing: Easing.out(Easing.cubic),
-        }),
-      );
-    },
-    [followPending],
-  );
-
-  const animateActivationFeedback = useCallback(() => {
-    cancelAnimation(iconScale);
-    cancelAnimation(iconRotate);
-
-    iconScale.value = 1;
-    iconRotate.value = 0;
-
-    iconScale.value = withSequence(
-      withTiming(1.08, {
-        duration: 80,
-        easing: Easing.out(Easing.cubic),
-      }),
-      withSpring(1, {
-        damping: 14,
-        stiffness: 220,
-        mass: 0.6,
-      }),
+  const pressBounce = useCallback(scaleValue => {
+    cancelAnimation(scaleValue);
+    scaleValue.value = withSequence(
+      withTiming(0.95, {duration: 45, easing: Easing.out(Easing.cubic)}),
+      withTiming(1, {duration: 70, easing: Easing.out(Easing.cubic)}),
     );
+  }, []);
 
-    iconRotate.value = withSequence(
-      withTiming(8, {
-        duration: 70,
-        easing: Easing.out(Easing.quad),
-      }),
-      withTiming(-7, {
-        duration: 80,
-        easing: Easing.inOut(Easing.quad),
-      }),
-      withTiming(4, {
-        duration: 70,
-        easing: Easing.inOut(Easing.quad),
-      }),
-      withTiming(-2, {
-        duration: 60,
-        easing: Easing.inOut(Easing.quad),
-      }),
-      withTiming(0, {
-        duration: 60,
-        easing: Easing.out(Easing.quad),
-      }),
+  // Wiggle réservé à l'activation de la CLOCHE (jamais sur le +).
+  const bellActivationWiggle = useCallback(() => {
+    cancelAnimation(bellIconScale);
+    cancelAnimation(bellIconRotate);
+    bellIconScale.value = 1;
+    bellIconRotate.value = 0;
+    bellIconScale.value = withSequence(
+      withTiming(1.08, {duration: 80, easing: Easing.out(Easing.cubic)}),
+      withSpring(1, {damping: 14, stiffness: 220, mass: 0.6}),
     );
-  }, [iconRotate, iconScale]);
+    bellIconRotate.value = withSequence(
+      withTiming(8, {duration: 70, easing: Easing.out(Easing.quad)}),
+      withTiming(-7, {duration: 80, easing: Easing.inOut(Easing.quad)}),
+      withTiming(4, {duration: 70, easing: Easing.inOut(Easing.quad)}),
+      withTiming(-2, {duration: 60, easing: Easing.inOut(Easing.quad)}),
+      withTiming(0, {duration: 60, easing: Easing.out(Easing.quad)}),
+    );
+  }, [bellIconRotate, bellIconScale]);
 
-  // Follow/unfollow via la queue offline (comportement historique).
-  // `notifications:false` = suivi silencieux (tap sur le +).
-  const commitFollowChange = useCallback(
-    async (nextIsFollowed, {notifications = true, pressedScale} = {}) => {
-      setVisualIsFollowed(nextIsFollowed);
-      setVisualIsNotified(nextIsFollowed && notifications);
-      animatePressFeedback(pressedScale || bellScale);
+  // Diffère le travail lourd (mutations contexte) hors du batch du tap, pour que
+  // le changement de couleur (état local) peigne d'abord.
+  const deferHeavyWork = useCallback(work => {
+    setTimeout(work, 0);
+  }, []);
 
-      if (nextIsFollowed) {
-        animateActivationFeedback();
-      } else {
-        resetIconAnimation();
+  // Pose l'intention + état visuel instantané. Sur échec : on relâche
+  // l'intention et on resynchronise sur le contexte (qui a reverté).
+  // Sécurité : si le contexte ne confirme jamais l'intention (échec permanent
+  // rare), on la lève après un délai pour que la couleur suive la réalité.
+  const applyIntent = useCallback((followed, notified) => {
+    intentRef.current = {followed, notified};
+    setFollowedVisual(followed);
+    setNotifiedVisual(notified);
+    if (intentTimeoutRef.current) {
+      clearTimeout(intentTimeoutRef.current);
+    }
+    intentTimeoutRef.current = setTimeout(() => {
+      intentRef.current = null;
+      intentTimeoutRef.current = null;
+    }, INTENT_SETTLE_TIMEOUT_MS);
+  }, []);
+
+  const onActionFailed = useCallback(() => {
+    intentRef.current = null;
+    setFollowedVisual(derivedIsFollowed);
+    setNotifiedVisual(derivedIsNotified);
+  }, [derivedIsFollowed, derivedIsNotified]);
+
+  const doFollow = useCallback(
+    (notifications, pressedScale) => {
+      applyIntent(true, notifications);
+      pressBounce(pressedScale);
+      if (notifications) {
+        bellActivationWiggle();
       }
-
-      const success = await handleFollowGame({
-        appId: appIdString,
-        name: safeName,
-        imageUrl: safeImageUrl,
-        isFollowed: derivedIsFollowed,
-        notifications,
-      });
-
-      if (success && typeof onToggle === 'function') {
-        onToggle({
+      deferHeavyWork(() => {
+        handleFollowGame({
           appId: appIdString,
-          previousIsFollowed: derivedIsFollowed,
-          nextIsFollowed,
+          name: safeName,
+          imageUrl: safeImageUrl,
+          isFollowed: derivedIsFollowed,
+          notifications,
+        }).then(success => {
+          if (!success) {
+            onActionFailed();
+            return;
+          }
+          if (typeof onToggle === 'function') {
+            onToggle({
+              appId: appIdString,
+              previousIsFollowed: derivedIsFollowed,
+              nextIsFollowed: true,
+            });
+          }
         });
-      }
+      });
     },
     [
-      animateActivationFeedback,
-      animatePressFeedback,
       appIdString,
-      bellScale,
+      applyIntent,
+      bellActivationWiggle,
+      deferHeavyWork,
       derivedIsFollowed,
       handleFollowGame,
+      onActionFailed,
       onToggle,
-      resetIconAnimation,
+      pressBounce,
       safeImageUrl,
       safeName,
     ],
   );
 
-  const confirmThenUnfollow = useCallback(
+  const doUnfollow = useCallback(
     pressedScale => {
-      if (!confirmUnfollowGames) {
-        commitFollowChange(false, {pressedScale});
-        return;
-      }
-
-      showDialog({
-        title: t('settings.confirmUnfollowTitle'),
-        message: t('settings.confirmUnfollowMessage', {game: safeName}),
-        tone: 'warning',
-        icon: 'bell-off-outline',
-        confirmCheckboxLabel: t('settings.confirmUnfollowCheckbox'),
-        options: {cancelable: true},
-        buttons: [
-          {text: t('common.cancel'), style: 'cancel'},
-          {
-            text: t('settings.confirmUnfollowConfirm'),
-            style: 'destructive',
-            onPress: async ({dontShowAgain}) => {
-              if (dontShowAgain) {
-                await handleConfirmUnfollowGamesChange(false);
-              }
-              await commitFollowChange(false, {pressedScale});
-            },
-          },
-        ],
+      applyIntent(false, false);
+      pressBounce(pressedScale);
+      deferHeavyWork(() => {
+        handleFollowGame({
+          appId: appIdString,
+          name: safeName,
+          imageUrl: safeImageUrl,
+          isFollowed: derivedIsFollowed,
+        }).then(success => {
+          if (!success) {
+            onActionFailed();
+            return;
+          }
+          if (typeof onToggle === 'function') {
+            onToggle({
+              appId: appIdString,
+              previousIsFollowed: derivedIsFollowed,
+              nextIsFollowed: false,
+            });
+          }
+        });
       });
     },
     [
-      commitFollowChange,
-      confirmUnfollowGames,
-      handleConfirmUnfollowGamesChange,
+      appIdString,
+      applyIntent,
+      deferHeavyWork,
+      derivedIsFollowed,
+      handleFollowGame,
+      onActionFailed,
+      onToggle,
+      pressBounce,
+      safeImageUrl,
       safeName,
-      t,
     ],
   );
 
@@ -287,72 +295,101 @@ const FollowToggle = ({
       debugLog('FollowToggle: appId manquant, action ignoree');
       return;
     }
-    if (followPending) {
+
+    if (!followedVisual) {
+      doFollow(false, plusScale);
       return;
     }
 
-    if (!visualIsFollowed) {
-      commitFollowChange(true, {notifications: false, pressedScale: plusScale});
+    if (!confirmUnfollowGames) {
+      doUnfollow(plusScale);
       return;
     }
 
-    confirmThenUnfollow(plusScale);
+    showDialog({
+      title: t('settings.confirmUnfollowTitle'),
+      message: t('settings.confirmUnfollowMessage', {game: safeName}),
+      tone: 'warning',
+      icon: 'bell-off-outline',
+      confirmCheckboxLabel: t('settings.confirmUnfollowCheckbox'),
+      options: {cancelable: true},
+      buttons: [
+        {text: t('common.cancel'), style: 'cancel'},
+        {
+          text: t('settings.confirmUnfollowConfirm'),
+          style: 'destructive',
+          onPress: async ({dontShowAgain}) => {
+            if (dontShowAgain) {
+              await handleConfirmUnfollowGamesChange(false);
+            }
+            doUnfollow(plusScale);
+          },
+        },
+      ],
+    });
   }, [
     appIdString,
-    commitFollowChange,
-    confirmThenUnfollow,
-    followPending,
+    confirmUnfollowGames,
+    doFollow,
+    doUnfollow,
+    followedVisual,
+    handleConfirmUnfollowGamesChange,
     plusScale,
-    visualIsFollowed,
+    safeName,
+    t,
   ]);
 
-  // [cloche] : non suivi → suit ET notifie ; suivi → bascule notifications
-  // seulement (jamais de désabonnement par la cloche).
-  const handleBellPress = useCallback(async () => {
+  // [cloche] : non suivi → suit ET notifie ; suivi → bascule notifications.
+  const handleBellPress = useCallback(() => {
     if (!appIdString) {
       debugLog('FollowToggle: appId manquant, action ignoree');
       return;
     }
-    if (followPending) {
-      return;
-    }
 
-    if (!visualIsFollowed) {
-      commitFollowChange(true, {notifications: true, pressedScale: bellScale});
+    if (!followedVisual) {
+      doFollow(true, bellScale);
       return;
     }
 
     if (typeof handleToggleGameNotifications !== 'function') {
       return;
     }
-
-    const nextIsNotified = !visualIsNotified;
-    setVisualIsNotified(nextIsNotified);
-    animatePressFeedback(bellScale);
-    if (nextIsNotified) {
-      animateActivationFeedback();
-    } else {
-      resetIconAnimation();
+    // Optimiste visuel INSTANTANÉ + intention (reste suivi, notif togglée)
+    const nextNotified = !notifiedVisual;
+    applyIntent(true, nextNotified);
+    pressBounce(bellScale);
+    if (nextNotified) {
+      bellActivationWiggle();
     }
-
-    const success = await handleToggleGameNotifications(appIdString);
-    if (!success) {
-      setVisualIsNotified(!nextIsNotified); // revert visuel
-    }
+    deferHeavyWork(() => {
+      // name/imageUrl : préservent la card (évite un placeholder "Jeu <id>" pour
+      // les jeux hors liste locale — wishlist, jeux suivis).
+      handleToggleGameNotifications(appIdString, {
+        name: safeName,
+        imageUrl: safeImageUrl,
+      }).then(success => {
+        if (!success) {
+          onActionFailed();
+        }
+      });
+    });
   }, [
-    animateActivationFeedback,
-    animatePressFeedback,
     appIdString,
+    applyIntent,
+    bellActivationWiggle,
     bellScale,
-    commitFollowChange,
-    followPending,
+    deferHeavyWork,
+    doFollow,
+    followedVisual,
     handleToggleGameNotifications,
-    resetIconAnimation,
-    visualIsFollowed,
-    visualIsNotified,
+    notifiedVisual,
+    onActionFailed,
+    pressBounce,
+    safeImageUrl,
+    safeName,
   ]);
 
-  const bellIsActive = visualIsFollowed && visualIsNotified;
+  const bellIsActive = followedVisual && notifiedVisual;
 
   return (
     <View style={[styles.row, style]}>
@@ -360,24 +397,21 @@ const FollowToggle = ({
         <Pressable
           style={[
             styles.button,
-            visualIsFollowed ? styles.buttonActive : styles.buttonInactive,
-            followPending ? styles.buttonDisabled : null,
+            followedVisual ? styles.buttonActive : styles.buttonInactive,
           ]}
-          disabled={followPending}
           onPress={handlePlusPress}
           accessibilityRole="button"
-          accessibilityState={{disabled: followPending}}
           accessibilityLabel={
-            visualIsFollowed
+            followedVisual
               ? t('games.unfollowA11y')
               : t('games.followSilentA11y')
           }
           hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}
           testID={testID ? `${testID}-plus` : undefined}>
           <Icon
-            name={visualIsFollowed ? 'checkmark-circle' : 'add-circle-outline'}
+            name={followedVisual ? 'checkmark-circle' : 'add-circle-outline'}
             size={size}
-            color={visualIsFollowed ? activeColor : inactiveColor}
+            color={followedVisual ? activeColor : inactiveColor}
           />
         </Pressable>
       </Animated.View>
@@ -386,12 +420,9 @@ const FollowToggle = ({
           style={[
             styles.button,
             bellIsActive ? styles.buttonActive : styles.buttonInactive,
-            followPending ? styles.buttonDisabled : null,
           ]}
-          disabled={followPending}
           onPress={handleBellPress}
           accessibilityRole="button"
-          accessibilityState={{disabled: followPending}}
           accessibilityLabel={
             bellIsActive
               ? t('games.notificationsOffA11y')
@@ -399,7 +430,7 @@ const FollowToggle = ({
           }
           hitSlop={{top: 6, bottom: 6, left: 6, right: 6}}
           testID={testID}>
-          <Animated.View style={iconAnimatedStyle}>
+          <Animated.View style={bellIconAnimatedStyle}>
             <Icon
               name={bellIsActive ? 'notifications' : 'notifications-outline'}
               size={size}
@@ -433,9 +464,6 @@ const styles = StyleSheet.create({
   buttonInactive: {
     backgroundColor: 'rgba(42, 71, 94, 0.08)',
     borderColor: 'rgba(42, 71, 94, 0.18)',
-  },
-  buttonDisabled: {
-    opacity: 1,
   },
 });
 

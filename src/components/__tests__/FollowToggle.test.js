@@ -85,6 +85,7 @@ describe('components/FollowToggle — machine à états [+][cloche]', () => {
       await waitFor(() =>
         expect(mockContext.handleToggleGameNotifications).toHaveBeenCalledWith(
           '730',
+          expect.any(Object),
         ),
       );
       expect(mockContext.handleFollowGame).not.toHaveBeenCalled();
@@ -122,35 +123,39 @@ describe('components/FollowToggle — machine à états [+][cloche]', () => {
       await waitFor(() =>
         expect(mockContext.handleToggleGameNotifications).toHaveBeenCalledWith(
           '730',
+          expect.any(Object),
         ),
       );
       expect(mockContext.handleFollowGame).not.toHaveBeenCalled();
     });
 
-    it('échec du toggle → l\'état visuel de la cloche est reverté', async () => {
-      mockContext.handleToggleGameNotifications.mockResolvedValue(false);
+    it('tap cloche → délègue le toggle (le revert est géré par le hook, pas le composant)', async () => {
       const {getByTestId} = renderToggle();
-      const bell = getByTestId(BELL_ID);
-
-      fireEvent.press(bell);
-
+      fireEvent.press(getByTestId(BELL_ID));
       await waitFor(() =>
-        expect(mockContext.handleToggleGameNotifications).toHaveBeenCalled(),
+        expect(mockContext.handleToggleGameNotifications).toHaveBeenCalledWith(
+          '730',
+          expect.any(Object),
+        ),
       );
-      // Revert : la cloche redevient inactive → son label propose d'activer
-      expect(bell.props.accessibilityLabel).toBe('Activer les notifications');
     });
   });
 
-  it('aucune action quand une mutation est en attente (followPending)', () => {
-    setFollowState({followed: false, notified: false});
-    mockContext.isFollowPending.mockReturnValue(true);
+  // Projection pure : la couleur de la cloche suit DIRECTEMENT l'état du
+  // contexte (isGameNotified), pas un état local — donc pas de flash possible.
+  it('rend la cloche pleine quand le contexte dit suivi + notifié', () => {
+    setFollowState({followed: true, notified: true});
     const {getByTestId} = renderToggle();
+    expect(getByTestId(BELL_ID).props.accessibilityLabel).toBe(
+      'Couper les notifications',
+    );
+  });
 
-    fireEvent.press(getByTestId(PLUS_ID));
-    fireEvent.press(getByTestId(BELL_ID));
-
-    expect(mockContext.handleFollowGame).not.toHaveBeenCalled();
-    expect(mockContext.handleToggleGameNotifications).not.toHaveBeenCalled();
+  it('rend la cloche vide sur un suivi silencieux (suivi mais non notifié)', () => {
+    setFollowState({followed: true, notified: false});
+    const {getByTestId} = renderToggle();
+    expect(getByTestId(BELL_ID).props.accessibilityLabel).toBe(
+      'Activer les notifications',
+    );
   });
 });

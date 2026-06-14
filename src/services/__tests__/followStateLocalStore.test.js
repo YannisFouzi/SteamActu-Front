@@ -224,6 +224,39 @@ describe('services/followStateLocalStore', () => {
       });
       expect(result.followedGames).toEqual([]);
     });
+
+    // mutedGames suit le même overlay (protège l'état muté optimiste au refresh)
+    it('suivi silencieux (notifications:false) → ajoute appId à mutedGames', () => {
+      const user = { followedGames: ['570'], mutedGames: [] };
+      const result = applyPendingFollowOverlayToUser(user, {
+        '730': mut({ targetIsFollowed: true, notifications: false }),
+      });
+      expect(result.followedGames.sort()).toEqual(['570', '730']);
+      expect(result.mutedGames).toEqual(['730']);
+    });
+
+    it('réactivation (notifications:true) → retire appId de mutedGames même si le serveur le disait muté', () => {
+      const user = { followedGames: ['730'], mutedGames: ['730'] };
+      const result = applyPendingFollowOverlayToUser(user, {
+        '730': mut({ targetIsFollowed: true, notifications: true }),
+      });
+      expect(result.mutedGames).toEqual([]);
+    });
+
+    it('unfollow → retire appId de followedGames ET mutedGames', () => {
+      const user = { followedGames: ['730'], mutedGames: ['730'] };
+      const result = applyPendingFollowOverlayToUser(user, {
+        '730': mut({ targetIsFollowed: false }),
+      });
+      expect(result.followedGames).toEqual([]);
+      expect(result.mutedGames).toEqual([]);
+    });
+
+    it('préserve mutedGames serveur pour les jeux sans mutation en file', () => {
+      const user = { followedGames: ['730', '570'], mutedGames: ['570'] };
+      const result = applyPendingFollowOverlayToUser(user, {});
+      expect(result.mutedGames).toEqual(['570']);
+    });
   });
 
   describe('applyPendingFollowOverlayToGames()', () => {
@@ -270,6 +303,29 @@ describe('services/followStateLocalStore', () => {
       );
       expect(result).toEqual([]);
     });
+
+    it('PRÉSERVE followedAt d\'un déjà-suivi (toggle cloche ne re-trie pas "Récents")', () => {
+      const origin = '2026-06-01T10:00:00.000Z';
+      const result = applyPendingFollowOverlayToFollowedGames(
+        [{ appId: '730', name: 'CSGO', followedAt: origin }],
+        {
+          // Re-follow (toggle cloche) : la mutation porte un followedAt récent…
+          '730': {
+            appId: '730',
+            steamId: STEAM,
+            targetIsFollowed: true,
+            notifications: false,
+            gameRef: {
+              appId: '730',
+              name: 'CSGO',
+              followedAt: '2026-06-12T23:00:00.000Z',
+            },
+          },
+        },
+      );
+      // …mais la date d'origine est conservée → position de tri inchangée.
+      expect(result[0].followedAt).toBe(origin);
+    });
   });
 
   describe('applyPendingFollowOverlayToNewsFeed()', () => {
@@ -294,11 +350,14 @@ describe('services/followStateLocalStore', () => {
   });
 
   describe('applyLocalFollowState()', () => {
-    it('queue la mutation + appelle setUser/setGames + persist caches', async () => {
+    // Flush des microtasks pour laisser finir la persistance arrière-plan.
+    const flush = () => new Promise(resolve => setTimeout(resolve, 0));
+
+    it('met à jour setUser/setGames SYNCHRONEMENT + persiste la mutation en arrière-plan', () => {
       const setUser = jest.fn();
       const setGames = jest.fn();
 
-      await applyLocalFollowState({
+      const result = applyLocalFollowState({
         steamId: STEAM,
         appId: '730',
         targetIsFollowed: true,
@@ -307,15 +366,31 @@ describe('services/followStateLocalStore', () => {
         setGames,
       });
 
+      // Synchrone : l'état mémoire est appliqué immédiatement (pas d'await).
       expect(setUser).toHaveBeenCalledTimes(1);
       expect(setGames).toHaveBeenCalledTimes(1);
-      expect(await hasPendingFollowMutation({ steamId: STEAM, appId: '730' })).toBe(
-        true,
-      );
+      expect(result?.appId).toBe('730');
     });
 
-    it('renvoie null si appId invalide', async () => {
-      const r = await applyLocalFollowState({
+    it('persiste la mutation en file (en arrière-plan)', async () => {
+      applyLocalFollowState({
+        steamId: STEAM,
+        appId: '730',
+        targetIsFollowed: true,
+        gameRef: { name: 'CSGO' },
+        setUser: jest.fn(),
+        setGames: jest.fn(),
+      });
+
+      await flush();
+      await flush();
+      expect(
+        await hasPendingFollowMutation({ steamId: STEAM, appId: '730' }),
+      ).toBe(true);
+    });
+
+    it('renvoie null si appId invalide', () => {
+      const r = applyLocalFollowState({
         steamId: STEAM,
         appId: '',
         targetIsFollowed: true,

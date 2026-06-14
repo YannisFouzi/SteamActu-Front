@@ -1,6 +1,6 @@
 import axios from 'axios';
 import {APP_CONFIG} from '../config/env';
-import {debugError} from '../hooks/hooksLogger';
+import {debugError, debugLog} from '../hooks/hooksLogger';
 import {getCurrentAppLanguage, translate} from '../i18n';
 import {clearMobileSession, getMobileSession} from './mobileSessionStore';
 
@@ -60,10 +60,19 @@ api.interceptors.request.use(async config => {
 api.interceptors.response.use(
   response => response,
   async error => {
-    debugError('API Error', {
+    const status = error.response?.status;
+    // Les 4xx (sauf 401) sont des erreurs "attendues" que l'appelant gère
+    // explicitement (follow déjà suivi → idempotent, toggle 404 → amend de la
+    // queue, validations…). Les logguer en `debugError` (niveau erreur +
+    // Sentry) polluait les logs/Sentry et donnait l'impression que tout casse.
+    // On les rétrograde en log dev. Seuls réseau (0) et 5xx restent des erreurs.
+    const isExpectedClientError =
+      typeof status === 'number' && status >= 400 && status < 500 && status !== 401;
+    const logFn = isExpectedClientError ? debugLog : debugError;
+    logFn('API Error', {
       url: error.config?.url,
       method: error.config?.method,
-      status: error.response?.status,
+      status,
       data: error.response?.data,
     });
 

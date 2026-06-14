@@ -1,7 +1,6 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
-import {showAlert, debugError, debugLog} from '../../hooks/hooksLogger';
+import {useCallback, useEffect, useState} from 'react';
+import {debugError, debugLog} from '../../hooks/hooksLogger';
 import {translate} from '../../i18n';
-import {userService} from '../../services/api';
 import {
   applyLocalFollowState,
   buildFollowGameRef,
@@ -23,32 +22,6 @@ const buildPendingFollowStates = pendingMutations =>
     return acc;
   }, {});
 
-// Garde anti double-tap auto-réparante : une entrée in-flight plus vieille que
-// ce TTL est considérée morte (opération locale qui a pendu) et n'est plus
-// bloquante. Sans ça, un hang AsyncStorage laissait les boutons d'un jeu
-// définitivement désactivés jusqu'au restart de l'app (vécu en prod).
-const FOLLOW_REQUEST_TTL_MS = 15_000;
-
-// Borne dure sur les opérations locales awaited (queue + écriture des caches) :
-// handleFollowGame doit TOUJOURS terminer pour que son finally nettoie la
-// garde. Le nom de l'opération est loggué au déclenchement → si un hang se
-// reproduit, on saura exactement quelle primitive a pendu.
-const LOCAL_OP_TIMEOUT_MS = 10_000;
-
-const withLocalOpTimeout = async (promise, opName) => {
-  let timer;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => {
-      reject(new Error(`Local follow op timed out: ${opName}`));
-    }, LOCAL_OP_TIMEOUT_MS);
-  });
-  try {
-    return await Promise.race([promise, timeout]);
-  } finally {
-    clearTimeout(timer);
-  }
-};
-
 export const useFollowedGamesActions = ({
   steamId,
   user,
@@ -60,8 +33,6 @@ export const useFollowedGamesActions = ({
   markSkipNextGamesRefresh,
   notifyNotificationSync,
 }) => {
-  // Map appId → timestamp de départ (TTL, voir FOLLOW_REQUEST_TTL_MS)
-  const followRequestsInFlightRef = useRef(new Map());
   const [pendingFollowStates, setPendingFollowStates] = useState({});
 
   const refreshPendingFollowStates = useCallback(async () => {
@@ -192,30 +163,12 @@ export const useFollowedGamesActions = ({
     [pendingFollowStates, user],
   );
 
-  const isFollowPending = useCallback(appId => {
-    const appIdString = normalizeFollowAppId(appId);
-    if (!appIdString) {
-      return false;
-    }
-
-    const startedAt = followRequestsInFlightRef.current.get(appIdString);
-    if (typeof startedAt !== 'number') {
-      return false;
-    }
-
-    // Auto-réparation : une entrée au-delà du TTL = opération locale qui a
-    // pendu. On la purge pour réactiver les boutons sans restart de l'app.
-    if (Date.now() - startedAt > FOLLOW_REQUEST_TTL_MS) {
-      followRequestsInFlightRef.current.delete(appIdString);
-      debugError(
-        '[FOLLOW] Garde in-flight expirée (op locale pendue ?):',
-        appIdString,
-      );
-      return false;
-    }
-
-    return true;
-  }, []);
+  // L'UI ne désactive plus les boutons pendant une mutation : l'état optimiste
+  // (pendingFollowStates, synchrone) est la source de vérité, et la file +
+  // le mutex de queueLocalFollowMutation sérialisent déjà l'I/O. Un re-tap
+  // rapide lit l'état optimiste à jour et bascule correctement. Conservé pour
+  // compat du contrat (consommé par FollowToggle), renvoie toujours false.
+  const isFollowPending = useCallback(() => false, []);
 
   // Maintien optimiste de user.mutedGames (jeux suivis avec notifications
   // coupées — bouton +). Source serveur : User.toJSON expose mutedGames ;
@@ -262,43 +215,135 @@ export const useFollowedGamesActions = ({
     [isGameFollowed, user],
   );
 
-  // Bascule cloche d'un jeu déjà suivi : optimiste + revert si échec. Appel
-  // direct (pas la queue offline) — préférence serveur légère, même pattern
-  // que le SPA web ; le pire cas d'un échec réseau est un revert visuel.
-  const handleToggleGameNotifications = useCallback(
-    async appId => {
+  // Cœur unique : applique l'état désiré {followed, notifications} d'un jeu.
+  // L'état optimiste (pendingFollowStates + mutedGames + listes) est appliqué
+  // en MÉMOIRE, SYNCHRONEMENT → l'UI est instantanée. La persistance locale et
+  // la synchro réseau partent en ARRIÈRE-PLAN (best-effort) : l'UI n'attend
+  // JAMAIS AsyncStorage, donc pas de latence ni de timeout/erreur sous spam.
+  const commitFollowMutation = useCallback(
+    ({appId, targetIsFollowed, notifications, meta = {}}) => {
       const appIdString = normalizeFollowAppId(appId);
       if (!steamId || !appIdString) {
         return false;
       }
+      const wantsNotifications = notifications !== false;
 
-      const nextEnabled = !isGameNotified(appIdString);
-      updateUserMutedGames(appIdString, !nextEnabled);
+      // ── Optimiste synchrone (un seul batch React) ──
+      setPendingFollowState(appIdString, targetIsFollowed);
+      updateUserMutedGames(
+        appIdString,
+        targetIsFollowed && !wantsNotifications,
+      );
 
-      try {
-        await userService.setFollowNotifications(
-          steamId,
-          appIdString,
-          nextEnabled,
-        );
-        debugLog(
-          nextEnabled
-            ? '[FOLLOW] Notifications réactivées:'
-            : '[FOLLOW] Notifications coupées (suivi silencieux):',
-          appIdString,
-        );
-        return true;
-      } catch (error) {
-        debugError('Erreur bascule notifications du jeu:', error);
-        updateUserMutedGames(appIdString, nextEnabled); // revert
-        showAlert(
-          translate('common.error'),
-          translate('games.followUpdateError'),
-        );
+      // gameRef : `meta` (ex. résultat de recherche, jeu hors liste locale)
+      // prime, puis le jeu de la liste locale, puis fallback.
+      const game = games.find(g => getGameAppId(g) === appIdString);
+      const gameName =
+        meta.name ||
+        game?.name ||
+        translate('common.gameWithId', {appId: appIdString});
+      const gameImage =
+        meta.imageUrl ||
+        meta.logoUrl ||
+        game?.header_image ||
+        game?.capsule ||
+        (game ? getGameIconUrl(appIdString, game.img_icon_url) : '') ||
+        '';
+      const gameRef = buildFollowGameRef({
+        ...(game || {}),
+        ...meta,
+        appId: appIdString,
+        name: gameName,
+        imageUrl: gameImage,
+      });
+      const mutationUpdatedAt = Date.now();
+
+      // ── Listes en mémoire (instantané) + persistance locale en arrière-plan ──
+      applyLocalFollowState({
+        steamId,
+        appId: appIdString,
+        targetIsFollowed,
+        gameRef,
+        setUser,
+        setGames,
+        updatedAt: mutationUpdatedAt,
+        notifications: wantsNotifications,
+      });
+
+      // ── Enqueue offline + synchro réseau EN ARRIÈRE-PLAN (best-effort) ──
+      // L'UI ne bloque pas dessus ; une écriture/synchro lente n'est PAS une
+      // erreur utilisateur. La file gère ses propres retries/échecs permanents.
+      queueFollowSync({
+        steamId,
+        appId: appIdString,
+        targetIsFollowed,
+        gameRef,
+        updatedAt: mutationUpdatedAt,
+        notifications: wantsNotifications,
+      })
+        .then(() => syncQueuedFollow({steamId, reason: 'follow-commit'}))
+        .catch(error => {
+          debugError('[FOLLOW] Sync arrière-plan échouée:', error);
+        })
+        .finally(() => {
+          refreshPendingFollowStates().catch(error => {
+            debugError('[FOLLOW] Pending follow refresh failed:', error);
+          });
+        });
+
+      if (typeof notifyNotificationSync === 'function' && !targetIsFollowed) {
+        notifyNotificationSync('wishlist', appIdString);
+        notifyNotificationSync('followed', appIdString);
+        notifyNotificationSync('news', appIdString);
+      }
+      if (typeof markSkipNextGamesRefresh === 'function') {
+        markSkipNextGamesRefresh();
+      }
+      debugLog(
+        targetIsFollowed
+          ? `[FOLLOW] Commit suivi (${
+              wantsNotifications ? 'notifié' : 'silencieux'
+            }):`
+          : '[FOLLOW] Commit désabonnement:',
+        appIdString,
+      );
+      return true;
+    },
+    [
+      games,
+      markSkipNextGamesRefresh,
+      notifyNotificationSync,
+      refreshPendingFollowStates,
+      setGames,
+      setPendingFollowState,
+      setUser,
+      steamId,
+      updateUserMutedGames,
+    ],
+  );
+
+  // Bascule cloche d'un jeu déjà suivi : passe par le MÊME pipeline que le
+  // follow (commitFollowMutation), avec `targetIsFollowed:true` (reste suivi)
+  // et le niveau voulu. L'overlay protège l'état muté au refresh ; la file
+  // converge serveur (POST idempotent → PUT). Plus de PUT direct/amend/404.
+  const handleToggleGameNotifications = useCallback(
+    async (appId, meta = {}) => {
+      const appIdString = normalizeFollowAppId(appId);
+      if (!appIdString || !isGameFollowed(appIdString)) {
         return false;
       }
+      const nextEnabled = !isGameNotified(appIdString);
+      return commitFollowMutation({
+        appId: appIdString,
+        targetIsFollowed: true,
+        notifications: nextEnabled,
+        // name/imageUrl préservent la card : sans eux, le gameRef retombe sur
+        // un placeholder "Jeu <id>" qui écrasait le vrai nom/image en cache
+        // (cas des jeux hors liste locale : wishlist, jeux suivis).
+        meta,
+      });
     },
-    [isGameNotified, steamId, updateUserMutedGames],
+    [commitFollowMutation, isGameFollowed, isGameNotified],
   );
 
   const applyNotificationUnfollowCommit = useCallback(
@@ -377,181 +422,29 @@ export const useFollowedGamesActions = ({
     ],
   );
 
+  // Suivre/désabonner : calcule l'état cible et délègue au commit unique.
   const handleFollowGame = useCallback(
     async (gameMeta = {}) => {
-      const appIdString = normalizeFollowAppId(gameMeta?.appId ?? gameMeta?.appid);
-      // Déclaré hors du try : le catch doit pouvoir restaurer l'état muted
-      // capturé avant la mutation optimiste.
-      let wasMuted = false;
-      let mutedTouched = false;
-
-      try {
-        if (!steamId) {
-          debugError('SteamID non trouve');
-          return false;
-        }
-
-        if (!appIdString) {
-          debugError('AppID non trouve');
-          return false;
-        }
-
-        if (isFollowPending(appIdString)) {
-          debugLog('[FOLLOW] Action ignoree, mutation locale deja en cours:', appIdString);
-          return false;
-        }
-
-        const isFollowed = getResolvedFollowState(
-          appIdString,
-          typeof gameMeta.isFollowed === 'boolean'
-            ? gameMeta.isFollowed
-            : undefined,
-        );
-        const targetIsFollowed = !isFollowed;
-        // notifications:false = suivi silencieux (bouton +). N'a de sens que
-        // pour un follow ; ignoré sur un unfollow.
-        const wantsNotifications = gameMeta.notifications !== false;
-        const game = games.find(g => getGameAppId(g) === appIdString);
-        const gameName =
-          gameMeta.name ||
-          game?.name ||
-          translate('common.gameWithId', {appId: appIdString});
-        const gameImage =
-          gameMeta.imageUrl ||
-          gameMeta.logoUrl ||
-          game?.header_image ||
-          game?.capsule ||
-          (game ? getGameIconUrl(appIdString, game.img_icon_url) : '') ||
-          '';
-        const gameRef = buildFollowGameRef({
-          ...(game || {}),
-          ...gameMeta,
-          appId: appIdString,
-          name: gameName,
-          imageUrl: gameImage,
-        });
-
-        // Capturé AVANT la mutation optimiste pour pouvoir le restaurer en cas
-        // d'échec (revert propre des deux états).
-        wasMuted =
-          Array.isArray(user?.mutedGames) &&
-          user.mutedGames.map(String).includes(appIdString);
-        mutedTouched = true;
-
-        followRequestsInFlightRef.current.set(appIdString, Date.now());
-        setPendingFollowState(appIdString, targetIsFollowed);
-        // mutedGames optimiste DANS LE MÊME batch React que le pending follow
-        // — sinon la cloche voit "suivi + non muté" pendant les écritures
-        // AsyncStorage ci-dessous et flashe vert sur un suivi silencieux.
-        updateUserMutedGames(
-          appIdString,
-          targetIsFollowed && !wantsNotifications,
-        );
-
-        const mutationUpdatedAt = Date.now();
-
-        const enqueued = await withLocalOpTimeout(
-          queueFollowSync({
-            steamId,
-            appId: appIdString,
-            targetIsFollowed,
-            gameRef,
-            updatedAt: mutationUpdatedAt,
-            notifications: wantsNotifications,
-          }),
-          'queueFollowSync',
-        );
-
-        if (!enqueued) {
-          throw new Error('Failed to enqueue follow sync task');
-        }
-
-        const mutation = await withLocalOpTimeout(
-          applyLocalFollowState({
-            steamId,
-            appId: appIdString,
-            targetIsFollowed,
-            gameRef,
-            setUser,
-            setGames,
-            updatedAt: mutationUpdatedAt,
-            notifications: wantsNotifications,
-          }),
-          'applyLocalFollowState',
-        );
-
-        if (!mutation) {
-          throw new Error('Local follow mutation was not created');
-        }
-
-        syncQueuedFollow({
-          steamId,
-          reason: 'follow-toggle',
-        })
-          .catch(error => {
-            debugError('[FOLLOW] Sync follow differee apres mutation locale:', error);
-          })
-          .finally(() => {
-            refreshPendingFollowStates().catch(error => {
-              debugError('[FOLLOW] Pending follow refresh failed:', error);
-            });
-          });
-
-        if (
-          typeof notifyNotificationSync === 'function' &&
-          !targetIsFollowed
-        ) {
-          notifyNotificationSync('wishlist', appIdString);
-          notifyNotificationSync('followed', appIdString);
-          notifyNotificationSync('news', appIdString);
-        }
-
-        debugLog(
-          targetIsFollowed
-            ? '[FOLLOW] Jeu suivi localement:'
-            : '[FOLLOW] Jeu retire localement des suivis:',
-          gameName,
-        );
-
-        if (typeof markSkipNextGamesRefresh === 'function') {
-          markSkipNextGamesRefresh();
-        }
-
-        return true;
-      } catch (error) {
-        debugError('Erreur lors de la modification locale du suivi:', error);
-        // Revert de la mutation optimiste mutedGames (posée avant les awaits)
-        if (mutedTouched) {
-          updateUserMutedGames(appIdString, wasMuted);
-        }
-        await refreshPendingFollowStates().catch(refreshError => {
-          debugError('[FOLLOW] Pending follow refresh failed:', refreshError);
-        });
-        showAlert(
-          translate('common.error'),
-          translate('games.followUpdateUnexpectedError'),
-        );
+      const appIdString = normalizeFollowAppId(
+        gameMeta?.appId ?? gameMeta?.appid,
+      );
+      if (!appIdString) {
+        debugError('AppID non trouve');
         return false;
-      } finally {
-        if (appIdString) {
-          followRequestsInFlightRef.current.delete(appIdString);
-        }
       }
+      const isFollowed = getResolvedFollowState(
+        appIdString,
+        typeof gameMeta.isFollowed === 'boolean' ? gameMeta.isFollowed : undefined,
+      );
+      return commitFollowMutation({
+        appId: appIdString,
+        targetIsFollowed: !isFollowed,
+        // notifications:false = suivi silencieux (bouton +). Ignoré sur unfollow.
+        notifications: gameMeta.notifications,
+        meta: gameMeta,
+      });
     },
-    [
-      games,
-      getResolvedFollowState,
-      isFollowPending,
-      markSkipNextGamesRefresh,
-      notifyNotificationSync,
-      refreshPendingFollowStates,
-      setGames,
-      setPendingFollowState,
-      setUser,
-      steamId,
-      updateUserMutedGames,
-      user,
-    ],
+    [commitFollowMutation, getResolvedFollowState],
   );
 
   return {
