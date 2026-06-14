@@ -21,6 +21,8 @@ export const STATUS_DEBOUNCE_DELAY = 250;
 export const getGamesCacheKey = steamId => buildStorageKey('games', steamId);
 export const getGamesVersionKey = steamId =>
   buildStorageKey('gamesVersion', steamId);
+export const getFollowVersionKey = steamId =>
+  buildStorageKey('followVersion', steamId);
 export const getWishlistCacheKey = steamId =>
   buildStorageKey('wishlist', steamId);
 export const getWishlistVersionKey = steamId =>
@@ -34,6 +36,7 @@ export const getUserScopedStorageKeys = steamId => {
   return [
     getGamesCacheKey(steamId),
     getGamesVersionKey(steamId),
+    getFollowVersionKey(steamId),
     getWishlistCacheKey(steamId),
     getWishlistVersionKey(steamId),
     getSteamProfileCacheKey(steamId),

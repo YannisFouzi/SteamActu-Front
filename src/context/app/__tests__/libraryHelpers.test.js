@@ -71,9 +71,9 @@ describe('context/app/libraryHelpers', () => {
   });
 
   describe('getUserScopedStorageKeys()', () => {
-    it('renvoie 5 clés pour un steamId', () => {
+    it('renvoie 6 clés pour un steamId', () => {
       const keys = getUserScopedStorageKeys(STEAM);
-      expect(keys).toHaveLength(5);
+      expect(keys).toHaveLength(6);
       expect(keys.every((k) => k.includes(STEAM))).toBe(true);
     });
 

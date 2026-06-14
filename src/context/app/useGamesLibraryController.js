@@ -11,6 +11,7 @@ import {
 } from '../../services/followStateLocalStore';
 import {
   STATUS_DEBOUNCE_DELAY,
+  getFollowVersionKey,
   getGamesCacheKey,
   getGamesVersionKey,
   handleDataLoadError,
@@ -31,6 +32,10 @@ export const useGamesLibraryController = ({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [gamesVersion, setGamesVersion] = useState(null);
+  // Version du SUIVI (follow/unfollow/toggle, toutes surfaces). Un mismatch
+  // déclenche un re-fetch du PROFIL SEUL — pas le reload des 250 jeux —, ce qui
+  // propage les follows faits ailleurs (web, plugin, extension) sans lag.
+  const [followVersion, setFollowVersion] = useState(null);
   const [lastRefreshTime, setLastRefreshTime] = useState(Date.now());
 
   const gamesFetchInFlightRef = useRef(false);
@@ -123,9 +128,51 @@ export const useGamesLibraryController = ({
     [gamesVersion, steamId],
   );
 
+  const persistFollowVersion = useCallback(
+    async (newVersion, targetSteamId = steamId) => {
+      if (!newVersion) {
+        return;
+      }
+      const versionKey = getFollowVersionKey(targetSteamId);
+      if (!versionKey) {
+        return;
+      }
+      setFollowVersion(newVersion);
+      await AsyncStorage.setItem(versionKey, newVersion);
+    },
+    [steamId],
+  );
+
+  // Re-fetch du PROFIL uniquement (followedGames/mutedGames/etc.) sans toucher à
+  // la bibliothèque — déclenché quand seul followVersion a bougé (un suivi fait
+  // sur une autre surface). Garde-fou : si un loadData complet est en vol, il
+  // rafraîchira déjà le profil, donc on s'abstient.
+  const refreshProfileOnly = useCallback(
+    async (serverFollowVersion, targetSteamId = steamId) => {
+      if (!targetSteamId || gamesFetchInFlightRef.current) {
+        return;
+      }
+      try {
+        let userData = await loadUserProfile(targetSteamId);
+        const pending = await readPendingFollowMutations(targetSteamId);
+        userData = applyPendingFollowOverlayToUser(userData, pending);
+        setUser(userData);
+        if (serverFollowVersion) {
+          await persistFollowVersion(serverFollowVersion, targetSteamId);
+        }
+        debugLog('[FOLLOW_VERSION] profil re-fetch (follow change distant)', {
+          version: serverFollowVersion,
+        });
+      } catch (error) {
+        debugError('[FOLLOW_VERSION] refreshProfileOnly fail', error);
+      }
+    },
+    [persistFollowVersion, setUser, steamId],
+  );
+
   const loadData = useCallback(
     async (forceReload = false, origin = 'unknown', options = {}) => {
-      const {expectedGamesVersion} = options;
+      const {expectedGamesVersion, expectedFollowVersion} = options;
 
       debugLog('\n[LOADDATA] Debut loadData...', `origine=${origin}`);
       debugLog('[LOADDATA] forceReload:', forceReload);
@@ -145,14 +192,20 @@ export const useGamesLibraryController = ({
 
       const gamesCacheKey = getGamesCacheKey(savedSteamId);
       const gamesVersionKey = getGamesVersionKey(savedSteamId);
+      const followVersionKey = getFollowVersionKey(savedSteamId);
       const pendingFollowMutations =
         await readPendingFollowMutations(savedSteamId);
 
       if (!gamesHydratedFromCacheRef.current) {
-        const [cachedGames, cachedVersion] = await Promise.all([
-          getJSONItem(gamesCacheKey, null),
-          AsyncStorage.getItem(gamesVersionKey),
-        ]);
+        const [cachedGames, cachedVersion, cachedFollowVersion] =
+          await Promise.all([
+            getJSONItem(gamesCacheKey, null),
+            AsyncStorage.getItem(gamesVersionKey),
+            AsyncStorage.getItem(followVersionKey),
+          ]);
+        if (cachedFollowVersion) {
+          setFollowVersion(cachedFollowVersion);
+        }
 
         if (Array.isArray(cachedGames) && cachedGames.length > 0) {
           debugLog('[CACHE] cache_hit games', {
@@ -249,7 +302,8 @@ export const useGamesLibraryController = ({
         );
 
         let serverGamesVersion = expectedGamesVersion || null;
-        if (!serverGamesVersion) {
+        let serverFollowVersion = expectedFollowVersion || null;
+        if (!serverGamesVersion || !serverFollowVersion) {
           try {
             debugLog('[LOADDATA] status_check_start (origine=loadData)', {
               origin,
@@ -259,10 +313,16 @@ export const useGamesLibraryController = ({
               savedSteamId,
               requestConfig,
             );
-            serverGamesVersion = statusResponse?.data?.gamesVersion || null;
+            serverGamesVersion =
+              serverGamesVersion || statusResponse?.data?.gamesVersion || null;
+            serverFollowVersion =
+              serverFollowVersion ||
+              statusResponse?.data?.followVersion ||
+              null;
             debugLog('[LOADDATA] status_check_ok (origine=loadData)', {
               origin,
               serverGamesVersion,
+              serverFollowVersion,
             });
           } catch (statusError) {
             if (statusError?.name === 'CanceledError') {
@@ -277,6 +337,11 @@ export const useGamesLibraryController = ({
           await persistGamesVersion(serverGamesVersion, savedSteamId, {
             reason: `loadData:${origin}`,
           });
+        }
+        // loadData rafraîchit déjà le profil → on aligne followVersion pour ne
+        // pas re-déclencher un refresh profil juste après.
+        if (serverFollowVersion) {
+          await persistFollowVersion(serverFollowVersion, savedSteamId);
         }
 
         await persistGamesCache(normalizedGames, savedSteamId);
@@ -316,6 +381,7 @@ export const useGamesLibraryController = ({
       onLogoutRef,
       persistGamesCache,
       persistGamesVersion,
+      persistFollowVersion,
       setSteamId,
       setUser,
       steamId,
@@ -407,12 +473,15 @@ export const useGamesLibraryController = ({
           debugLog('[VERSION] status_check_start', {origin});
           const statusResponse = await steamService.fetchStatus(steamId);
           const serverGamesVersion = statusResponse?.data?.gamesVersion;
+          const serverFollowVersion = statusResponse?.data?.followVersion;
 
           if (!serverGamesVersion) {
             debugLog('[VERSION] status_missing', {origin});
             return;
           }
 
+          // 1) La bibliothèque a changé → reload complet (qui aligne aussi
+          // followVersion). Prioritaire : il rafraîchit déjà le profil.
           if (serverGamesVersion !== gamesVersion) {
             debugLog('[VERSION] status_mismatch', {
               origin,
@@ -421,13 +490,27 @@ export const useGamesLibraryController = ({
             });
             await loadData(true, origin, {
               expectedGamesVersion: serverGamesVersion,
+              expectedFollowVersion: serverFollowVersion,
             });
-          } else {
-            debugLog('[VERSION] status_match', {
-              origin,
-              version: serverGamesVersion,
-            });
+            return;
           }
+
+          // 2) Seul le SUIVI a changé (follow fait ailleurs : web, plugin,
+          // extension) → re-fetch du profil seul, pas de reload bibliothèque.
+          if (serverFollowVersion && serverFollowVersion !== followVersion) {
+            debugLog('[VERSION] follow_mismatch', {
+              origin,
+              serveur: serverFollowVersion,
+              local: followVersion,
+            });
+            await refreshProfileOnly(serverFollowVersion);
+            return;
+          }
+
+          debugLog('[VERSION] status_match', {
+            origin,
+            version: serverGamesVersion,
+          });
         } catch (error) {
           debugError('[VERSION] status_check_fail', error);
         } finally {
@@ -444,7 +527,15 @@ export const useGamesLibraryController = ({
         STATUS_DEBOUNCE_DELAY,
       );
     },
-    [gamesVersion, loadData, loading, refreshing, steamId],
+    [
+      followVersion,
+      gamesVersion,
+      loadData,
+      loading,
+      refreshing,
+      refreshProfileOnly,
+      steamId,
+    ],
   );
 
   // API publique RÉFÉRENCE-STABLE (même pattern que loadDataRef dans
@@ -476,6 +567,7 @@ export const useGamesLibraryController = ({
 
     setGames([]);
     setGamesVersion(null);
+    setFollowVersion(null);
     setLastRefreshTime(0);
     setLoading(false);
     setRefreshing(false);
