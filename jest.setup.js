@@ -101,6 +101,16 @@ jest.mock('@react-native-firebase/app', () => ({
   },
 }));
 
+// --- Firebase Analytics : no-op ---
+jest.mock('@react-native-firebase/analytics', () => {
+  const analytics = () => ({
+    setAnalyticsCollectionEnabled: jest.fn().mockResolvedValue(),
+    logScreenView: jest.fn().mockResolvedValue(),
+    logEvent: jest.fn().mockResolvedValue(),
+  });
+  return { __esModule: true, default: analytics };
+});
+
 // --- Notifee ---
 jest.mock('@notifee/react-native', () => ({
   __esModule: true,

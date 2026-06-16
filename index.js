@@ -16,6 +16,12 @@ import {
   setPendingNotification,
 } from './src/services/initialNotificationStore';
 import {displayRemoteNotification} from './src/services/notificationService';
+import {initAnalytics} from './src/services/analytics';
+
+// Configure la collecte analytics dès le boot (désactivée en dev). Firebase
+// collecte ensuite pays/audience automatiquement en prod ; le suivi d'écrans et
+// les events d'usage sont déclenchés depuis l'app.
+initAnalytics();
 
 if (APP_CONFIG.SENTRY_DSN) {
   Sentry.init({

@@ -13,6 +13,7 @@ import LoginScreen from '../screens/LoginScreen';
 import StartupScreen from '../screens/StartupScreen';
 import UpdateRequiredScreen from '../screens/UpdateRequiredScreen';
 import {checkAppVersion} from '../services/versionService';
+import {logScreenView} from '../services/analytics';
 import {
   consumeNavigationInitialNotification,
   isInitialNotificationBootstrapResolved,
@@ -118,6 +119,8 @@ const AppNavigator = () => {
   const {isBootstrapping, isAuthenticated, user} = useAppContext();
   const navigationRef = useNavigationContainerRef();
   const navigationReadyRef = React.useRef(false);
+  // Dernier écran vu, pour ne logguer un screen_view qu'au vrai changement.
+  const routeNameRef = React.useRef();
   const [initialNotificationResolved, setInitialNotificationResolved] =
     React.useState(isInitialNotificationBootstrapResolved());
   const [startupIntent, setStartupIntent] = React.useState(null);
@@ -215,7 +218,16 @@ const AppNavigator = () => {
       linking={linking}
       onReady={() => {
         navigationReadyRef.current = true;
+        routeNameRef.current = navigationRef.getCurrentRoute()?.name;
         hideBootSplashIfReady();
+      }}
+      onStateChange={() => {
+        const previous = routeNameRef.current;
+        const current = navigationRef.getCurrentRoute()?.name;
+        if (current && current !== previous) {
+          logScreenView(current);
+        }
+        routeNameRef.current = current;
       }}>
       <Stack.Navigator
         key={navigatorKey}
