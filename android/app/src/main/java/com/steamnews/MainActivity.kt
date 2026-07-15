@@ -11,7 +11,11 @@ class MainActivity : ReactActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     RNBootSplash.init(this, R.style.BootTheme)
-    super.onCreate(savedInstanceState)
+    // Pass null: react-native-screens forbids restoring its Screen fragments.
+    // After a process kill (e.g. low memory) Android would otherwise try to
+    // restore them -> IllegalStateException "Screen fragments should never be
+    // restored" -> crash on launch. RN always rebuilds from initial JS state.
+    super.onCreate(null)
   }
 
   /**
